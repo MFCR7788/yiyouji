@@ -41,7 +41,7 @@ export type LoginAttemptStatus = {
 
 type AuthListener = (event: AuthChangeEvent, session: Session | null) => void;
 
-type OtpType = 'signup' | 'magiclink' | 'recovery' | 'email_change' | 'email';
+type OtpType = 'signup' | 'magiclink' | 'recovery' | 'email_change' | 'email' | 'sms';
 
 const authListeners = new Set<AuthListener>();
 let cachedSession: Session | null = null;
@@ -258,7 +258,7 @@ export const supabase = {
             return postAuthAction('signInWithOtp', { params });
         },
 
-        async verifyOtp(params: { email: string; token: string; type: OtpType }) {
+        async verifyOtp(params: { email?: string; phone?: string; token: string; type: OtpType }) {
             const result = await postAuthAction<{ session: Session | null; user: SupabaseUser | null }>('verifyOtp', { params });
             if (!result.error && result.data?.session) {
                 applySession(result.data.session, 'SIGNED_IN');
@@ -587,6 +587,64 @@ export async function sendOTP(
             },
         };
     }
+}
+
+export async function sendPhoneOTP(
+    phone: string,
+    type: 'signup' | 'login' = 'login'
+): Promise<AuthResult> {
+    try {
+        const { error } = await supabase.auth.signInWithOtp({
+            phone,
+            options: {
+                shouldCreateUser: type === 'signup',
+            },
+        });
+
+        if (error) {
+            return {
+                success: false,
+                error: {
+                    message: getErrorMessage(error.message),
+                    code: error.code || error.message,
+                },
+            };
+        }
+
+        return { success: true };
+    } catch (err) {
+        console.error('[auth] sendPhoneOTP failed:', err);
+        return {
+            success: false,
+            error: {
+                message: '发送失败，请重试',
+                code: 'SEND_FAILED',
+            },
+        };
+    }
+}
+
+export async function verifyPhoneOTP(
+    phone: string,
+    token: string
+): Promise<AuthResult> {
+    const { error } = await supabase.auth.verifyOtp({
+        phone,
+        token,
+        type: 'sms',
+    });
+
+    if (error) {
+        return {
+            success: false,
+            error: {
+                message: getErrorMessage(error.message),
+                code: error.code || error.message,
+            },
+        };
+    }
+
+    return { success: true };
 }
 
 export async function verifyOTP(

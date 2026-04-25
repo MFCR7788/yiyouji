@@ -92,7 +92,7 @@ export function ShareCard({ fortune, date, userName, isPersonalized, almanac }: 
             const shared = await shareCard(
                 { element: cardRef.current },
                 {
-                    title: `太卜 ${formatDate(date)} 运势`,
+                    title: `星卜 ${formatDate(date)} 运势`,
                     text: `我的${isPersonalized ? '个性化' : '今日'}运势 - 综合运势：${fortune.overall}`,
                 }
             );
@@ -248,7 +248,7 @@ export function ShareCard({ fortune, date, userName, isPersonalized, almanac }: 
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                             src="/Logo.svg"
-                            alt="太卜"
+                            alt="星卜"
                             style={{
                                 width: '24px',
                                 height: '24px',
@@ -256,7 +256,7 @@ export function ShareCard({ fortune, date, userName, isPersonalized, almanac }: 
                                 objectFit: 'cover',
                             }}
                         />
-                        <span style={{ fontSize: '13px', color: '#d97706', fontWeight: 600 }}>太卜</span>
+                        <span style={{ fontSize: '13px', color: '#d97706', fontWeight: 600 }}>星卜</span>
                     </div>
                     <span style={{ fontSize: '12px', color: '#9ca3af' }}>AI智能命理平台</span>
                 </div>

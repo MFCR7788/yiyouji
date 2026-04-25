@@ -41,17 +41,35 @@ async function signInSystemAdmin(): Promise<Session | null> {
     }
 
     const client = getSystemAuthClient();
-    const { data, error } = await client.auth.signInWithPassword({ email, password });
+    
+    const timeoutPromise = new Promise<{ data: null; error: Error }>((_, reject) => {
+        setTimeout(() => {
+            reject(new Error('Sign in timeout'));
+        }, 10000);
+    });
 
-    if (error || !data.session) {
-        if (SYSTEM_ADMIN_SESSION_REQUIRED) {
-            throw new Error('[supabase-server] Failed to sign in system admin session');
+    try {
+        const { data, error } = await Promise.race([
+            client.auth.signInWithPassword({ email, password }),
+            timeoutPromise,
+        ]);
+
+        if (error || !data.session) {
+            if (SYSTEM_ADMIN_SESSION_REQUIRED) {
+                throw new Error('[supabase-server] Failed to sign in system admin session');
+            }
+            console.error('[supabase-server] Failed to sign in system admin:', error);
+            return null;
         }
-        console.error('[supabase-server] Failed to sign in system admin:', error);
+
+        return data.session;
+    } catch (err) {
+        if (SYSTEM_ADMIN_SESSION_REQUIRED) {
+            throw new Error('[supabase-server] Failed to sign in system admin session: ' + (err as Error).message);
+        }
+        console.error('[supabase-server] Failed to sign in system admin (timeout):', err);
         return null;
     }
-
-    return data.session;
 }
 
 async function getSystemAccessToken(): Promise<string | null> {

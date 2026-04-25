@@ -18,6 +18,7 @@ const VENDOR_DEFAULT_TIER: Record<string, ModelTier> = {
 /** DeepSeek 模型 ID -> tier 映射 */
 const DEEPSEEK_MODEL_TIER: Record<string, ModelTier> = {
     "deepseek-v3.2": "free",
+    "deepseek-chat": "free",
     "deepseek-pro": "plus",
 };
 

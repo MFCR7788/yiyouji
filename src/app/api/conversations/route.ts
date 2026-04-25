@@ -2,6 +2,11 @@ import { type NextRequest } from 'next/server';
 import { jsonError, jsonOk, requireUserContext, resolveRequestDbClient } from '@/lib/api-utils';
 import { isValidChatMessagePayload } from '@/lib/server/conversation-messages';
 import type { ChatMessage } from '@/types';
+import { IS_DEV_MODE, initDevMode } from '@/lib/dev-mode';
+import { getLocalConversations, createLocalConversation } from '@/lib/local-database';
+
+// 初始化开发模式
+initDevMode();
 
 const CONVERSATION_LIST_SELECT = [
     'id',
@@ -12,8 +17,6 @@ const CONVERSATION_LIST_SELECT = [
     'updated_at',
     'source_type',
     'question_preview:source_data->>question',
-    'is_archived',
-    'archived_kb_ids',
 ].join(', ');
 
 function isObjectBody(value: unknown): value is Record<string, unknown> {
@@ -35,8 +38,6 @@ function normalizeConversationTitle(title: string | null | undefined): string | 
 export async function GET(request: NextRequest) {
     const auth = await requireUserContext(request);
     if ('error' in auth) return jsonError(auth.error.message, auth.error.status);
-    const db = resolveRequestDbClient(auth);
-    if (!db) return jsonError('加载对话列表失败', 500);
 
     const { searchParams } = new URL(request.url);
     const includeArchived = searchParams.get('includeArchived') === 'true';
@@ -45,15 +46,31 @@ export async function GET(request: NextRequest) {
     const sourceType = searchParams.get('sourceType');
     const chartId = searchParams.get('chartId');
 
+    // 开发模式：使用本地数据库
+    if (IS_DEV_MODE) {
+        const result = getLocalConversations(auth.user.id, limit, offset);
+        
+        let conversations = result.conversations;
+        if (sourceType) {
+            conversations = conversations.filter(c => c.sourceType === sourceType);
+        }
+        
+        return jsonOk({
+            conversations,
+            pagination: result.pagination,
+        });
+    }
+
+    // 生产模式：使用远程数据库
+    const db = resolveRequestDbClient(auth);
+    if (!db) return jsonError('加载对话列表失败', 500);
+
     let query = db
-        .from('conversations_with_archive_status')
+        .from('conversations')
         .select(CONVERSATION_LIST_SELECT)
         .eq('user_id', auth.user.id)
         .order('updated_at', { ascending: false });
 
-    if (!includeArchived) {
-        query = query.eq('is_archived', false);
-    }
     if (sourceType) {
         query = query.eq('source_type', sourceType);
     }
@@ -83,8 +100,6 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
     const auth = await requireUserContext(request);
     if ('error' in auth) return jsonError(auth.error.message, auth.error.status);
-    const db = resolveRequestDbClient(auth);
-    if (!db) return jsonError('创建对话失败', 500);
 
     let body: {
         personality?: string;
@@ -124,6 +139,20 @@ export async function POST(request: NextRequest) {
             return jsonError('messages 必须是数组或 null', 400);
         }
     }
+
+    // 开发模式：使用本地数据库
+    if (IS_DEV_MODE) {
+        const conversation = createLocalConversation(auth.user.id, {
+            personality: body.personality || 'general',
+            title: normalizedTitle || '新对话',
+            messages: initialMessages,
+        });
+        return jsonOk({ id: conversation.id }, 201);
+    }
+
+    // 生产模式：使用远程数据库
+    const db = resolveRequestDbClient(auth);
+    if (!db) return jsonError('创建对话失败', 500);
 
     const { data, error } = await db.rpc('create_conversation_with_messages', {
         p_user_id: auth.user.id,

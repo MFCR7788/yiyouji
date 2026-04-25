@@ -1,6 +1,7 @@
 import { type NextRequest } from 'next/server';
 import { jsonError, jsonOk, requireUserContext, resolveRequestDbClient } from '@/lib/api-utils';
 import { getNotificationRetentionCutoffIso } from '@/lib/notification-server';
+import { IS_DEV_MODE } from '@/lib/dev-mode';
 
 function parseIds(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -10,6 +11,21 @@ function parseIds(value: unknown): string[] {
 export async function GET(request: NextRequest) {
   const auth = await requireUserContext(request);
   if ('error' in auth) return jsonError(auth.error.message, auth.error.status);
+  
+  if (IS_DEV_MODE) {
+    const countOnly = request.nextUrl.searchParams.get('count') === '1';
+    if (countOnly) {
+      return jsonOk({ count: 0 });
+    }
+    return jsonOk({
+      notifications: [],
+      pagination: {
+        hasMore: false,
+        nextOffset: null,
+      },
+    });
+  }
+  
   const db = resolveRequestDbClient(auth);
   if (!db) return jsonError('获取通知失败', 500);
 

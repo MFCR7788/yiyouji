@@ -8,6 +8,11 @@ import { NextRequest } from 'next/server';
 import { RecordCategory, RecordFilters, normalizeRecordInput } from '@/lib/records';
 import { requireUserContext, jsonError, jsonOk } from '@/lib/api-utils';
 import { quotePostgrestString } from '@/lib/utils/postgrest';
+import { IS_DEV_MODE, initDevMode } from '@/lib/dev-mode';
+import { getLocalRecords, createLocalRecord } from '@/lib/local-database';
+
+// 初始化开发模式
+initDevMode();
 
 export async function GET(request: NextRequest) {
     try {
@@ -36,6 +41,33 @@ export async function GET(request: NextRequest) {
         const isPinned = searchParams.get('isPinned');
         const tags = searchParams.getAll('tag');
 
+        // 开发模式：使用本地数据库
+        if (IS_DEV_MODE) {
+            const result = getLocalRecords(user.id);
+            let records = result.records;
+            
+            // 应用筛选条件
+            if (category) records = records.filter(r => r.category === category);
+            if (isPinned !== undefined) records = records.filter(r => r.is_pinned === (isPinned === 'true'));
+            if (startDate) records = records.filter(r => r.event_date >= startDate);
+            if (endDate) records = records.filter(r => r.event_date <= endDate);
+            if (tags.length > 0) records = records.filter(r => tags.some(t => r.tags.includes(t)));
+            if (search) records = records.filter(r => 
+                r.title.includes(search) || (r.content && r.content.includes(search))
+            );
+
+            // 分页
+            const from = (page - 1) * pageSize;
+            const to = from + pageSize;
+            const paginatedRecords = records.slice(from, to);
+
+            return jsonOk({
+                records: paginatedRecords,
+                total: records.length,
+            });
+        }
+
+        // 生产模式：使用远程数据库
         const filters: RecordFilters = {};
         if (category) filters.category = category;
         if (search) filters.search = search;
@@ -47,7 +79,7 @@ export async function GET(request: NextRequest) {
 
         // 构建查询
         let query = auth.db
-            .from('ming_records_with_archive_status')
+            .from('ming_records')
             .select('*', { count: 'exact' })
             .eq('user_id', user.id)
             .order('is_pinned', { ascending: false })
@@ -113,6 +145,13 @@ export async function POST(request: NextRequest) {
             return jsonError(normalized.error, 400);
         }
 
+        // 开发模式：使用本地数据库
+        if (IS_DEV_MODE) {
+            const record = createLocalRecord(user.id, normalized.data as any);
+            return jsonOk(record);
+        }
+
+        // 生产模式：使用远程数据库
         const { data, error } = await auth.db
             .from('ming_records')
             .insert({

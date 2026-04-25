@@ -5,6 +5,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import type { User } from '@supabase/supabase-js';
 import { getAuthAdminClient as getPrivilegedAuthClient, getSystemAdminClient as getPrivilegedSystemAdminClient } from '@/lib/supabase-server';
 import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/supabase-env';
+import { IS_DEV_MODE } from '@/lib/dev-mode';
+import { createDevSupabaseClient } from '@/lib/local-database';
 import {
     ACCESS_COOKIE,
     REFRESH_COOKIE,
@@ -101,6 +103,29 @@ export async function getAuthContext(
     const bearer = request.headers.get('authorization');
     const accessToken = bearer?.replace(/Bearer\s+/i, '') || request.cookies.get(ACCESS_COOKIE)?.value || null;
     const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value || null;
+    
+    if (IS_DEV_MODE) {
+        const mockUser: User | null = accessToken ? {
+            id: 'dev-user-id',
+            app_metadata: {},
+            user_metadata: { nickname: '开发用户' },
+            aud: 'authenticated',
+            role: 'authenticated',
+            email: 'dev@example.com',
+            email_confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        } : null;
+        const devClient = createDevSupabaseClient('dev-user-id') as any;
+        return {
+            db: devClient,
+            supabase: devClient,
+            accessToken,
+            user: mockUser,
+            authError: null,
+        };
+    }
+    
     const authResolverClient = dependencies.authResolverClient ?? createAnonClient();
     const authedClientFactory = dependencies.authedClientFactory ?? createAuthedClient;
     const { session, refreshed, error: resolverError } = await resolveSessionFromTokens(authResolverClient, {
@@ -207,6 +232,34 @@ export async function requireUserContext(
     | { db: RequestDbClient; supabase: RequestDbClient; accessToken: string | null; user: User }
     | { error: { message: string; status: number } }
 > {
+    const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
+    
+    if (isDevMode) {
+        const authHeader = request.headers.get('authorization');
+        if (authHeader?.startsWith('Bearer ')) {
+            const mockUser: User = {
+                id: 'dev-user-id',
+                app_metadata: {},
+                user_metadata: { nickname: '开发用户' },
+                aud: 'authenticated',
+                role: 'authenticated',
+                email: 'dev@example.com',
+                email_confirmed_at: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+            
+            const devClient = createDevSupabaseClient('dev-user-id') as RequestDbClient;
+            
+            return {
+                db: devClient,
+                supabase: devClient,
+                accessToken: authHeader.replace('Bearer ', ''),
+                user: mockUser,
+            };
+        }
+    }
+    
     const { db, supabase, accessToken, user, authError } = await getAuthContext(request);
     if (authError) {
         return { error: { message: authError.message, status: authError.status } };

@@ -89,14 +89,26 @@ export async function resolveChatRequest(
   request: NextRequest,
   body: ChatRequestBody,
 ): Promise<ResolvedChatRequest | Response> {
-  const canSkipCredit = !!(INTERNAL_SECRET && body.skipCreditCheck && body.internalSecret === INTERNAL_SECRET);
+  const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
+  const canSkipCredit = isDevMode || !!(INTERNAL_SECRET && body.skipCreditCheck && body.internalSecret === INTERNAL_SECRET);
 
   let accessTokenForKB: string | null = getChatAccessTokenForKnowledgeBase(request);
   let authUser: ChatAuthUser | null = null;
   let authDb: ReturnType<typeof resolveRequestDbClient> = null;
 
   let userId: string | null = null;
-  if (canSkipCredit) {
+  if (isDevMode) {
+    userId = 'dev-user-id';
+    authUser = {
+      id: userId,
+      email: 'dev@example.com',
+      name: 'Developer',
+      email_confirmed_at: new Date().toISOString(),
+      app_metadata: {},
+      user_metadata: {},
+    };
+    authDb = null;
+  } else if (canSkipCredit) {
     const auth = await getAuthContext(request);
     if (auth.authError) {
       return jsonError(auth.authError.message, auth.authError.status);
@@ -124,7 +136,7 @@ export async function resolveChatRequest(
   }
 
   let authInfo = null;
-  if (userId) {
+  if (userId && !isDevMode) {
     try {
       authInfo = await getUserAuthInfo(userId, {
         client: authDb ?? undefined,
@@ -137,7 +149,9 @@ export async function resolveChatRequest(
       throw error;
     }
   }
-  const membershipType = authInfo?.effectiveMembership ?? 'free';
+  
+  // 开发模式下使用模拟的会员类型
+  const membershipType = isDevMode ? 'pro' : (authInfo?.effectiveMembership ?? 'free');
   if (!isModelAllowedForMembership(modelConfig, membershipType)) {
     return jsonError('当前会员等级无法使用该模型', 403);
   }

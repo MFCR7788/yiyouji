@@ -236,7 +236,7 @@ export default function McpServicePanel() {
               </>
             ) : (
               <div className="rounded-xl border border-border bg-background-secondary/40 p-4 text-sm text-foreground-secondary">
-                管理员当前已关闭 OAuth 接入；如需使用太卜 MCP，请切换到上方的 Stdio 本地接入方式。
+                管理员当前已关闭 OAuth 接入；如需使用星卜 MCP，请切换到上方的 Stdio 本地接入方式。
               </div>
             )}
           </div>

@@ -8,6 +8,7 @@ import {
   type SessionResolutionError,
   setSessionCookies,
 } from '@/lib/auth-session';
+import { IS_DEV_MODE } from '@/lib/dev-mode';
 
 type AuthAction =
   | 'signInWithPassword'
@@ -50,7 +51,37 @@ async function resolveSession(request: NextRequest): Promise<{
   });
 }
 
+function buildDevSession(): Session {
+  return {
+    access_token: 'dev-token',
+    refresh_token: 'dev-refresh-token',
+    expires_at: Date.now() / 1000 + 3600,
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: {
+      id: 'dev-user-id',
+      app_metadata: {},
+      user_metadata: { nickname: '开发用户' },
+      aud: 'authenticated',
+      role: 'authenticated',
+      email: 'dev@example.com',
+      email_confirmed_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    },
+  };
+}
+
 export async function GET(request: NextRequest) {
+  if (IS_DEV_MODE) {
+    const authHeader = request.headers.get('authorization');
+    if (authHeader?.startsWith('Bearer ')) {
+      const mockSession = buildDevSession();
+      return authSuccess({ session: mockSession, user: mockSession.user });
+    }
+    return authSuccess({ session: null, user: null });
+  }
+  
   const { session, refreshed, error } = await resolveSession(request);
   if (error) {
     return authFailure(error.message, error.status, error.code);
@@ -72,6 +103,10 @@ export async function POST(request: NextRequest) {
 
   const action = String(payload.action || '') as AuthAction;
   if (!action) return authFailure('Missing auth action', 400);
+
+  if (IS_DEV_MODE) {
+    return handleDevModeAction(action, payload);
+  }
 
   const anonymousClient = createAnonClient();
 
@@ -229,6 +264,74 @@ export async function POST(request: NextRequest) {
       });
       if (error) return authFailure(error.message, 500, error.code);
 
+      return authSuccess({ success: true });
+    }
+    default:
+      return authFailure(`Unsupported auth action: ${action}`, 400);
+  }
+}
+
+function handleDevModeAction(action: AuthAction, payload: Record<string, unknown>) {
+  const mockSession = buildDevSession();
+
+  switch (action) {
+    case 'signInWithPassword': {
+      const response = authSuccess({ session: mockSession, user: mockSession.user });
+      setSessionCookies(response, mockSession);
+      return response;
+    }
+    case 'signUp': {
+      const response = authSuccess({ session: mockSession, user: mockSession.user });
+      setSessionCookies(response, mockSession);
+      return response;
+    }
+    case 'signOut': {
+      const response = authSuccess({ signedOut: true });
+      setSessionCookies(response, null);
+      return response;
+    }
+    case 'updateUser': {
+      const attributes = (payload.attributes as Record<string, unknown> | undefined) || {};
+      const updatedUser = {
+        ...mockSession.user,
+        user_metadata: {
+          ...mockSession.user.user_metadata,
+          ...attributes,
+        },
+      };
+      return authSuccess({ user: updatedUser });
+    }
+    case 'resetPasswordForEmail': {
+      return authSuccess({ success: true });
+    }
+    case 'signInWithOtp': {
+      return authSuccess({ success: true });
+    }
+    case 'verifyOtp': {
+      const response = authSuccess({ session: mockSession, user: mockSession.user });
+      setSessionCookies(response, mockSession);
+      return response;
+    }
+    case 'resetPasswordWithOtp': {
+      return authSuccess({ success: true });
+    }
+    case 'getUser': {
+      const explicitToken = typeof payload.token === 'string' ? payload.token : null;
+      if (explicitToken) {
+        return authSuccess({ user: mockSession.user });
+      }
+      return authSuccess({ user: mockSession.user });
+    }
+    case 'getSession': {
+      return authSuccess({ session: mockSession, user: mockSession.user });
+    }
+    case 'checkLoginAttempts': {
+      return authSuccess({
+        blocked: false,
+        remainingAttempts: 5,
+      });
+    }
+    case 'recordLoginAttempt': {
       return authSuccess({ success: true });
     }
     default:

@@ -7,14 +7,13 @@
  */
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   CalendarCheck,
   CheckCircle2,
   Key,
-  Lock,
   RefreshCw,
+  Lock,
 } from 'lucide-react';
 import {
   type CheckinStatus,
@@ -29,96 +28,7 @@ import { KeyActivationModal } from '@/components/membership/KeyActivationModal';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { useToast } from '@/components/ui/Toast';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
-import { getSettingsCenterRouteTargetForPath } from '@/lib/settings-center';
 import { getMembershipInfo, type MembershipInfo } from '@/lib/user/membership';
-
-type ClaimStatus =
-  | 'ok'
-  | 'cooldown'
-  | 'lower_tier_ignored'
-  | 'no_eligibility'
-  | 'claim_failed'
-  | 'missing_linuxdo';
-
-type LinuxDoClaimPlanName = 'Plus' | 'Pro';
-
-function resolveMembershipPlanName(type: MembershipInfo['type'] | null | undefined): LinuxDoClaimPlanName | null {
-  if (type === 'pro') return 'Pro';
-  if (type === 'plus') return 'Plus';
-  return null;
-}
-
-function resolveLinuxDoPlanNameFromUser(user: ReturnType<typeof useSessionSafe>['user']): LinuxDoClaimPlanName | null {
-  const providerMetadata = user?.user_metadata?.linuxdo_provider_metadata;
-  if (!providerMetadata || typeof providerMetadata !== 'object') {
-    return null;
-  }
-
-  const trustLevel = (providerMetadata as { trust_level?: unknown }).trust_level;
-  if (typeof trustLevel !== 'number') {
-    return null;
-  }
-  if (trustLevel >= 3) {
-    return 'Pro';
-  }
-  if (trustLevel === 2) {
-    return 'Plus';
-  }
-  return null;
-}
-
-function buildLinuxDoClaimLockKey(userId: string) {
-  return `taibu:linuxdo-membership-claim:${userId}`;
-}
-
-function buildLegacyLinuxDoClaimLockKey(userId: string) {
-  return `mingai:linuxdo-membership-claim:${userId}`;
-}
-
-function persistLinuxDoClaimLock(
-  userId: string,
-  nextAvailableAt: string,
-  planName: LinuxDoClaimPlanName | null,
-) {
-  if (typeof window === 'undefined') return;
-  window.sessionStorage.setItem(buildLinuxDoClaimLockKey(userId), JSON.stringify({
-    nextAvailableAt,
-    planName,
-  }));
-  window.sessionStorage.removeItem(buildLegacyLinuxDoClaimLockKey(userId));
-}
-
-function clearLinuxDoClaimLock(userId: string) {
-  if (typeof window === 'undefined') return;
-  window.sessionStorage.removeItem(buildLinuxDoClaimLockKey(userId));
-  window.sessionStorage.removeItem(buildLegacyLinuxDoClaimLockKey(userId));
-}
-
-function readLinuxDoClaimLock(userId: string): { nextAvailableAt: string; planName: LinuxDoClaimPlanName | null } | null {
-  if (typeof window === 'undefined') return null;
-
-  const raw = window.sessionStorage.getItem(buildLinuxDoClaimLockKey(userId));
-  window.sessionStorage.removeItem(buildLegacyLinuxDoClaimLockKey(userId));
-  if (!raw) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(raw) as {
-      nextAvailableAt?: unknown;
-      planName?: unknown;
-    };
-    if (typeof parsed.nextAvailableAt !== 'string' || parsed.nextAvailableAt.trim().length === 0) {
-      return null;
-    }
-    return {
-      nextAvailableAt: parsed.nextAvailableAt,
-      planName: parsed.planName === 'Plus' || parsed.planName === 'Pro' ? parsed.planName : null,
-    };
-  } catch {
-    return null;
-  }
-}
 
 function ActionButton({
   icon,
@@ -165,9 +75,7 @@ function ActionButton({
 }
 
 export default function UpgradePanel() {
-  const pathname = usePathname();
   const { user, loading: sessionLoading } = useSessionSafe();
-  const searchParams = useSearchParams();
   const { isFeatureEnabled, loaded: featureLoaded } = useFeatureToggles();
   const [membership, setMembership] = useState<MembershipInfo | null>(null);
   const [membershipError, setMembershipError] = useState<string | null>(null);
@@ -180,11 +88,7 @@ export default function UpgradePanel() {
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [transactionsRefreshKey, setTransactionsRefreshKey] = useState(0);
-  const [linuxDoClaimLockedUntil, setLinuxDoClaimLockedUntil] = useState<string | null>(null);
-  const [linuxDoClaimPlanName, setLinuxDoClaimPlanName] = useState<LinuxDoClaimPlanName | null>(null);
   const { showToast } = useToast();
-  const hasLinuxDoLogin = typeof user?.user_metadata?.linuxdo_sub === 'string'
-    && user.user_metadata.linuxdo_sub.trim().length > 0;
 
   const checkinEnabled = featureLoaded && isFeatureEnabled('checkin');
   const containerClass = 'space-y-8';
@@ -262,127 +166,6 @@ export default function UpgradePanel() {
     void refreshCheckinStatus();
   }, [checkinEnabled, refreshCheckinStatus, sessionLoading, user]);
 
-  useEffect(() => {
-    if (!user?.id || !hasLinuxDoLogin) {
-      setLinuxDoClaimLockedUntil(null);
-      setLinuxDoClaimPlanName(null);
-      return;
-    }
-
-    const storedLock = readLinuxDoClaimLock(user.id);
-    if (!storedLock) {
-      setLinuxDoClaimLockedUntil(null);
-      setLinuxDoClaimPlanName(null);
-      return;
-    }
-
-    if (new Date(storedLock.nextAvailableAt).getTime() <= Date.now()) {
-      clearLinuxDoClaimLock(user.id);
-      setLinuxDoClaimLockedUntil(null);
-      setLinuxDoClaimPlanName(null);
-      return;
-    }
-
-    setLinuxDoClaimLockedUntil(storedLock.nextAvailableAt);
-    setLinuxDoClaimPlanName(storedLock.planName);
-  }, [hasLinuxDoLogin, user?.id]);
-
-  useEffect(() => {
-    const claim = searchParams.get('claim') as ClaimStatus | null;
-    if (!claim) return;
-
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.delete('claim');
-    nextUrl.searchParams.delete('next_available_at');
-    window.history.replaceState({}, '', nextUrl.toString());
-
-    if (claim === 'ok') {
-      const fallbackPlanName = resolveLinuxDoPlanNameFromUser(user);
-      const lockedUntil = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-      setLinuxDoClaimLockedUntil(lockedUntil);
-      setLinuxDoClaimPlanName(fallbackPlanName);
-      if (user?.id) {
-        persistLinuxDoClaimLock(user.id, lockedUntil, fallbackPlanName);
-      }
-      void (async () => {
-        let planName = fallbackPlanName;
-        if (user?.id) {
-          const membershipResult = await refreshMembership(user.id);
-          if (membershipResult.ok) {
-            planName = resolveMembershipPlanName(membershipResult.info?.type) ?? planName;
-          }
-        }
-
-        setLinuxDoClaimPlanName(planName);
-        if (user?.id) {
-          persistLinuxDoClaimLock(user.id, lockedUntil, planName);
-        }
-        showToast('success', `恭喜领取 ${planName ?? '会员'} 会员`);
-      })();
-      return;
-    }
-
-    if (claim === 'cooldown') {
-      const nextAvailableAt = searchParams.get('next_available_at');
-      const fallbackPlanName = resolveLinuxDoPlanNameFromUser(user);
-      if (nextAvailableAt) {
-        setLinuxDoClaimLockedUntil(nextAvailableAt);
-        setLinuxDoClaimPlanName(fallbackPlanName);
-        if (user?.id) {
-          persistLinuxDoClaimLock(user.id, nextAvailableAt, fallbackPlanName);
-        }
-      }
-      const formatted = nextAvailableAt
-        ? new Date(nextAvailableAt).toLocaleString('zh-CN', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit',
-          })
-        : null;
-      showToast('info', formatted ? `本月已领取，请在 ${formatted} 后再试` : '本月已领取，请下次再来');
-      return;
-    }
-
-    if (claim === 'lower_tier_ignored') {
-      if (user?.id) {
-        clearLinuxDoClaimLock(user.id);
-      }
-      setLinuxDoClaimLockedUntil(null);
-      setLinuxDoClaimPlanName(null);
-      showToast('info', '当前已有更高等级会员，本次 Linux.do 月领未覆盖');
-      return;
-    }
-
-    if (claim === 'no_eligibility') {
-      if (user?.id) {
-        clearLinuxDoClaimLock(user.id);
-      }
-      setLinuxDoClaimLockedUntil(null);
-      setLinuxDoClaimPlanName(null);
-      showToast('info', '当前 Linux.do 等级不足，无法领取本月会员');
-      return;
-    }
-
-    if (claim === 'missing_linuxdo') {
-      if (user?.id) {
-        clearLinuxDoClaimLock(user.id);
-      }
-      setLinuxDoClaimLockedUntil(null);
-      setLinuxDoClaimPlanName(null);
-      showToast('error', '请使用 Linux.do 账号重新登录后再领取');
-      return;
-    }
-
-    if (user?.id) {
-      clearLinuxDoClaimLock(user.id);
-    }
-    setLinuxDoClaimLockedUntil(null);
-    setLinuxDoClaimPlanName(null);
-    showToast('error', '领取会员失败，请稍后重试');
-  }, [refreshMembership, searchParams, showToast, user]);
-
   const handleKeySuccess = (info: MembershipInfo | null) => {
     if (info) {
       setMembership(info);
@@ -453,31 +236,6 @@ export default function UpgradePanel() {
   };
 
   const currentPlan = membership?.type || 'free';
-  const currentSearch = searchParams.toString();
-  const linuxdoClaimUrl = useMemo(() => {
-    const returnToSearchParams = new URLSearchParams(currentSearch);
-    returnToSearchParams.delete('claim');
-    returnToSearchParams.delete('next_available_at');
-    const returnToSearch = returnToSearchParams.toString();
-    const params = new URLSearchParams({
-      intent: 'membership-claim',
-      returnTo: getSettingsCenterRouteTargetForPath(pathname, 'upgrade', {
-        search: returnToSearch ? `?${returnToSearch}` : '',
-      }),
-    });
-    return `/api/auth/linuxdo?${params.toString()}`;
-  }, [currentSearch, pathname]);
-  const linuxDoClaimDisabled = hasLinuxDoLogin
-    && !!linuxDoClaimLockedUntil
-    && new Date(linuxDoClaimLockedUntil).getTime() > Date.now();
-  const linuxDoClaimLabel = linuxDoClaimDisabled
-    ? linuxDoClaimPlanName
-      ? `已领取 ${linuxDoClaimPlanName}`
-      : '本月已领取'
-    : '领取月度会员';
-  const linuxDoClaimIcon = linuxDoClaimDisabled
-    ? <Lock className="h-4 w-4" />
-    : <RefreshCw className="h-4 w-4" />;
   const checkinButtonLabel = !user
     ? '登录后签到'
     : checkinSubmitting
@@ -540,15 +298,6 @@ export default function UpgradePanel() {
 
       <div className="rounded-lg border border-[#ebe8e2] bg-[#f7f6f3] px-4 py-4">
         <div className="flex flex-wrap gap-2">
-          {hasLinuxDoLogin ? (
-            <ActionButton
-              href={linuxDoClaimDisabled ? undefined : linuxdoClaimUrl}
-              icon={linuxDoClaimIcon}
-              label={linuxDoClaimLabel}
-              disabled={linuxDoClaimDisabled}
-              title={linuxDoClaimDisabled ? '本月已领取 LinuxDo 会员' : '领取本月 LinuxDo 会员'}
-            />
-          ) : null}
           <ActionButton
             onClick={() => {
               if (!user) {

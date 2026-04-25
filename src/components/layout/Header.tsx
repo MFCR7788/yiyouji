@@ -119,7 +119,7 @@ export function Header() {
 
     // 获取当前页面标题
     const getPageTitle = () => {
-        if (!pathname) return '太卜';
+        if (!pathname) return '星卜';
         // 优先匹配更长的路径
         const sortedKeys = Object.keys(ROUTE_LABELS).sort((a, b) => b.length - a.length);
         for (const key of sortedKeys) {
@@ -127,7 +127,7 @@ export function Header() {
                 return ROUTE_LABELS[key];
             }
         }
-        return '太卜';
+        return '星卜';
     };
 
     const pageTitle = getPageTitle();

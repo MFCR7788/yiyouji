@@ -282,12 +282,29 @@ export async function getModelConfigAsync(
   modelId: string
 ): Promise<AIModelConfig | undefined> {
   const models = await getModelsAsync();
-  const direct = models.find((model) => model.id === modelId);
-  if (direct) return direct;
-  if (modelId === 'deepseek-chat' || modelId === 'deepseek') {
-    return models.find((model) => model.id === 'deepseek-v3.2');
+  
+  let direct = models.find((model) => model.id === modelId);
+  if (direct && hasAvailableSource(direct)) {
+    return direct;
   }
-  return undefined;
+  
+  if (modelId === 'deepseek') {
+    const chat = models.find((model) => model.id === 'deepseek-chat');
+    if (chat && hasAvailableSource(chat)) return chat;
+    const v32 = models.find((model) => model.id === 'deepseek-v3.2');
+    if (v32 && hasAvailableSource(v32)) return v32;
+  }
+  
+  const envModels = buildModels();
+  if (envModels.length > 0) {
+    const envDirect = envModels.find((model) => model.id === modelId);
+    if (envDirect) return envDirect;
+    if (modelId === 'deepseek') {
+      return envModels.find((model) => model.id === 'deepseek-chat') || envModels.find((model) => model.id === 'deepseek-v3.2');
+    }
+  }
+  
+  return direct || undefined;
 }
 
 export function clearModelCache(): void {

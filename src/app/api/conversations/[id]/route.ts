@@ -4,6 +4,8 @@ import { extractAnalysisFromConversation } from '@/lib/ai/ai-analysis-query';
 import { isValidChatMessagePayload, loadAllConversationMessages, loadConversationAnalysisMessage, loadConversationMessagePage } from '@/lib/server/conversation-messages';
 import { deleteConversationGraph } from '@/lib/chat/conversation-delete';
 import { isValidUUID } from '@/lib/validation';
+import { IS_DEV_MODE } from '@/lib/dev-mode';
+import { updateLocalConversation } from '@/lib/local-database';
 import type { ChatMessage } from '@/types';
 
 type ConversationPatchBody = {
@@ -201,8 +203,6 @@ export async function PATCH(
     if (!isValidUUID(id)) {
         return jsonError('对话ID格式不合法', 400);
     }
-    const db = resolveRequestDbClient(auth);
-    if (!db) return jsonError('更新对话失败', 500);
     let body: ConversationPatchBody;
 
     try {
@@ -241,6 +241,21 @@ export async function PATCH(
             return jsonError('messages 必须是数组或 null', 400);
         }
     }
+
+    if (IS_DEV_MODE) {
+        const success = updateLocalConversation(auth.user.id, id, {
+            title: normalizedTitle || undefined,
+            messages: nextMessages || undefined,
+            personality: body.personality || undefined,
+        });
+        if (!success) {
+            return jsonError('对话不存在', 404);
+        }
+        return jsonOk({ success: true, id });
+    }
+
+    const db = resolveRequestDbClient(auth);
+    if (!db) return jsonError('更新对话失败', 500);
 
     const { data, error } = await db.rpc('update_conversation_with_messages', {
         p_conversation_id: id,

@@ -121,17 +121,27 @@ function BaziResultContent() {
             setLoadError(null);
 
             try {
-                const [chartData, wuxingAnalysis, personalityAnalysis] = await Promise.all([
-                    loadSavedChart('bazi', chartId),
-                    loadLatestConversationAnalysisSnapshot({
-                        sourceType: 'bazi_wuxing',
-                        chartId,
-                    }),
-                    loadLatestConversationAnalysisSnapshot({
-                        sourceType: 'bazi_personality',
-                        chartId,
-                    }),
-                ]);
+                // 并行加载命盘数据（对话分析可能因为表结构不存在而失败，但不影响命盘展示）
+                const chartData = await loadSavedChart('bazi', chartId);
+                
+                let wuxingAnalysis = null;
+                let personalityAnalysis = null;
+
+                try {
+                    [wuxingAnalysis, personalityAnalysis] = await Promise.all([
+                        loadLatestConversationAnalysisSnapshot({
+                            sourceType: 'bazi_wuxing',
+                            chartId,
+                        }),
+                        loadLatestConversationAnalysisSnapshot({
+                            sourceType: 'bazi_personality',
+                            chartId,
+                        }),
+                    ]);
+                } catch {
+                    // 对话分析加载失败不影响命盘展示
+                    console.warn('[bazi] 对话分析加载失败，继续展示命盘');
+                }
 
                 if (cancelled) {
                     return;
@@ -380,7 +390,7 @@ function BaziResultContent() {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: `${formData.name}的八字命盘 - 太卜`,
+                    title: `${formData.name}的八字命盘 - 星卜`,
                     text: `查看${formData.name}的八字命盘分析`,
                     url,
                 });

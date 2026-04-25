@@ -144,22 +144,37 @@ export async function loadConversations(
         offset: String(offset),
     });
 
-    const payload = await requestBrowserData<{
-        conversations?: ConversationListApiRow[];
-        pagination?: { hasMore?: boolean; nextOffset?: number | null };
-    }>(`/api/conversations?${params.toString()}`, {
-        signal,
-    }, {
-        fallbackMessage: '加载对话列表失败',
-    });
+    try {
+        const payload = await requestBrowserData<{
+            conversations?: ConversationListApiRow[];
+            pagination?: { hasMore?: boolean; nextOffset?: number | null };
+        }>(`/api/conversations?${params.toString()}`, {
+            signal,
+        }, {
+            fallbackMessage: '加载对话列表失败',
+        });
 
-    return {
-        conversations: (payload?.conversations || []).map(toConversationListItem),
-        pagination: {
-            hasMore: payload?.pagination?.hasMore === true,
-            nextOffset: payload?.pagination?.nextOffset ?? null,
-        },
-    };
+        return {
+            conversations: (payload?.conversations || []).map(toConversationListItem),
+            pagination: {
+                hasMore: payload?.pagination?.hasMore === true,
+                nextOffset: payload?.pagination?.nextOffset ?? null,
+            },
+        };
+    } catch (error) {
+        // 未登录、数据库连接失败或服务不可用时返回空列表，不抛出错误
+        if (error instanceof Error) {
+            const message = error.message.toLowerCase();
+            if (message.includes('401') || message.includes('500') || message.includes('503') || message.includes('timeout') || message.includes('fetch failed')) {
+                console.warn('[conversation] Failed to load conversations, returning empty list:', error.message);
+                return {
+                    conversations: [],
+                    pagination: { hasMore: false, nextOffset: null },
+                };
+            }
+        }
+        throw error;
+    }
 }
 
 export async function loadConversationWindow(

@@ -1,8 +1,8 @@
 /**
  * 认证弹窗组件
  * 
- * 支持登录、注册、忘记密码切换
- * Phase 3 增强：OTP验证码登录/注册、密码强度验证、登录限制
+ * 支持手机号登录、注册、忘记密码切换
+ * 使用阿里云短信验证码登录/注册
  */
 'use client';
 
@@ -14,16 +14,14 @@ import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import {
     signInWithEmailProtected,
     sendOTP,
-    verifyOTP,
-    recordLoginAttempt,
     resetPasswordWithOTP,
 } from '@/lib/auth';
 import { supabase } from '@/lib/auth';
+import { sendSmsCode, verifySmsCode } from '@/lib/sms/client';
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrengthIndicator';
 import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
-import { OAuthButtons } from '@/components/auth/OAuthButtons';
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'verify-register' | 'verify-login' | 'set-password' | 'verify-reset' | 'reset-password';
 type LoginMethod = 'password' | 'otp';
@@ -38,6 +36,7 @@ interface AuthModalProps {
 interface AuthState {
     mode: AuthMode;
     loginMethod: LoginMethod;
+    phone: string;
     emailPrefix: string;
     emailSuffix: string;
     password: string;
@@ -61,7 +60,8 @@ type AuthAction =
 
 const initialAuthState: AuthState = {
     mode: 'login',
-    loginMethod: 'password',
+    loginMethod: 'otp',
+    phone: '',
     emailPrefix: '',
     emailSuffix: '@qq.com',
     password: '',
@@ -84,6 +84,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
         case 'RESET_FORM':
             return {
                 ...state,
+                phone: '',
                 emailPrefix: '',
                 password: '',
                 confirmPassword: '',
@@ -97,6 +98,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
             };
         case 'SWITCH_MODE': {
             const reset: Partial<AuthState> = {
+                phone: '',
                 emailPrefix: '',
                 password: '',
                 confirmPassword: '',
@@ -110,7 +112,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
                 mode: action.mode,
             };
             if (action.mode === 'login') {
-                reset.loginMethod = 'password';
+                reset.loginMethod = 'otp';
             }
             return { ...state, ...reset };
         }
@@ -137,7 +139,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     const verifyingRef = useRef(false);
 
     const {
-        mode, loginMethod, emailPrefix, emailSuffix,
+        mode, loginMethod, phone, emailPrefix, emailSuffix,
         password, confirmPassword, showPassword, showConfirmPassword,
         nickname, verificationCode, loading, sendingCode,
         error, success, countdown,
@@ -170,10 +172,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         router.refresh();
     };
 
-    // 发送验证码
-    const handleSendOTP = async (type: 'signup' | 'magiclink') => {
-        if (!emailPrefix) {
-            setField('error', '请输入邮箱地址');
+    // 发送手机验证码
+    const handleSendPhoneOTP = async (type: 'signup' | 'login') => {
+        if (!phone || phone.length !== 11) {
+            setField('error', '请输入正确的11位手机号');
             return;
         }
 
@@ -181,18 +183,18 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         setField('loading', true);
 
         try {
-            const result = await sendOTP(email, type);
+            const result = await sendSmsCode(phone);
             if (result.success) {
                 setField('countdown', 60);
                 if (type === 'signup') {
                     setField('mode', 'verify-register');
-                    setField('success', '验证码已发送到您的邮箱');
+                    setField('success', '验证码已发送到您的手机');
                 } else {
                     setField('mode', 'verify-login');
-                    setField('success', '登录验证码已发送到您的邮箱');
+                    setField('success', '登录验证码已发送到您的手机');
                 }
             } else {
-                setField('error', result.error?.message || '发送失败');
+                setField('error', result.message || '发送失败');
             }
         } catch {
             setField('error', '发送失败，请重试');
@@ -203,8 +205,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     // 注册时发送验证码（不切换模式）
     const handleSendRegisterCode = async () => {
-        if (!emailPrefix) {
-            setField('error', '请输入邮箱地址');
+        if (!phone || phone.length !== 11) {
+            setField('error', '请输入正确的11位手机号');
             return;
         }
 
@@ -223,12 +225,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         setField('sendingCode', true);
 
         try {
-            const result = await sendOTP(email, 'signup');
+            const result = await sendSmsCode(phone);
             if (result.success) {
                 setField('countdown', 60);
-                setField('success', '验证码已发送到您的邮箱');
+                setField('success', '验证码已发送到您的手机');
             } else {
-                setField('error', result.error?.message || '发送失败');
+                setField('error', result.message || '发送失败');
             }
         } catch {
             setField('error', '发送失败，请重试');
@@ -260,8 +262,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             return;
         }
 
-        const type = mode === 'verify-register' ? 'signup' : 'magiclink';
-        await handleSendOTP(type);
+        const type = mode === 'verify-register' ? 'signup' : 'login';
+        await handleSendPhoneOTP(type);
     };
 
     // 验证验证码
@@ -287,8 +289,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         const currentMode = mode;
 
         try {
-            const verifyType = currentMode === 'verify-register' ? 'signup' : 'magiclink';
-            const result = await verifyOTP(email, codeToVerify, verifyType);
+            const result = await verifySmsCode(phone, codeToVerify);
             if (result.success) {
                 if (currentMode === 'verify-register') {
                     setField('mode', 'set-password');
@@ -298,7 +299,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     completeAuth();
                 }
             } else {
-                setField('error', result.error?.message || '验证失败');
+                setField('error', result.message || '验证失败');
             }
         } catch {
             setField('error', '验证失败，请重试');
@@ -312,18 +313,32 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     const handleLogin = async () => {
         if (loginMethod === 'password') {
-            const result = await signInWithEmailProtected(email, password);
+            if (!phone || !password) {
+                setField('error', '请填写完整信息');
+                return;
+            }
+
+            const result = await signInWithEmailProtected(
+                `${phone}@phone.xingbu.app`,
+                password
+            );
             if (result.success) {
                 completeAuth();
             } else {
                 setField('error', result.error?.message || '登录失败');
             }
         } else {
-            await handleSendOTP('magiclink');
+            await handleSendPhoneOTP('login');
         }
     };
 
     const handleRegister = async () => {
+        if (!phone || phone.length !== 11) {
+            setField('error', '请输入正确的11位手机号');
+            setField('loading', false);
+            return;
+        }
+
         if (!verificationCode || verificationCode.length !== 6) {
             setField('error', '请输入6位验证码');
             setField('loading', false);
@@ -343,22 +358,25 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             return;
         }
 
-        const verifyResult = await verifyOTP(email, verificationCode);
-        if (verifyResult.success) {
-            const { error: updateError } = await supabase.auth.updateUser({
-                password: password,
-                data: { nickname: nickname || '命理爱好者' },
-            });
+        // 验证短信验证码并注册
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                phone,
+                code: verificationCode,
+                password,
+                nickname: nickname || '命理爱好者',
+            }),
+        });
 
-            if (updateError) {
-                setField('error', '设置密码失败：' + updateError.message);
-            } else {
-                await recordLoginAttempt(email, true);
-                setField('success', '注册成功！');
-                completeAuth();
-            }
+        const result = await response.json();
+
+        if (result.success) {
+            setField('success', '注册成功！');
+            completeAuth();
         } else {
-            setField('error', verifyResult.error?.message || '验证码验证失败');
+            setField('error', result.message || '注册失败');
         }
     };
 
@@ -384,6 +402,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     const handleForgotPassword = async () => {
         setField('error', '');
+        if (!emailPrefix) {
+            setField('error', '请输入邮箱地址');
+            return;
+        }
         const result = await sendOTP(email, 'recovery');
         if (result.success) {
             setField('countdown', 60);
@@ -442,7 +464,22 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 case 'verify-register':
                 case 'verify-login':
                 case 'verify-reset':
-                    await handleVerifyOTP(); break;
+                    await handleVerifyOTP();
+                    break;
+                case 'set-password':
+                    await handleSetPassword();
+                    break;
+                case 'register':
+                    // 注册流程直接设置密码，验证码已在 handleVerifyOTP 中验证过
+                    const { isValid: regIsValid } = validatePasswordStrength(password);
+                    if (!regIsValid) {
+                        setField('error', '密码不符合强度要求');
+                    } else if (password !== confirmPassword) {
+                        setField('error', '两次输入的密码不一致');
+                    } else {
+                        await handleSetPassword();
+                    }
+                    break;
             }
         } catch {
             setField('error', '操作失败，请重试');
@@ -457,7 +494,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             case 'login': return '登录';
             case 'register': return '注册';
             case 'forgot': return '重置密码';
-            case 'verify-register': return '验证邮箱';
+            case 'verify-register': return '验证手机';
             case 'verify-login': return '验证登录';
             case 'verify-reset': return '验证身份';
             case 'set-password': return '设置密码';
@@ -545,11 +582,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                         <LoginForm
                             loginMethod={loginMethod}
                             onLoginMethodChange={(v) => setField('loginMethod', v)}
-                            emailPrefix={emailPrefix}
-                            onEmailPrefixChange={(v) => setField('emailPrefix', v)}
-                            emailSuffix={emailSuffix}
-                            onEmailSuffixChange={(v) => setField('emailSuffix', v)}
-                            emailSuffixes={EMAIL_SUFFIXES}
+                            phone={phone}
+                            onPhoneChange={(v) => setField('phone', v)}
                             password={password}
                             onPasswordChange={(v) => setField('password', v)}
                             showPassword={showPassword}
@@ -559,10 +593,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     )}
 
                     {/* 验证码输入（验证模式） */}
-                    {(mode === 'verify-register' || mode === 'verify-login' || mode === 'verify-reset') && (
+                    {(mode === 'verify-register' || mode === 'verify-login') && (
                         <div className="space-y-4">
                             <p className="text-sm text-foreground-secondary text-center">
-                                验证码已发送至 <span className="font-medium text-foreground">{email}</span>
+                                验证码已发送至 {phone}
                             </p>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium text-foreground-secondary text-center block">
@@ -697,11 +731,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                         <RegisterForm
                             nickname={nickname}
                             onNicknameChange={(v) => setField('nickname', v)}
-                            emailPrefix={emailPrefix}
-                            onEmailPrefixChange={(v) => setField('emailPrefix', v)}
-                            emailSuffix={emailSuffix}
-                            onEmailSuffixChange={(v) => setField('emailSuffix', v)}
-                            emailSuffixes={EMAIL_SUFFIXES}
+                            phone={phone}
+                            onPhoneChange={(v) => setField('phone', v)}
                             password={password}
                             onPasswordChange={(v) => setField('password', v)}
                             confirmPassword={confirmPassword}
@@ -757,11 +788,6 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                         {loading && <SoundWaveLoader variant="inline" />}
                         {getSubmitText()}
                     </button>
-
-                    {/* 第三方登录 */}
-                    {(mode === 'login' || mode === 'register') && (
-                        <OAuthButtons />
-                    )}
 
                     {/* 切换登录/注册 */}
                     {(mode === 'login' || mode === 'register') && (

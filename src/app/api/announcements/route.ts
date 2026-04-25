@@ -1,8 +1,27 @@
 import { NextRequest } from 'next/server';
 import { getSystemAdminClient, jsonError, jsonOk } from '@/lib/api-utils';
 import { serializeAnnouncement, type AnnouncementRow } from '@/lib/announcement';
+import { IS_DEV_MODE } from '@/lib/dev-mode';
 
 export async function GET(request: NextRequest) {
+    if (IS_DEV_MODE) {
+        const countOnly = request.nextUrl.searchParams.get('count') === '1';
+        const latestOnly = request.nextUrl.searchParams.get('latest') === '1';
+
+        if (countOnly) {
+            return jsonOk({ count: 0 });
+        }
+
+        if (latestOnly) {
+            return jsonOk({ announcement: null });
+        }
+
+        return jsonOk({
+            announcements: [],
+            pagination: { hasMore: false, nextOffset: null },
+        });
+    }
+
     const supabase = getSystemAdminClient();
     const countOnly = request.nextUrl.searchParams.get('count') === '1';
     const latestOnly = request.nextUrl.searchParams.get('latest') === '1';

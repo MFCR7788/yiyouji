@@ -65,3 +65,17 @@ docs/*
 .claude
 **/CLAUDE.md
 .ace-tool/
+
+# local node binary
+/node/
+
+# temp scripts
+create-admin.*
+create-exec-sql.sh
+create-new-admin.sh
+fix-users-table.sh
+reset-admin-password.sh
+run-db-setup.mjs
+setup-admin.sh
+setup-db.*
+test-supabase-auth.sh

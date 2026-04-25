@@ -110,7 +110,7 @@ export async function shareCard(
         // 检查是否支持 Web Share API
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({
-                title: shareData.title || '太卜 运势卡片',
+                title: shareData.title || '星卜 运势卡片',
                 text: shareData.text || '查看我的今日运势',
                 files: [file],
             });

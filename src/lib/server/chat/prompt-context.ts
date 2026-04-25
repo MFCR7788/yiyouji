@@ -13,6 +13,7 @@ import { isFeatureModuleEnabled } from '@/lib/app-settings';
 import { normalizeUserSettings, type UserIdentityProfile, USER_SETTINGS_SELECT } from '@/lib/user/settings';
 import { normalizeVisualizationSettings, type VisualizationSettings } from '@/lib/visualization/settings';
 import { DEFAULT_DIMENSIONS } from '@/lib/visualization/dimensions';
+import { IS_DEV_MODE } from '@/lib/dev-mode';
 
 /** 用户未保存可视化设置时的默认配置 */
 const DEFAULT_VISUALIZATION_SETTINGS: VisualizationSettings = {
@@ -134,7 +135,7 @@ export async function buildChatPromptContext(
 ): Promise<ChatPromptContextResult> {
   const { body, userId, accessTokenForKB, requestedModelId, reasoningEnabled, membershipType } = resolvedRequest;
 
-  const supabase = getSystemAdminClient();
+  const supabase = IS_DEV_MODE ? null : getSystemAdminClient();
   const knowledgeBaseFeatureEnabled = await isFeatureModuleEnabled('knowledge-base');
 
   let dreamContext: { baziChartName?: string; dailyFortune?: string } | undefined;
@@ -155,7 +156,7 @@ export async function buildChatPromptContext(
     : mergedMentions.filter((mention) => mention.type !== 'knowledge_base');
 
   const mentionBudget = await calculatePromptBudget(requestedModelId, reasoningEnabled);
-  const userSettings = userId ? await loadUserSettingsContext(supabase, userId) : {
+  const userSettings = userId && supabase ? await loadUserSettingsContext(supabase, userId) : {
     expressionStyle: 'direct' as const,
     chartPromptDetailLevel: 'default' as const,
     userProfile: null,
@@ -163,7 +164,7 @@ export async function buildChatPromptContext(
     promptKbIds: [] as string[],
   };
 
-  const resolvedMentions = userId
+  const resolvedMentions = userId && supabase
     ? await resolveMentionsForPrompt(effectiveMentions, userId, supabase, mentionBudget, userSettings.chartPromptDetailLevel)
     : [];
 
@@ -174,7 +175,7 @@ export async function buildChatPromptContext(
     visualizationSettings: body.visualizationSettings,
   });
 
-  const promptKnowledgeBases = userId && canUsePromptKnowledgeBase && effectiveUserSettings.promptKbIds.length > 0
+  const promptKnowledgeBases = userId && supabase && canUsePromptKnowledgeBase && effectiveUserSettings.promptKbIds.length > 0
     ? await (async () => {
       const { data: kbRows } = await supabase
         .from('knowledge_bases')
@@ -193,7 +194,7 @@ export async function buildChatPromptContext(
     })()
     : [];
 
-  const knowledgeHits = userId && canUsePromptKnowledgeBase
+  const knowledgeHits = userId && supabase && canUsePromptKnowledgeBase
     ? await buildKnowledgeHits({
         query: userQuestionForSearch,
         userId,

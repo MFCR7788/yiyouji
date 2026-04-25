@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/favicon.svg" alt="太卜" width="80" height="80">
+<img src="public/favicon.svg" alt="星卜" width="80" height="80">
 
-# 太卜
+# 星卜
 
 **将传统命理文化与AI深度融合**
 
@@ -53,7 +53,7 @@ Language: **中文** | [English](README.en.md)
 
 ## MCP
 
-太卜提供 MCP，可在支持 MCP 的客户端中直接调用命理工具。
+星卜提供 MCP，可在支持 MCP 的客户端中直接调用命理工具。
 
 ### 快速配置
 
@@ -173,13 +173,13 @@ pnpm dev
 提示：
 
 - `AGPL-3.0-only` 不禁止商用，但要求修改后的网络服务在对外提供时履行相应源码开放义务
-- `MIT` 包允许商用、再分发与二次开发，但需保留版权与许可声明
+- `MIT` 包允许商用、再分发与魔法超人，但需保留版权与许可声明
 
 ---
 
 <div align="center">
 
-**太卜** - 用AI解读命运，用科技传承文化
+**星卜** - 用AI解读命运，用科技传承文化
 
 Made with ❤️ by [hhszzzz](https://github.com/hhszzzz)
 

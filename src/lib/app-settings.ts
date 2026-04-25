@@ -1,5 +1,6 @@
 import { getSystemAdminClient } from "@/lib/api-utils";
 import { IS_NODE_TEST_RUNTIME } from "@/lib/runtime";
+import { IS_DEV_MODE } from "@/lib/dev-mode";
 
 // ─── 功能模块开关 ───
 
@@ -117,6 +118,11 @@ async function readFeatureToggleValue(
 
 /** 批量读取所有功能模块开关状态。返回 Record<id, boolean>，true = 已关闭 */
 export async function readFeatureTogglesState(): Promise<FeatureTogglesReadResult> {
+  if (IS_DEV_MODE) {
+    console.warn('[app-settings] Running in dev mode, returning default feature toggles (all enabled)');
+    return { loaded: true, toggles: {} };
+  }
+  
   try {
     const supabase = getSystemAdminClient();
     const { data, error } = await readFeatureToggleRows(supabase);
@@ -125,7 +131,8 @@ export async function readFeatureTogglesState(): Promise<FeatureTogglesReadResul
       if (!IS_NODE_TEST_RUNTIME) {
         console.error('[app-settings] Failed to read feature toggles:', error.message);
       }
-      return { loaded: false, toggles: {} };
+      console.warn('[app-settings] Falling back to default feature toggles (all enabled)');
+      return { loaded: true, toggles: {} };
     }
 
     return {
@@ -136,7 +143,8 @@ export async function readFeatureTogglesState(): Promise<FeatureTogglesReadResul
     if (!IS_NODE_TEST_RUNTIME) {
       console.error('[app-settings] Failed to read feature toggles:', error);
     }
-    return { loaded: false, toggles: {} };
+    console.warn('[app-settings] Falling back to default feature toggles (all enabled)');
+    return { loaded: true, toggles: {} };
   }
 }
 

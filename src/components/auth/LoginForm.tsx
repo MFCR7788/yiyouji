@@ -6,18 +6,15 @@
  */
 'use client';
 
-import { Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Phone, Lock, Eye, EyeOff } from 'lucide-react';
 
 type LoginMethod = 'password' | 'otp';
 
 interface LoginFormProps {
     loginMethod: LoginMethod;
     onLoginMethodChange: (method: LoginMethod) => void;
-    emailPrefix: string;
-    onEmailPrefixChange: (value: string) => void;
-    emailSuffix: string;
-    onEmailSuffixChange: (value: string) => void;
-    emailSuffixes: string[];
+    phone: string;
+    onPhoneChange: (value: string) => void;
     password: string;
     onPasswordChange: (value: string) => void;
     showPassword: boolean;
@@ -28,11 +25,8 @@ interface LoginFormProps {
 export function LoginForm({
     loginMethod,
     onLoginMethodChange,
-    emailPrefix,
-    onEmailPrefixChange,
-    emailSuffix,
-    onEmailSuffixChange,
-    emailSuffixes,
+    phone,
+    onPhoneChange,
     password,
     onPasswordChange,
     showPassword,
@@ -65,13 +59,10 @@ export function LoginForm({
                 </button>
             </div>
 
-            {/* 邮箱 */}
-            <EmailField
-                emailPrefix={emailPrefix}
-                onEmailPrefixChange={onEmailPrefixChange}
-                emailSuffix={emailSuffix}
-                onEmailSuffixChange={onEmailSuffixChange}
-                emailSuffixes={emailSuffixes}
+            {/* 手机号 */}
+            <PhoneField
+                phone={phone}
+                onPhoneChange={onPhoneChange}
             />
 
             {/* 密码（仅密码登录） */}
@@ -114,44 +105,35 @@ export function LoginForm({
     );
 }
 
-/** 共享邮箱输入字段 */
-export function EmailField({
-    emailPrefix,
-    onEmailPrefixChange,
-    emailSuffix,
-    onEmailSuffixChange,
-    emailSuffixes,
+/** 共享手机号输入字段 */
+export function PhoneField({
+    phone,
+    onPhoneChange,
 }: {
-    emailPrefix: string;
-    onEmailPrefixChange: (value: string) => void;
-    emailSuffix: string;
-    onEmailSuffixChange: (value: string) => void;
-    emailSuffixes: string[];
+    phone: string;
+    onPhoneChange: (value: string) => void;
 }) {
     return (
         <div className="space-y-2">
-            <label className="text-sm font-medium text-foreground-secondary">邮箱</label>
-            <div className="flex gap-2">
-                <div className="relative flex-1">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
-                    <input
-                        type="text"
-                        value={emailPrefix}
-                        onChange={(e) => onEmailPrefixChange(e.target.value)}
-                        placeholder="邮箱前缀"
-                        required
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
-                    />
-                </div>
-                <select
-                    value={emailSuffix}
-                    onChange={(e) => onEmailSuffixChange(e.target.value)}
-                    className="px-3 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors text-sm"
-                >
-                    {emailSuffixes.map(suffix => (
-                        <option key={suffix} value={suffix}>{suffix}</option>
-                    ))}
-                </select>
+            <label className="text-sm font-medium text-foreground-secondary">手机号</label>
+            <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
+                <input
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => {
+                        // 只允许数字输入
+                        const value = e.target.value.replace(/\D/g, '');
+                        // 限制最多11位
+                        if (value.length <= 11) {
+                            onPhoneChange(value);
+                        }
+                    }}
+                    placeholder="请输入手机号"
+                    required
+                    maxLength={11}
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
+                />
             </div>
         </div>
     );

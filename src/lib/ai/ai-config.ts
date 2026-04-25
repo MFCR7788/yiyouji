@@ -67,6 +67,8 @@ export function attachGatewaySources(model: AIModelConfig): AIModelConfig {
       ...model,
       sources: [],
       transport: model.transport || DEFAULT_AI_TRANSPORT,
+      apiUrl: model.apiUrl,
+      apiKeyEnvVar: model.apiKeyEnvVar,
     };
   }
 
@@ -143,7 +145,26 @@ function parseEnvFallbackModels(): AIModelConfig[] {
 // ===== 动态生成模型配置 =====
 
 export function buildModels(): AIModelConfig[] {
-  return parseEnvFallbackModels();
+  const envModels = parseEnvFallbackModels();
+  if (envModels.length > 0) {
+    return envModels;
+  }
+  
+  const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
+  if (isDevMode) {
+    console.warn('[ai-config] No MINGAI_FALLBACK_MODELS_JSON env var found, using default dev model');
+    return [normalizeEnvFallbackModel({
+      id: 'deepseek-chat',
+      name: 'DeepSeek Chat',
+      vendor: 'deepseek',
+      usageType: 'chat',
+      apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+      apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+      supportsReasoning: false,
+    })];
+  }
+  
+  return [];
 }
 
 // 懒加载模型配置（环境变量）
@@ -169,7 +190,7 @@ export function getModelConfig(modelId: string): AIModelConfig | undefined {
   return models.find((model) => model.id === modelId);
 }
 
-export const DEFAULT_MODEL_ID = '';
+export const DEFAULT_MODEL_ID = 'deepseek-chat';
 export const DEFAULT_VISION_MODEL_ID = '';
 export const DEFAULT_EMBEDDING_MODEL_ID = process.env.KNOWLEDGE_BASE_EMBEDDING_MODEL_ID || 'text-embedding-v4';
 export const DEFAULT_RERANK_MODEL_ID = process.env.KNOWLEDGE_BASE_RERANK_MODEL_ID || 'qwen3-rerank';

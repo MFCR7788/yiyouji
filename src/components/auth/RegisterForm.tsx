@@ -10,16 +10,13 @@ import { Lock, User, Eye, EyeOff } from 'lucide-react';
 import { PasswordStrengthIndicator } from '@/components/auth/PasswordStrengthIndicator';
 import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
-import { EmailField } from '@/components/auth/LoginForm';
+import { PhoneField } from '@/components/auth/LoginForm';
 
 interface RegisterFormProps {
     nickname: string;
     onNicknameChange: (value: string) => void;
-    emailPrefix: string;
-    onEmailPrefixChange: (value: string) => void;
-    emailSuffix: string;
-    onEmailSuffixChange: (value: string) => void;
-    emailSuffixes: string[];
+    phone: string;
+    onPhoneChange: (value: string) => void;
     password: string;
     onPasswordChange: (value: string) => void;
     confirmPassword: string;
@@ -39,11 +36,8 @@ interface RegisterFormProps {
 export function RegisterForm({
     nickname,
     onNicknameChange,
-    emailPrefix,
-    onEmailPrefixChange,
-    emailSuffix,
-    onEmailSuffixChange,
-    emailSuffixes,
+    phone,
+    onPhoneChange,
     password,
     onPasswordChange,
     confirmPassword,
@@ -76,13 +70,10 @@ export function RegisterForm({
                 </div>
             </div>
 
-            {/* 邮箱 */}
-            <EmailField
-                emailPrefix={emailPrefix}
-                onEmailPrefixChange={onEmailPrefixChange}
-                emailSuffix={emailSuffix}
-                onEmailSuffixChange={onEmailSuffixChange}
-                emailSuffixes={emailSuffixes}
+            {/* 手机号 */}
+            <PhoneField
+                phone={phone}
+                onPhoneChange={onPhoneChange}
             />
 
             {/* 密码 */}
@@ -143,7 +134,7 @@ export function RegisterForm({
             {/* 验证码 */}
             <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium text-foreground-secondary">邮箱验证码</label>
+                    <label className="text-sm font-medium text-foreground-secondary">手机验证码</label>
                     <button
                         type="button"
                         onClick={onSendCode}

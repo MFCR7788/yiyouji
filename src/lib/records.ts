@@ -356,14 +356,25 @@ export async function getRecords(
         query.append('tag', tag);
     }
 
-    const payload = await requestBrowserData<{ records?: unknown[]; total?: number }>(`/api/records?${query.toString()}`, undefined, {
-        fallbackMessage: '请求失败',
-    });
-    const validRecords = (payload.records ?? []).filter(isValidMingRecord);
-    return {
-        records: validRecords,
-        total: payload.total || 0,
-    };
+    try {
+        const payload = await requestBrowserData<{ records?: unknown[]; total?: number }>(`/api/records?${query.toString()}`, undefined, {
+            fallbackMessage: '请求失败',
+        });
+        const validRecords = (payload.records ?? []).filter(isValidMingRecord);
+        return {
+            records: validRecords,
+            total: payload.total || 0,
+        };
+    } catch (error) {
+        if (error instanceof Error) {
+            const message = error.message.toLowerCase();
+            if (message.includes('401') || message.includes('请先登录')) {
+                console.warn('[records] Not logged in, returning empty list');
+                return { records: [], total: 0 };
+            }
+        }
+        throw error;
+    }
 }
 
 /**

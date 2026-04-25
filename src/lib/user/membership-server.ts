@@ -1,5 +1,6 @@
 import { createAuthedClient, getSystemAdminClient } from "@/lib/api-utils";
 import { isMembershipExpired, type MembershipType } from "@/lib/user/membership";
+import { IS_DEV_MODE } from "@/lib/dev-mode";
 
 type MembershipReaderClient = {
     from: (table: 'users') => {
@@ -36,6 +37,9 @@ export async function getEffectiveMembershipType(
     userId: string,
     options?: { client?: unknown },
 ): Promise<MembershipType> {
+    if (IS_DEV_MODE && !options?.client) {
+        return 'pro';
+    }
     try {
         const supabase = (options?.client ?? getSystemAdminClient()) as MembershipReaderClient;
         const { data, error } = await supabase
