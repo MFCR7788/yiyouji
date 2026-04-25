@@ -257,7 +257,7 @@ export function initMockData() {
                     {
                         id: 'msg_2',
                         role: 'assistant',
-                        content: '您好！我是星卜 AI，很高兴为您服务。',
+                        content: '您好！我是易有吉 AI，很高兴为您服务。',
                         createdAt: new Date().toISOString(),
                     },
                 ],

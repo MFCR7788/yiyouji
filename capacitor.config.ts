@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.hhs.taibu',
-  appName: '星卜',
+  appName: '易有吉',
   webDir: 'capacitor-www',
   server: {
     url: 'https://www.mingai.fun',

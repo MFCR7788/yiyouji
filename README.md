@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="public/favicon.svg" alt="星卜" width="80" height="80">
+<img src="public/favicon.svg" alt="易有吉" width="80" height="80">
 
-# 星卜
+# 易有吉
 
 **将传统命理文化与AI深度融合**
 
@@ -53,7 +53,7 @@ Language: **中文** | [English](README.en.md)
 
 ## MCP
 
-星卜提供 MCP，可在支持 MCP 的客户端中直接调用命理工具。
+易有吉提供 MCP，可在支持 MCP 的客户端中直接调用命理工具。
 
 ### 快速配置
 
@@ -179,7 +179,7 @@ pnpm dev
 
 <div align="center">
 
-**星卜** - 用AI解读命运，用科技传承文化
+**易有吉** - 用AI解读命运，用科技传承文化
 
 Made with ❤️ by [hhszzzz](https://github.com/hhszzzz)
 

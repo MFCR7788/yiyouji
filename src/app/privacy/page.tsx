@@ -1,7 +1,7 @@
 /**
  * 隐私政策页面
  *
- * 阐述星卜如何收集、使用、保护用户个人信息
+ * 阐述易有吉如何收集、使用、保护用户个人信息
  */
 'use client';
 
@@ -51,7 +51,7 @@ export default function PrivacyPage() {
                             <div>
                                 <h2 className="text-lg font-bold mb-2">您的隐私对我们至关重要</h2>
                                 <p className="text-sm text-foreground-secondary leading-relaxed">
-                                    星卜（以下简称&quot;我们&quot;）非常重视用户的隐私保护。本隐私政策阐述了我们如何收集、使用、存储和保护您的个人信息。我们承诺按照相关法律法规的要求，为用户提供安全可靠的服务。
+                                    易有吉（以下简称&quot;我们&quot;）非常重视用户的隐私保护。本隐私政策阐述了我们如何收集、使用、存储和保护您的个人信息。我们承诺按照相关法律法规的要求，为用户提供安全可靠的服务。
                                 </p>
                             </div>
                         </div>

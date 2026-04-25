@@ -273,7 +273,7 @@ function ZiweiResultContent() {
         }
         const url = window.location.href;
         if (navigator.share) {
-            try { await navigator.share({ title: `${resolvedFormData.name}的紫微命盘 - 星卜`, text: `查看${resolvedFormData.name}的紫微斗数命盘`, url }); } catch { }
+            try { await navigator.share({ title: `${resolvedFormData.name}的紫微命盘 - 易有吉`, text: `查看${resolvedFormData.name}的紫微斗数命盘`, url }); } catch { }
         } else {
             try { await navigator.clipboard.writeText(url); showToast('success', '链接已复制到剪贴板'); } catch { showToast('error', '复制链接失败'); }
         }

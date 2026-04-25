@@ -1,7 +1,7 @@
 /**
  * 服务条款页面
  *
- * 阐述星卜服务的使用条款和条件
+ * 阐述易有吉服务的使用条款和条件
  */
 'use client';
 
@@ -23,7 +23,7 @@ export default function TermsPage() {
                     </Link>
                     <div>
                         <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-foreground to-foreground/70">服务条款</h1>
-                        <p className="text-sm text-foreground-secondary mt-1">使用星卜服务前请仔细阅读</p>
+                        <p className="text-sm text-foreground-secondary mt-1">使用易有吉服务前请仔细阅读</p>
                     </div>
                 </div>
 
@@ -37,7 +37,7 @@ export default function TermsPage() {
                         返回帮助中心
                     </Link>
                     <h1 className="text-2xl font-bold">服务条款</h1>
-                    <p className="text-sm text-foreground-secondary mt-1">使用星卜服务前请仔细阅读</p>
+                    <p className="text-sm text-foreground-secondary mt-1">使用易有吉服务前请仔细阅读</p>
                 </div>
 
                 {/* 内容区域 */}
@@ -51,7 +51,7 @@ export default function TermsPage() {
                             <div>
                                 <h2 className="text-lg font-bold mb-2">服务条款概述</h2>
                                 <p className="text-sm text-foreground-secondary leading-relaxed">
-                                    欢迎使用星卜（以下简称&quot;本服务&quot;）。本服务条款是您与星卜之间的法律协议，规定了使用本服务的条款和条件。在使用本服务前，请仔细阅读以下条款。您使用本服务即表示您同意接受本服务条款的约束。
+                                    欢迎使用易有吉（以下简称&quot;本服务&quot;）。本服务条款是您与易有吉之间的法律协议，规定了使用本服务的条款和条件。在使用本服务前，请仔细阅读以下条款。您使用本服务即表示您同意接受本服务条款的约束。
                                 </p>
                             </div>
                         </div>
@@ -67,7 +67,7 @@ export default function TermsPage() {
                         </h2>
                         <div className="bg-background rounded-2xl border border-border/50 p-6 space-y-4">
                             <p className="text-sm text-foreground-secondary leading-relaxed">
-                                星卜提供以下命理相关服务：
+                                易有吉提供以下命理相关服务：
                             </p>
                             <ul className="space-y-3 text-sm text-foreground-secondary">
                                 <li className="flex items-start gap-3">
@@ -220,7 +220,7 @@ export default function TermsPage() {
                         <h2 className="text-lg font-bold mb-4 ml-1">知识产权</h2>
                         <div className="bg-background rounded-2xl border border-border/50 p-6">
                             <p className="text-sm text-foreground-secondary leading-relaxed">
-                                本服务及其内容（包括但不限于文字、图片、图标、设计、代码）的知识产权归星卜所有或已获得合法授权。未经我们书面许可，您不得复制、修改、传播、公开展示或使用本服务的任何内容。我们尊重他人的知识产权，如果您认为您的作品被侵权，请联系我们进行处理。
+                                本服务及其内容（包括但不限于文字、图片、图标、设计、代码）的知识产权归易有吉所有或已获得合法授权。未经我们书面许可，您不得复制、修改、传播、公开展示或使用本服务的任何内容。我们尊重他人的知识产权，如果您认为您的作品被侵权，请联系我们进行处理。
                             </p>
                         </div>
                     </section>

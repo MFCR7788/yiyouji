@@ -37,8 +37,8 @@ test('renderAuthorizePage should include OAuth hidden fields and credential inpu
   assert.ok(html.includes('name="code_challenge_method"'));
   assert.ok(html.includes('name="email"'));
   assert.ok(html.includes('name="password"'));
-  assert.ok(html.includes('授权登录 - 星卜'));
-  assert.ok(html.includes('请求访问你的星卜账户'));
+  assert.ok(html.includes('授权登录 - 易有吉'));
+  assert.ok(html.includes('请求访问你的易有吉账户'));
   assert.ok(html.includes('https://www.mingai.fun/Logo.svg'));
 });
 

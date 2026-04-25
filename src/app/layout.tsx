@@ -74,23 +74,23 @@ const themeInitScript = `
 // SEO 元数据配置
 export const metadata: Metadata = {
   title: {
-    default: "星卜",
-    template: "%s | 星卜"
+    default: "易有吉",
+    template: "%s | 易有吉"
   },
   description: "将传统命理文化与前沿AI技术深度融合，为您提供专业、私密、便捷的命理咨询服务。八字精批、紫微斗数、塔罗占卜等多种命理体系。",
   keywords: ["命理", "八字", "AI算命", "紫微斗数", "塔罗", "运势", "命盘分析"],
-  authors: [{ name: "星卜" }],
-  creator: "星卜",
+  authors: [{ name: "易有吉" }],
+  creator: "易有吉",
   openGraph: {
     type: "website",
     locale: "zh_CN",
-    siteName: "星卜",
-    title: "星卜",
+    siteName: "易有吉",
+    title: "易有吉",
     description: "AI驱动的个性化命理分析，多人格AI命理师，记忆式对话体验",
   },
   twitter: {
     card: "summary_large_image",
-    title: "星卜",
+    title: "易有吉",
     description: "AI驱动的个性化命理分析",
   },
   icons: {
