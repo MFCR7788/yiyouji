@@ -1,10 +1,12 @@
 /**
  * 短信验证码验证路由
  *
- * 验证用户输入的验证码是否正确
+ * 验证用户输入的验证码是否正确，并完成登录
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCode } from '@/lib/sms/verification-store';
+import { createAnonClient } from '@/lib/api-utils';
+import { setSessionCookies } from '@/lib/auth-session';
 
 export async function POST(request: NextRequest) {
     try {
@@ -41,10 +43,32 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        return NextResponse.json({
-            success: true,
-            message: '验证成功',
+        const anonymousClient = createAnonClient();
+
+        const { data, error } = await anonymousClient.auth.verifyOtp({
+            phone,
+            token: code,
+            type: 'sms',
         });
+
+        if (error) {
+            console.error('[SMS API] 登录失败:', error);
+            return NextResponse.json(
+                { success: false, message: '登录失败，请重试' },
+                { status: 500 }
+            );
+        }
+
+        const response = NextResponse.json({
+            success: true,
+            message: '登录成功',
+        });
+
+        if (data.session) {
+            setSessionCookies(response, data.session);
+        }
+
+        return response;
     } catch (error) {
         console.error('[SMS API] 验证异常:', error);
         return NextResponse.json(

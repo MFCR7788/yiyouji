@@ -40,7 +40,6 @@ export async function GET(request: NextRequest) {
     if ('error' in auth) return jsonError(auth.error.message, auth.error.status);
 
     const { searchParams } = new URL(request.url);
-    const includeArchived = searchParams.get('includeArchived') === 'true';
     const limit = Math.min(Math.max(Number.parseInt(searchParams.get('limit') || '100', 10) || 100, 1), 100);
     const offset = Math.max(Number.parseInt(searchParams.get('offset') || '0', 10) || 0, 0);
     const sourceType = searchParams.get('sourceType');

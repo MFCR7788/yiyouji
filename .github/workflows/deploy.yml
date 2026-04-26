@@ -1,0 +1,115 @@
+name: Deploy to Alibaba Cloud
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: |
+          pnpm -C packages/core build
+          pnpm -C packages/mcp build
+          pnpm -C packages/mcp-server build
+
+      - name: Build Next.js
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Package standalone build
+        run: |
+          mkdir -p /tmp/deploy
+          cp -r .next/standalone/. /tmp/deploy/
+          mkdir -p /tmp/deploy/.next/static
+          cp -r .next/static/. /tmp/deploy/.next/static/
+          cp -r public /tmp/deploy/
+          cd /tmp/deploy
+          tar czf /tmp/yiyouji-deploy.tar.gz .
+
+      - name: Deploy via SSH
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          source: "/tmp/yiyouji-deploy.tar.gz"
+          target: "/tmp"
+
+      - name: Execute deployment
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SERVER_HOST }}
+          username: root
+          key: ${{ secrets.SERVER_SSH_KEY }}
+          script: |
+            set -e
+            APP_DIR="/opt/apps/yiyouji"
+
+            echo "=== 停止旧服务 ==="
+            pm2 stop yiyouji 2>/dev/null || true
+
+            echo "=== 备份旧版本 ==="
+            if [ -d "$APP_DIR" ]; then
+              mv "$APP_DIR" "${APP_DIR}-backup-$(date +%Y%m%d%H%M%S)" 2>/dev/null || rm -rf "$APP_DIR"
+            fi
+
+            echo "=== 解压新版本 ==="
+            mkdir -p "$APP_DIR"
+            cd "$APP_DIR"
+            tar xzf /tmp/yiyouji-deploy.tar.gz
+            rm -f /tmp/yiyouji-deploy.tar.gz
+
+            echo "=== 配置环境变量 ==="
+            if grep -q "NODE_ENV=development" "$APP_DIR/.env" 2>/dev/null; then
+              sed -i "s/NODE_ENV=development/NODE_ENV=production/" "$APP_DIR/.env"
+            fi
+            if grep -q "USE_LOCAL_DB=true" "$APP_DIR/.env" 2>/dev/null; then
+              sed -i "s/USE_LOCAL_DB=true/USE_LOCAL_DB=false/" "$APP_DIR/.env"
+            fi
+
+            echo "=== 启动服务 ==="
+            cd "$APP_DIR"
+            pm2 start server.js --name yiyouji -- -p 3000 2>/dev/null || pm2 restart yiyouji
+            pm2 save
+
+            echo "=== 验证服务 ==="
+            sleep 3
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ 部署成功！服务返回 HTTP $HTTP_CODE"
+            else
+              echo "❌ 部署可能失败，服务返回 HTTP $HTTP_CODE"
+              exit 1
+            fi

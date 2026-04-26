@@ -1,0 +1,12 @@
+#!/usr/bin/expect -f
+set timeout 600
+spawn ssh -o StrictHostKeyChecking=no root@42.121.219.223
+expect "password:"
+send "Admin>>>0307\r"
+expect "#"
+send "cd /opt/apps/yiyouji && pnpm build 2>&1\r"
+expect "#"
+send "echo BUILD_EXIT_CODE=$?\r"
+expect "#"
+send "exit\r"
+expect eof

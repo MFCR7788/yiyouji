@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "node scripts/dev-with-core-watch.mjs",
     "dev:web": "next dev",
-    "build": "pnpm -C packages/core build && next build",
+    "build": "pnpm -C packages/core build && next build && cp -r .next/static .next/standalone/.next/ && cp -r public .next/standalone/",
     "start": "next start",
     "lint": "pnpm lint:code && pnpm lint:guards",
     "lint:code": "eslint .",

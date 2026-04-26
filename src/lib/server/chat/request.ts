@@ -102,11 +102,10 @@ export async function resolveChatRequest(
     authUser = {
       id: userId,
       email: 'dev@example.com',
-      name: 'Developer',
       email_confirmed_at: new Date().toISOString(),
       app_metadata: {},
-      user_metadata: {},
-    };
+      user_metadata: { name: 'Developer' },
+    } as any;
     authDb = null;
   } else if (canSkipCredit) {
     const auth = await getAuthContext(request);

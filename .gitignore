@@ -79,3 +79,12 @@ run-db-setup.mjs
 setup-admin.sh
 setup-db.*
 test-supabase-auth.sh
+
+# deploy keys and temp scripts
+.github/deploy_key
+.github/deploy_key.pub
+deploy-server.sh
+remote-exec*.exp
+scp-*.exp
+setup-*.exp
+set-github-secrets.py

@@ -36,9 +36,6 @@ const dbState = getDbState();
 const recordsStore = dbState.recordsStore;
 const notesStore = dbState.notesStore;
 const conversationsStore = dbState.conversationsStore;
-const recordIdCounter = dbState.recordIdCounter;
-const noteIdCounter = dbState.noteIdCounter;
-const conversationIdCounter = dbState.conversationIdCounter;
 
 function generateId(): string {
     const chars = '0123456789abcdef';
@@ -135,7 +132,7 @@ export function createLocalConversation(userId: string, data: { personality?: st
     const conversation: Conversation = {
         id: generateId(),
         userId,
-        personality: data.personality || 'general',
+        personality: (data.personality || 'general') as import('@/types').AIPersonality,
         title: data.title || '新对话',
         messages: data.messages || [],
         createdAt: new Date().toISOString(),
@@ -180,9 +177,9 @@ export function updateLocalConversation(userId: string, conversationId: string, 
         ...conversations[index],
         ...(updates.title !== undefined && { title: updates.title }),
         ...(updates.messages !== undefined && { messages: updates.messages }),
-        ...(updates.personality !== undefined && { personality: updates.personality }),
+        ...(updates.personality !== undefined && { personality: updates.personality as import('@/types').AIPersonality }),
         updatedAt: new Date().toISOString(),
-    };
+    } as Conversation;
     return true;
 }
 
@@ -402,7 +399,7 @@ function createMockSelectChain(userId: string, tableName: string, selectOpts?: {
 
 function createMockFrom(userId: string, tableName: string) {
     return {
-        select(columns?: string, opts?: { count?: string; head?: boolean }) {
+        select(_columns?: string, opts?: { count?: string; head?: boolean }) {
             if (opts?.head) {
                 const result = createMockSelectChain(userId, tableName, opts);
                 const data = (result.maybeSingle?.() ?? { data: null }) as MockQueryResult;

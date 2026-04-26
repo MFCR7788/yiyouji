@@ -161,7 +161,7 @@ export function buildModels(): AIModelConfig[] {
       apiUrl: 'https://api.deepseek.com/v1/chat/completions',
       apiKeyEnvVar: 'DEEPSEEK_API_KEY',
       supportsReasoning: false,
-    })];
+    })].filter((m): m is AIModelConfig => m !== null);
   }
   
   return [];

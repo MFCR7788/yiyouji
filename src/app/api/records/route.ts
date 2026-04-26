@@ -49,8 +49,8 @@ export async function GET(request: NextRequest) {
             // 应用筛选条件
             if (category) records = records.filter(r => r.category === category);
             if (isPinned !== undefined) records = records.filter(r => r.is_pinned === (isPinned === 'true'));
-            if (startDate) records = records.filter(r => r.event_date >= startDate);
-            if (endDate) records = records.filter(r => r.event_date <= endDate);
+            if (startDate) records = records.filter(r => r.event_date != null && r.event_date >= startDate);
+            if (endDate) records = records.filter(r => r.event_date != null && r.event_date <= endDate);
             if (tags.length > 0) records = records.filter(r => tags.some(t => r.tags.includes(t)));
             if (search) records = records.filter(r => 
                 r.title.includes(search) || (r.content && r.content.includes(search))

@@ -249,7 +249,7 @@ export async function requireUserContext(
                 updated_at: new Date().toISOString(),
             };
             
-            const devClient = createDevSupabaseClient('dev-user-id') as RequestDbClient;
+            const devClient = createDevSupabaseClient('dev-user-id') as unknown as RequestDbClient;
             
             return {
                 db: devClient,
