@@ -22,18 +22,6 @@ jobs:
         with:
           version: 10
 
-      - name: Get pnpm store directory
-        shell: bash
-        run: echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
       - name: Install dependencies
         run: pnpm install
 
@@ -48,22 +36,30 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Verify build output
+      - name: List build output (debug)
         run: |
-          ls -la .next/
-          ls -la .next/standalone/ 2>/dev/null || echo "standalone dir not found"
+          echo "=== .next directory ==="
+          ls -la .next/ || echo ".next not found"
+          echo "=== .next/static ==="
+          ls -la .next/static/ || echo "static not found"
+          echo "=== .next/server ==="
+          ls -la .next/server/ || echo "server not found"
 
       - name: Create deploy package
         run: |
           mkdir -p /tmp/deploy
-          cp -r .next/standalone/. /tmp/deploy/
-          mkdir -p /tmp/deploy/.next/static
-          cp -r .next/static/. /tmp/deploy/.next/static/
+          
+          cp -r .next /tmp/deploy/
           cp -r public /tmp/deploy/
           cp package.json /tmp/deploy/
           cp pnpm-lock.yaml /tmp/deploy/
+          
+          echo "=== Deploy directory contents ==="
+          ls -la /tmp/deploy/
+          
           cd /tmp/deploy
           tar czf /tmp/yiyouji-deploy.tar.gz .
+          echo "=== Package size ==="
           ls -la /tmp/yiyouji-deploy.tar.gz
 
       - name: Deploy via SSH
@@ -105,7 +101,7 @@ jobs:
 
             echo "=== 启动服务 ==="
             cd "$APP_DIR"
-            pm2 start server.js --name yiyouji -- -p 3000 2>/dev/null || pm2 restart yiyouji
+            pm2 start "pnpm start" --name yiyouji -- -p 3000 2>/dev/null || pm2 restart yiyouji
             pm2 save
 
             echo "=== 验证服务 ==="
