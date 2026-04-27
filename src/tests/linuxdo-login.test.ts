@@ -104,7 +104,7 @@ test('exchangeCode should retry backup token endpoint when primary host fails', 
   const token = await exchangeCode(
     'oauth-code',
     'code-verifier',
-    'https://mingai.fun/api/auth/linuxdo/callback',
+    'https://yiyouji.zjsian.com/api/auth/linuxdo/callback',
   );
 
   assert.deepEqual(calls, [

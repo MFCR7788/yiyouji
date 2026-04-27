@@ -258,10 +258,21 @@ async function fetchModelsFromDB(): Promise<AIModelConfig[] | null> {
 
 export async function getModelsAsync(): Promise<AIModelConfig[]> {
   const dbModels = await fetchModelsFromDB();
-  if (dbModels !== null) {
-    return dbModels;
+  const envModels = buildModels();
+  
+  if (dbModels !== null && dbModels.length > 0) {
+    const dbModelIds = new Set(dbModels.map(m => m.id));
+    const envVisionModels = envModels.filter(m => m.supportsVision);
+    
+    const merged = [...dbModels];
+    for (const envModel of envVisionModels) {
+      if (!dbModelIds.has(envModel.id)) {
+        merged.push(envModel);
+      }
+    }
+    return merged;
   }
-  return buildModels();
+  return envModels;
 }
 
 export async function getModelsByUsageTypeAsync(

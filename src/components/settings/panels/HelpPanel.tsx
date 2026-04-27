@@ -79,7 +79,7 @@ export default function HelpPanel() {
           <div className="flex w-full flex-col gap-3 sm:flex-row">
             <div className="inline-flex items-center gap-2 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm text-foreground">
               <Mail className="h-4 w-4 text-accent" />
-              <span>support@mingai.fun</span>
+              <span>support@yiyouji.zjsifan.com</span>
             </div>
             <a
               href={projectRepoUrl}

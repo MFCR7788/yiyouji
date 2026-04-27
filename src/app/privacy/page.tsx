@@ -240,7 +240,7 @@ export default function PrivacyPage() {
                             </p>
                             <div className="flex items-center gap-3 px-5 py-3 rounded-xl bg-background border border-border/50 shadow-sm text-sm font-medium text-foreground">
                                 <Mail className="w-4 h-4 text-accent" />
-                                <span>support@mingai.fun</span>
+                                <span>support@yiyouji.zjsian.com</span>
                             </div>
                         </div>
                     </section>

@@ -170,18 +170,53 @@ async function runCreditDecrement(userId: string): Promise<
     | { status: 'rpc_error' }
 > {
     const supabase = getSystemAdminClient();
+    
+    try {
+        const { data, error } = await supabase
+            .rpc('decrement_ai_chat_count', { user_id: userId });
+
+        if (error) {
+            console.error('[credits] RPC decrement failed, falling back to direct update:', error.message);
+            return await runCreditDecrementDirect(userId);
+        }
+
+        if (typeof data === 'number') {
+            return {
+                status: 'ok',
+                remaining: data,
+            };
+        }
+
+        return { status: 'no_change' };
+    } catch (error) {
+        console.error('[credits] RPC call error, falling back to direct update:', error);
+        return await runCreditDecrementDirect(userId);
+    }
+}
+
+async function runCreditDecrementDirect(userId: string): Promise<
+    | { status: 'ok'; remaining: number }
+    | { status: 'no_change' }
+    | { status: 'rpc_error' }
+> {
+    const supabase = getSystemAdminClient();
     const { data, error } = await supabase
-        .rpc('decrement_ai_chat_count', { user_id: userId });
+        .from('users')
+        .update({ ai_chat_count: { '-': 1 } })
+        .eq('id', userId)
+        .gt('ai_chat_count', 0)
+        .select('ai_chat_count')
+        .maybeSingle();
 
     if (error) {
-        console.error('[credits] RPC decrement failed:', error.message);
+        console.error('[credits] Direct decrement failed:', error.message);
         return { status: 'rpc_error' };
     }
 
-    if (typeof data === 'number') {
+    if (data && typeof data.ai_chat_count === 'number') {
         return {
             status: 'ok',
-            remaining: data,
+            remaining: data.ai_chat_count,
         };
     }
 
@@ -214,15 +249,37 @@ export async function attemptCreditUse(
 export async function addCredits(userId: string, amount: number): Promise<number | null> {
     const supabase = getSystemAdminClient();
 
+    try {
+        const { data, error } = await supabase
+            .rpc('increment_ai_chat_count', { user_id: userId, amount });
+
+        if (error) {
+            console.error('[credits] RPC increment failed, falling back to direct update:', error.message);
+            return await addCreditsDirect(userId, amount);
+        }
+
+        return typeof data === 'number' ? data : null;
+    } catch (error) {
+        console.error('[credits] RPC call error, falling back to direct update:', error);
+        return await addCreditsDirect(userId, amount);
+    }
+}
+
+async function addCreditsDirect(userId: string, amount: number): Promise<number | null> {
+    const supabase = getSystemAdminClient();
     const { data, error } = await supabase
-        .rpc('increment_ai_chat_count', { user_id: userId, amount });
+        .from('users')
+        .update({ ai_chat_count: { '+': amount } })
+        .eq('id', userId)
+        .select('ai_chat_count')
+        .maybeSingle();
 
     if (error) {
-        console.error('[credits] Failed to add credits:', error.message);
+        console.error('[credits] Direct increment failed:', error.message);
         return null;
     }
 
-    return typeof data === 'number' ? data : null;
+    return data && typeof data.ai_chat_count === 'number' ? data.ai_chat_count : null;
 }
 
 export async function refundCreditsOrLog(userId: string, amount: number, context: string): Promise<boolean> {

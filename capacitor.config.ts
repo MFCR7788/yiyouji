@@ -5,11 +5,11 @@ const config: CapacitorConfig = {
   appName: '易有吉',
   webDir: 'capacitor-www',
   server: {
-    url: 'https://www.mingai.fun',
+    url: 'https://yiyouji.zjsian.com',
     cleartext: false,
     allowNavigation: [
-      'mingai.fun',
-      '*.mingai.fun',
+      'yiyouji.zjsian.com',
+      '*.yiyouji.zjsian.com',
       '*.vercel.app',
     ],
   },

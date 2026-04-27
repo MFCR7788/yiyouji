@@ -10,6 +10,8 @@ export interface SmsSendResult {
 export interface SmsVerifyResult {
     success: boolean;
     message?: string;
+    session?: unknown;
+    user?: unknown;
 }
 
 /**
@@ -54,6 +56,8 @@ export async function verifySmsCode(
         return {
             success: data.success === true,
             message: data.message || (data.success ? '验证成功' : '验证失败'),
+            session: data.session,
+            user: data.user,
         };
     } catch {
         return {

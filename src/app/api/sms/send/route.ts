@@ -1,11 +1,12 @@
 /**
  * 短信验证码发送路由
  *
- * 接收手机号，生成验证码并通过阿里云短信发送
+ * 接收手机号，生成验证码并通过阿里云短信发送，同时让 Supabase 也准备 OTP
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { sendAliyunSms, generateVerificationCode } from '@/lib/sms/aliyun';
 import { storeVerificationCode } from '@/lib/sms/verification-store';
+import { createAnonClient } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
     try {
@@ -28,12 +29,27 @@ export async function POST(request: NextRequest) {
 
         const code = generateVerificationCode();
 
+        console.info(`[SMS API] 生成验证码: ${phone} -> ${code}`);
+
         const storeResult = storeVerificationCode(phone, code);
         if (!storeResult.success) {
             return NextResponse.json(
                 { success: false, message: storeResult.message },
                 { status: 429 }
             );
+        }
+
+        const anonymousClient = createAnonClient();
+
+        const { error: otpError } = await anonymousClient.auth.signInWithOtp({
+            phone,
+            options: {
+                shouldCreateUser: true,
+            },
+        });
+
+        if (otpError) {
+            console.error('[SMS API] Supabase OTP 创建失败:', otpError);
         }
 
         const smsResult = await sendAliyunSms(phone, code);

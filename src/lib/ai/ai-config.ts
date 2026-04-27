@@ -191,7 +191,7 @@ export function getModelConfig(modelId: string): AIModelConfig | undefined {
 }
 
 export const DEFAULT_MODEL_ID = 'deepseek-chat';
-export const DEFAULT_VISION_MODEL_ID = '';
+export const DEFAULT_VISION_MODEL_ID = 'gemini-2.0-flash-vl';
 export const DEFAULT_EMBEDDING_MODEL_ID = process.env.KNOWLEDGE_BASE_EMBEDDING_MODEL_ID || 'text-embedding-v4';
 export const DEFAULT_RERANK_MODEL_ID = process.env.KNOWLEDGE_BASE_RERANK_MODEL_ID || 'qwen3-rerank';
 
@@ -207,7 +207,9 @@ export const VENDOR_NAMES: Record<string, string> = {
   deepseek: 'DeepSeek',
   glm: 'GLM',
   gemini: 'Gemini',
+  'gemini-vl': 'Gemini',
   qwen: 'Qwen',
+  'qwen-vl': 'Qwen',
   moonshot: 'Moonshot',
   xai: 'xAI',
   minimax: 'MiniMax',

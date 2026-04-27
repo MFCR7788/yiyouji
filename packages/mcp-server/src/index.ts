@@ -64,7 +64,7 @@ const IS_PRODUCTION = process.env.NODE_ENV === 'production';
 
 // ─── OAuth Provider ───
 const oauthProvider = new TaiBuOAuthProvider();
-const issuerUrl = new URL(process.env.MCP_ISSUER_URL || 'https://mcp.mingai.fun');
+const issuerUrl = new URL(process.env.MCP_ISSUER_URL || 'https://mcp.yiyouji.zjsifan.com');
 const scopesSupported = ['mcp:tools'] as const;
 const resourceName = 'TaiBu MCP Server';
 const resourceServerUrl = new URL('/mcp', issuerUrl);

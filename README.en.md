@@ -14,7 +14,7 @@
 
 Language: [中文](README.md) | **English**
 
-[Live Demo](https://www.mingai.fun) · [Report Issues](https://github.com/hhszzzz/taibu/issues)
+[Live Demo](https://yiyouji.zjsian.com) · [Report Issues](https://github.com/hhszzzz/taibu/issues)
 
 </div>
 

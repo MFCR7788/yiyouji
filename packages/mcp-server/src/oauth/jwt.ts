@@ -17,7 +17,7 @@ function getSecret(): Uint8Array {
 }
 
 function getIssuer(): string {
-  return process.env.MCP_ISSUER_URL || 'https://mcp.mingai.fun';
+  return process.env.MCP_ISSUER_URL || 'https://mcp.yiyouji.zjsifan.com';
 }
 
 function normalizeAudience(value: string): string | null {

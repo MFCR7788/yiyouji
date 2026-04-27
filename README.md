@@ -14,7 +14,7 @@
 
 Language: **中文** | [English](README.en.md)
 
-[在线体验](https://www.mingai.fun) · [报告问题](https://github.com/hhszzzz/taibu/issues)
+[在线体验](https://yiyouji.zjsian.com) · [报告问题](https://github.com/hhszzzz/taibu/issues)
 
 </div>
 

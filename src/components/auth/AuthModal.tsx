@@ -166,9 +166,25 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     if (!isOpen) return null;
 
     // 认证成功后的统一处理
-    const completeAuth = () => {
+    const completeAuth = async () => {
         onSuccess?.();
         onClose();
+        
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const response = await fetch('/api/user/profile');
+                const profileData = await response.json();
+                
+                if (profileData && !profileData.nickname) {
+                    router.push('/settings/profile');
+                    return;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to check user profile:', error);
+        }
+        
         router.refresh();
     };
 
@@ -296,6 +312,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     setField('success', '验证成功！请设置您的密码');
                     setField('verificationCode', '');
                 } else {
+                    await supabase.auth.revalidateSession();
                     completeAuth();
                 }
             } else {

@@ -18,6 +18,7 @@ import {
     Moon,
     Sun,
     Megaphone,
+    ChevronDown,
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/components/ui/ThemeProvider';
@@ -28,6 +29,8 @@ import { useAnnouncementCenterSafe } from '@/components/providers/AnnouncementPo
 import { SettingsCenterLink } from '@/components/settings/SettingsCenterLink';
 import { useActiveSettingsCenterTab } from '@/lib/hooks/useSettingsCenterRouteState';
 import { getSettingsCenterRouteTarget, isAdminSettingsCenterTab } from '@/lib/settings-center';
+import { useCurrentUserProfile } from '@/lib/hooks/useCurrentUserProfile';
+import { signOut } from '@/lib/auth';
 
 // 路由到标题的映射
 const ROUTE_LABELS: Record<string, string> = {
@@ -108,14 +111,29 @@ export function Header() {
     const { theme, toggleTheme } = useTheme();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const [userMenuOpen, setUserMenuOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const userMenuRef = useRef<HTMLDivElement>(null);
     const { user } = useSessionSafe();
+    const { profile } = useCurrentUserProfile({ enabled: !!user });
     const { openAnnouncementCenter } = useAnnouncementCenterSafe();
     const headerMenuContext = useHeaderMenuSafe();
     const customMenuItems = headerMenuContext?.menuItems || [];
     const announcementMenuLabel = user ? '通知 / 公告' : '公告';
     const activeSettingsTab = useActiveSettingsCenterTab();
     const isAdminContext = !!pathname?.startsWith('/admin') || isAdminSettingsCenterTab(activeSettingsTab);
+    
+    const displayName = profile?.nickname || user?.email?.split('@')[0] || '用户';
+    
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+                setUserMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     // 获取当前页面标题
     const getPageTitle = () => {
@@ -278,19 +296,58 @@ export function Header() {
 
                     {/* 用户状态 */}
                     {user ? (
-                        // 已登录：显示用户头像链接
-                        <SettingsCenterLink
-                            tab="profile"
-                            className="
-                                p-2 rounded-lg
-                                text-foreground-secondary
-                                hover:bg-background-secondary hover:text-foreground
-                                transition-all duration-200
-                            "
-                            title="账户"
-                        >
-                            <User className="w-5 h-5" />
-                        </SettingsCenterLink>
+                        // 已登录：显示用户名和下拉菜单
+                        <div className="relative" ref={userMenuRef}>
+                            <button
+                                onClick={() => setUserMenuOpen(!userMenuOpen)}
+                                className="
+                                    flex items-center gap-2 px-3 py-1.5 rounded-lg
+                                    text-sm font-medium
+                                    text-foreground-secondary
+                                    hover:bg-background-secondary hover:text-foreground
+                                    transition-all duration-200
+                                "
+                                title="用户中心"
+                            >
+                                <User className="w-5 h-5" />
+                                <span className="hidden sm:inline">{displayName}</span>
+                                <ChevronDown className={`w-4 h-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                            </button>
+                            
+                            {userMenuOpen && (
+                                <div className="absolute right-0 top-full mt-1 w-44 bg-background border border-border rounded-xl shadow-lg py-1 z-50">
+                                    <SettingsCenterLink
+                                        tab="profile"
+                                        onClick={() => setUserMenuOpen(false)}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-background-secondary transition-colors"
+                                    >
+                                        <User className="w-4 h-4" />
+                                        个人中心
+                                    </SettingsCenterLink>
+                                    <button
+                                        onClick={() => {
+                                            setUserMenuOpen(false);
+                                            openAnnouncementCenter({ tab: 'notifications' });
+                                        }}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-foreground hover:bg-background-secondary transition-colors"
+                                    >
+                                        <Megaphone className="w-4 h-4" />
+                                        通知中心
+                                    </button>
+                                    <div className="my-1 border-t border-border" />
+                                    <button
+                                        onClick={() => {
+                                            setUserMenuOpen(false);
+                                            signOut();
+                                        }}
+                                        className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-red-500 hover:bg-background-secondary transition-colors"
+                                    >
+                                        <LogIn className="w-4 h-4" />
+                                        退出登录
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     ) : (
                         // 未登录：显示登录按钮
                         <button

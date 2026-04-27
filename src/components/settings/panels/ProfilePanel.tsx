@@ -165,6 +165,20 @@ export default function ProfilePanel() {
     <div className="space-y-8">
       <StatusBanner error={error} success={success} />
 
+      {!originalNickname && (
+        <div className="rounded-md border border-accent bg-accent/5 p-4">
+          <div className="flex items-start gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent/20">
+              <UserIcon className="h-4 w-4 text-accent" />
+            </div>
+            <div>
+              <p className="font-medium text-foreground">欢迎加入易有吉！</p>
+              <p className="mt-1 text-sm text-foreground/60">请设置您的显示昵称，以便其他用户识别您。</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <section className="space-y-3">
         <h2 className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground/50">账户信息</h2>
         <div className="rounded-md border border-border bg-background p-6">
@@ -204,6 +218,7 @@ export default function ProfilePanel() {
                     value={nickname}
                     onChange={(event) => setNickname(event.target.value)}
                     className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-colors duration-150 focus:ring-2 focus:ring-blue-500/30"
+                    placeholder={!originalNickname ? '请输入您的昵称' : ''}
                   />
                   {hasNicknameChanges ? (
                     <button

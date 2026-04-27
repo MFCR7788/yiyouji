@@ -236,28 +236,26 @@ export async function requireUserContext(
     
     if (isDevMode) {
         const authHeader = request.headers.get('authorization');
-        if (authHeader?.startsWith('Bearer ')) {
-            const mockUser: User = {
-                id: 'dev-user-id',
-                app_metadata: {},
-                user_metadata: { nickname: '开发用户' },
-                aud: 'authenticated',
-                role: 'authenticated',
-                email: 'dev@example.com',
-                email_confirmed_at: new Date().toISOString(),
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-            };
-            
-            const devClient = createDevSupabaseClient('dev-user-id') as unknown as RequestDbClient;
-            
-            return {
-                db: devClient,
-                supabase: devClient,
-                accessToken: authHeader.replace('Bearer ', ''),
-                user: mockUser,
-            };
-        }
+        const mockUser: User = {
+            id: 'dev-user-id',
+            app_metadata: {},
+            user_metadata: { nickname: '开发用户' },
+            aud: 'authenticated',
+            role: 'authenticated',
+            email: 'dev@example.com',
+            email_confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        };
+        
+        const devClient = createDevSupabaseClient('dev-user-id') as unknown as RequestDbClient;
+        
+        return {
+            db: devClient,
+            supabase: devClient,
+            accessToken: authHeader?.startsWith('Bearer ') ? authHeader.replace('Bearer ', '') : null,
+            user: mockUser,
+        };
     }
     
     const { db, supabase, accessToken, user, authError } = await getAuthContext(request);
