@@ -124,8 +124,20 @@ export async function readFeatureTogglesState(): Promise<FeatureTogglesReadResul
   }
   
   try {
-    const supabase = getSystemAdminClient();
-    const { data, error } = await readFeatureToggleRows(supabase);
+    let supabase;
+    try {
+      supabase = getSystemAdminClient();
+    } catch (clientError) {
+      console.warn('[app-settings] Failed to initialize system admin client, falling back to default toggles:', clientError);
+      return { loaded: true, toggles: {} };
+    }
+    
+    const { data, error } = await Promise.race([
+      readFeatureToggleRows(supabase),
+      new Promise<{ data: [], error: { message: string } }>((_, reject) => {
+        setTimeout(() => reject(new Error('Read feature toggles timeout')), 10000);
+      })
+    ]);
 
     if (error) {
       if (!IS_NODE_TEST_RUNTIME) {

@@ -128,28 +128,74 @@ async function loadViewerState(auth: Awaited<ReturnType<typeof getAuthContext>>)
 }
 
 export async function GET(request: NextRequest) {
-  const auth = await getAuthContext(request);
+  try {
+    const auth = await getAuthContext(request);
 
-  const [featureToggleState, viewerState] = await Promise.all([
-    readFeatureTogglesState(),
-    loadViewerState(auth),
-  ]);
+    const [featureToggleState, viewerState] = await Promise.all([
+      Promise.race([
+        readFeatureTogglesState(),
+        new Promise<{ loaded: true; toggles: {} }>((resolve) => {
+          setTimeout(() => {
+            console.warn('[bootstrap] readFeatureTogglesState timeout, falling back to defaults');
+            resolve({ loaded: true, toggles: {} });
+          }, 8000);
+        })
+      ]),
+      Promise.race([
+        loadViewerState(auth),
+        new Promise<{ 
+          viewerLoaded: false; 
+          viewerSummary: null; 
+          viewerErrorMessage: '加载账户状态超时'; 
+          membership: null; 
+          unreadCount: 0; 
+          unreadCountLoaded: false; 
+        }>((resolve) => {
+          setTimeout(() => {
+            console.warn('[bootstrap] loadViewerState timeout, falling back to defaults');
+            resolve({
+              viewerLoaded: false,
+              viewerSummary: null,
+              viewerErrorMessage: '加载账户状态超时',
+              membership: null,
+              unreadCount: 0,
+              unreadCountLoaded: false,
+            });
+          }, 8000);
+        })
+      ]),
+    ]);
 
-  const data: AppBootstrapData = {
-    viewerLoaded: viewerState.viewerLoaded,
-    viewerSummary: viewerState.viewerSummary,
-    viewerErrorMessage: viewerState.viewerErrorMessage,
-    membership: viewerState.membership,
-    featureToggles: featureToggleState.toggles,
-    featureTogglesLoaded: featureToggleState.loaded,
-    featureTogglesErrorMessage: featureToggleState.loaded ? null : '功能状态加载失败',
-    unreadCount: viewerState.unreadCount,
-    unreadCountLoaded: viewerState.unreadCountLoaded,
-  };
+    const data: AppBootstrapData = {
+      viewerLoaded: viewerState.viewerLoaded,
+      viewerSummary: viewerState.viewerSummary,
+      viewerErrorMessage: viewerState.viewerErrorMessage,
+      membership: viewerState.membership,
+      featureToggles: featureToggleState.toggles,
+      featureTogglesLoaded: featureToggleState.loaded,
+      featureTogglesErrorMessage: featureToggleState.loaded ? null : '功能状态加载失败',
+      unreadCount: viewerState.unreadCount,
+      unreadCountLoaded: viewerState.unreadCountLoaded,
+    };
 
-  const hasPartialFailure = !!data.viewerErrorMessage
-    || !data.featureTogglesLoaded
-    || !data.unreadCountLoaded;
+    const hasPartialFailure = !!data.viewerErrorMessage
+      || !data.featureTogglesLoaded
+      || !data.unreadCountLoaded;
 
-  return jsonOk({ data }, hasPartialFailure ? 207 : 200);
+    return jsonOk({ data }, hasPartialFailure ? 207 : 200);
+  } catch (error) {
+    console.error('[bootstrap] Unexpected error:', error);
+    const data: AppBootstrapData = {
+      viewerLoaded: false,
+      viewerSummary: null,
+      viewerErrorMessage: '加载数据失败，请稍后重试',
+      membership: null,
+      featureToggles: {},
+      featureTogglesLoaded: true,
+      featureTogglesErrorMessage: null,
+      unreadCount: 0,
+      unreadCountLoaded: false,
+    };
+    return jsonOk({ data }, 207);
+  }
 }

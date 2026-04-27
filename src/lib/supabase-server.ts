@@ -81,12 +81,17 @@ async function getSystemAccessToken(): Promise<string | null> {
     if (tokenPromise) return tokenPromise;
 
     tokenPromise = (async () => {
-        const session = await signInSystemAdmin();
-        if (!session) return null;
+        try {
+            const session = await signInSystemAdmin();
+            if (!session) return null;
 
-        cachedAccessToken = session.access_token;
-        cachedAccessTokenExpiresAt = (session.expires_at ?? Math.floor(now / 1000) + 3000) * 1000;
-        return cachedAccessToken;
+            cachedAccessToken = session.access_token;
+            cachedAccessTokenExpiresAt = (session.expires_at ?? Math.floor(now / 1000) + 3000) * 1000;
+            return cachedAccessToken;
+        } catch (err) {
+            console.error('[supabase-server] Failed to get system access token:', err);
+            return null;
+        }
     })();
 
     try {
