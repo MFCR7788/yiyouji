@@ -32,35 +32,78 @@ jobs:
           pnpm -C packages/mcp-server build
 
       - name: Build Next.js
-        run: pnpm build
+        id: build-nextjs
+        run: |
+          pnpm build
+          echo "BUILD_SUCCESS=true" >> $GITHUB_OUTPUT
         env:
           NODE_ENV: production
 
-      - name: List build output (debug)
+      - name: Verify build output
         run: |
+          echo "=== Current directory ==="
+          pwd
+          echo "=== Directory listing ==="
+          ls -la
           echo "=== .next directory ==="
-          ls -la .next/ || echo ".next not found"
-          echo "=== .next/static ==="
-          ls -la .next/static/ || echo "static not found"
-          echo "=== .next/server ==="
-          ls -la .next/server/ || echo "server not found"
+          if [ -d ".next" ]; then
+            ls -la .next/
+          else
+            echo "ERROR: .next directory does not exist!"
+            exit 1
+          fi
 
       - name: Create deploy package
         run: |
           mkdir -p /tmp/deploy
           
-          cp -r .next /tmp/deploy/
-          cp -r public /tmp/deploy/
-          cp package.json /tmp/deploy/
-          cp pnpm-lock.yaml /tmp/deploy/
+          echo "=== Copying files ==="
+          if [ -d ".next" ]; then
+            cp -r .next /tmp/deploy/
+            echo "✅ Copied .next directory"
+          else
+            echo "ERROR: .next directory not found!"
+            exit 1
+          fi
+          
+          if [ -d "public" ]; then
+            cp -r public /tmp/deploy/
+            echo "✅ Copied public directory"
+          else
+            echo "ERROR: public directory not found!"
+            exit 1
+          fi
+          
+          if [ -f "package.json" ]; then
+            cp package.json /tmp/deploy/
+            echo "✅ Copied package.json"
+          else
+            echo "ERROR: package.json not found!"
+            exit 1
+          fi
+          
+          if [ -f "pnpm-lock.yaml" ]; then
+            cp pnpm-lock.yaml /tmp/deploy/
+            echo "✅ Copied pnpm-lock.yaml"
+          else
+            echo "ERROR: pnpm-lock.yaml not found!"
+            exit 1
+          fi
           
           echo "=== Deploy directory contents ==="
           ls -la /tmp/deploy/
           
           cd /tmp/deploy
           tar czf /tmp/yiyouji-deploy.tar.gz .
+          
           echo "=== Package size ==="
           ls -la /tmp/yiyouji-deploy.tar.gz
+          
+          PACKAGE_SIZE=$(du -b /tmp/yiyouji-deploy.tar.gz | awk '{print $1}')
+          if [ "$PACKAGE_SIZE" -lt 1000 ]; then
+            echo "ERROR: Package is too small ($PACKAGE_SIZE bytes), likely empty!"
+            exit 1
+          fi
 
       - name: Deploy via SSH
         uses: appleboy/scp-action@v0.1.7
