@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
 
         const storeResult = storeVerificationCode(phone, code);
         if (!storeResult.success) {
+            console.warn(`[SMS API] 存储验证码失败: ${phone} -> ${storeResult.message}`);
             return NextResponse.json(
                 { success: false, message: storeResult.message },
                 { status: 429 }
@@ -41,25 +42,33 @@ export async function POST(request: NextRequest) {
 
         const anonymousClient = createAnonClient();
 
-        const { error: otpError } = await anonymousClient.auth.signInWithOtp({
-            phone,
-            options: {
-                shouldCreateUser: true,
-            },
-        });
+        const { error: otpError } = await Promise.race([
+            anonymousClient.auth.signInWithOtp({
+                phone,
+                options: {
+                    shouldCreateUser: true,
+                },
+            }),
+            new Promise<{ error: Error }>((_, reject) => {
+                setTimeout(() => reject(new Error('Supabase OTP timeout')), 15000);
+            })
+        ]);
 
         if (otpError) {
-            console.error('[SMS API] Supabase OTP 创建失败:', otpError);
+            console.error('[SMS API] Supabase OTP 创建失败:', otpError.message);
         }
 
         const smsResult = await sendAliyunSms(phone, code);
 
         if (!smsResult.success) {
+            console.error(`[SMS API] 短信发送失败: ${phone} -> ${smsResult.message} (code: ${smsResult.code})`);
             return NextResponse.json(
                 { success: false, message: smsResult.message },
-                { status: 500 }
+                { status: smsResult.code === 'isv.MOBILE_NUMBER_ILLEGAL' ? 400 : 500 }
             );
         }
+
+        console.info(`[SMS API] 短信发送成功: ${phone} -> ${smsResult.bizId}`);
 
         return NextResponse.json({
             success: true,

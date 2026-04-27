@@ -5,7 +5,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCode } from '@/lib/sms/verification-store';
-import { getAuthAdminClient } from '@/lib/api-utils';
+import { createAnonClient } from '@/lib/api-utils';
 import { setSessionCookies } from '@/lib/auth-session';
 
 export async function POST(request: NextRequest) {
@@ -43,71 +43,36 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const authAdminClient = getAuthAdminClient();
+        const anonClient = createAnonClient();
 
-        if (!authAdminClient) {
-            console.error('[SMS API] 缺少管理员客户端配置');
-            return NextResponse.json(
-                { success: false, message: '系统配置错误，请稍后重试' },
-                { status: 500 }
-            );
-        }
-
-        let user = null;
-        const randomPassword = Math.random().toString(36).slice(-16);
-        const email = `${phone}@phone.xingbu.app`;
-
-        const { data: newUser, error: createError } = await authAdminClient.auth.admin.createUser({
-            phone,
-            email,
-            password: randomPassword,
-            email_confirm: true,
-        });
-
-        if (createError) {
-            if (createError.message.includes('already exists')) {
-                console.info('[SMS API] 用户已存在，尝试重置密码');
-                const { data: existingUsers, error: listError } = await authAdminClient.auth.admin.listUsers();
-                if (!listError && existingUsers.users) {
-                    user = existingUsers.users.find(u => u.phone === phone);
-                }
-                if (user) {
-                    await authAdminClient.auth.admin.updateUserById(user.id, {
-                        email,
-                        password: randomPassword,
-                    });
-                }
-            } else {
-                console.error('[SMS API] 创建用户失败:', createError);
-                return NextResponse.json(
-                    { success: false, message: '登录失败，请重试' },
-                    { status: 500 }
-                );
-            }
-        } else {
-            user = newUser.user;
-        }
-
-        if (!user) {
-            console.error('[SMS API] 用户创建/获取失败');
-            return NextResponse.json(
-                { success: false, message: '登录失败，请重试' },
-                { status: 500 }
-            );
-        }
-
-        const { data: signInData, error: signInError } = await authAdminClient.auth.signInWithPassword({
-            email,
-            password: randomPassword,
-        });
+        const { data: signInData, error: signInError } = await Promise.race([
+            anonClient.auth.signInWithOtp({
+                phone,
+                token: code,
+                type: 'sms',
+            }),
+            new Promise<{ data: null; error: Error }>((_, reject) => {
+                setTimeout(() => reject(new Error('OTP verification timeout')), 15000);
+            })
+        ]);
 
         if (signInError) {
-            console.error('[SMS API] 登录失败:', signInError);
+            console.error('[SMS API] OTP验证失败:', signInError.message);
+            return NextResponse.json(
+                { success: false, message: '验证码验证失败，请重试' },
+                { status: 400 }
+            );
+        }
+
+        if (!signInData?.session) {
+            console.error('[SMS API] 登录失败，未获取到session');
             return NextResponse.json(
                 { success: false, message: '登录失败，请重试' },
                 { status: 500 }
             );
         }
+
+        console.info(`[SMS API] 登录成功: ${phone}`);
 
         const response = NextResponse.json({
             success: true,
