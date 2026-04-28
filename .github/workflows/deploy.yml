@@ -82,6 +82,42 @@ jobs:
             tar xzf /tmp/yiyouji-deploy.tar.gz
             rm -f /tmp/yiyouji-deploy.tar.gz
 
+            echo "=== 创建 .env 文件 ==="
+            cat > "$APP_DIR/.env" << 'EOF'
+# Supabase
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
+SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}
+SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}
+SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}
+
+# 内部 API
+INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}
+CRON_SECRET=${{ secrets.CRON_SECRET }}
+
+# 阿里云短信
+ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}
+ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}
+ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}
+ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}
+ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}
+
+# Dify
+DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}
+DIFY_API_URL=${{ secrets.DIFY_API_URL }}
+
+# 高德地图
+AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}
+
+# AI
+VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}
+MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}
+
+# MCP
+MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}
+EOF
+
             echo "=== 安装生产依赖 ==="
             pnpm install --prod
 
