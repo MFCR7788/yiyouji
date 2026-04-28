@@ -8,11 +8,7 @@
 
 import { Phone, Lock, Eye, EyeOff } from 'lucide-react';
 
-type LoginMethod = 'password' | 'otp';
-
 interface LoginFormProps {
-    loginMethod: LoginMethod;
-    onLoginMethodChange: (method: LoginMethod) => void;
     phone: string;
     onPhoneChange: (value: string) => void;
     password: string;
@@ -23,8 +19,6 @@ interface LoginFormProps {
 }
 
 export function LoginForm({
-    loginMethod,
-    onLoginMethodChange,
     phone,
     onPhoneChange,
     password,
@@ -35,72 +29,46 @@ export function LoginForm({
 }: LoginFormProps) {
     return (
         <>
-            {/* 登录方式切换 */}
-            <div className="flex gap-2 p-1 bg-background-secondary rounded-xl">
-                <button
-                    type="button"
-                    onClick={() => onLoginMethodChange('password')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${loginMethod === 'password'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-foreground-secondary hover:text-foreground'
-                    }`}
-                >
-                    密码登录
-                </button>
-                <button
-                    type="button"
-                    onClick={() => onLoginMethodChange('otp')}
-                    className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-colors ${loginMethod === 'otp'
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-foreground-secondary hover:text-foreground'
-                    }`}
-                >
-                    验证码登录
-                </button>
-            </div>
-
             {/* 手机号 */}
             <PhoneField
                 phone={phone}
                 onPhoneChange={onPhoneChange}
             />
 
-            {/* 密码（仅密码登录） */}
-            {loginMethod === 'password' && (
-                <>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium text-foreground-secondary">密码</label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={(e) => onPasswordChange(e.target.value)}
-                                placeholder="输入密码"
-                                required
-                                minLength={6}
-                                className="w-full pl-10 pr-10 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
-                            />
-                            <button
-                                type="button"
-                                onClick={onToggleShowPassword}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground transition-colors"
-                            >
-                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </button>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <button
-                            type="button"
-                            onClick={onForgotPassword}
-                            className="text-sm text-accent hover:underline"
-                        >
-                            忘记密码？
-                        </button>
-                    </div>
-                </>
-            )}
+            {/* 密码 */}
+            <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground-secondary">密码</label>
+                <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
+                    <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={password}
+                        onChange={(e) => onPasswordChange(e.target.value)}
+                        placeholder="输入密码"
+                        required
+                        minLength={6}
+                        className="w-full pl-10 pr-10 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
+                    />
+                    <button
+                        type="button"
+                        onClick={onToggleShowPassword}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground transition-colors"
+                    >
+                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                    </button>
+                </div>
+            </div>
+
+            {/* 忘记密码 */}
+            <div className="text-right">
+                <button
+                    type="button"
+                    onClick={onForgotPassword}
+                    className="text-sm text-accent hover:underline"
+                >
+                    忘记密码？
+                </button>
+            </div>
         </>
     );
 }

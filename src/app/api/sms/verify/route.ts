@@ -2,6 +2,7 @@
  * 短信验证码验证路由
  *
  * 验证用户输入的验证码是否正确，并完成登录
+ * 使用本地验证码验证 + Supabase 密码登录
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyCode } from '@/lib/sms/verification-store';
@@ -34,6 +35,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        // 本地验证码验证
         const localResult = verifyCode(phone, code);
 
         if (!localResult.success) {
@@ -44,24 +46,64 @@ export async function POST(request: NextRequest) {
         }
 
         const anonClient = createAnonClient();
+        const email = `${phone}@phone.xingbu.app`;
 
-        const { data: signInData, error: signInError } = await Promise.race([
-            anonClient.auth.signInWithOtp({
-                phone,
-                token: code,
-                type: 'sms',
-            }),
-            new Promise<{ data: null; error: Error }>((_, reject) => {
-                setTimeout(() => reject(new Error('OTP verification timeout')), 15000);
-            })
-        ]);
+        // 尝试使用固定密码登录（用户注册时设置的密码）
+        // 如果登录失败，说明用户未注册，需要先注册
+        const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
+            email,
+            password: `phone_${phone}_default_password`,
+        });
 
         if (signInError) {
-            console.error('[SMS API] OTP验证失败:', signInError.message);
-            return NextResponse.json(
-                { success: false, message: '验证码验证失败，请重试' },
-                { status: 400 }
-            );
+            // 用户可能未注册，尝试注册
+            const { data: signUpData, error: signUpError } = await anonClient.auth.signUp({
+                email,
+                password: `phone_${phone}_default_password`,
+                options: {
+                    data: {
+                        phone,
+                        nickname: '命理爱好者',
+                    },
+                },
+            });
+
+            if (signUpError) {
+                console.error('[SMS API] 注册失败:', signUpError.message);
+                return NextResponse.json(
+                    { success: false, message: '登录失败，请重试' },
+                    { status: 500 }
+                );
+            }
+
+            // 注册成功后再次登录
+            const { data: newSignInData, error: newSignInError } = await anonClient.auth.signInWithPassword({
+                email,
+                password: `phone_${phone}_default_password`,
+            });
+
+            if (newSignInError || !newSignInData.session) {
+                console.error('[SMS API] 登录失败:', newSignInError?.message);
+                return NextResponse.json(
+                    { success: false, message: '登录失败，请重试' },
+                    { status: 500 }
+                );
+            }
+
+            console.info(`[SMS API] 注册并登录成功: ${phone}`);
+
+            const response = NextResponse.json({
+                success: true,
+                message: '登录成功',
+                session: newSignInData.session,
+                user: newSignInData.user,
+            });
+
+            if (newSignInData.session) {
+                setSessionCookies(response, newSignInData.session);
+            }
+
+            return response;
         }
 
         if (!signInData?.session) {

@@ -1,12 +1,11 @@
 /**
  * 短信验证码发送路由
  *
- * 接收手机号，生成验证码并通过阿里云短信发送，同时让 Supabase 也准备 OTP
+ * 接收手机号，生成验证码并通过阿里云短信发送
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { sendAliyunSms, generateVerificationCode } from '@/lib/sms/aliyun';
 import { storeVerificationCode } from '@/lib/sms/verification-store';
-import { createAnonClient } from '@/lib/api-utils';
 
 export async function POST(request: NextRequest) {
     try {
@@ -40,31 +39,13 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const anonymousClient = createAnonClient();
-
-        const { error: otpError } = await Promise.race([
-            anonymousClient.auth.signInWithOtp({
-                phone,
-                options: {
-                    shouldCreateUser: true,
-                },
-            }),
-            new Promise<{ error: Error }>((_, reject) => {
-                setTimeout(() => reject(new Error('Supabase OTP timeout')), 15000);
-            })
-        ]);
-
-        if (otpError) {
-            console.error('[SMS API] Supabase OTP 创建失败:', otpError.message);
-        }
-
         const smsResult = await sendAliyunSms(phone, code);
 
         if (!smsResult.success) {
             console.error(`[SMS API] 短信发送失败: ${phone} -> ${smsResult.message} (code: ${smsResult.code})`);
             return NextResponse.json(
-                { success: false, message: smsResult.message },
-                { status: smsResult.code === 'isv.MOBILE_NUMBER_ILLEGAL' ? 400 : 500 }
+                { success: false, message: smsResult.message || '短信发送失败' },
+                { status: 500 }
             );
         }
 
