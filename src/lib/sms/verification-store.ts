@@ -10,6 +10,7 @@ interface VerificationRecord {
     expiresAt: number;
     createdAt: number;
     sendCount: number;
+    nickname?: string;
 }
 
 const verificationStore = new Map<string, VerificationRecord>();
@@ -23,17 +24,16 @@ const SEND_COOLDOWN_MS = 60 * 1000; // 发送间隔60秒
  */
 export function storeVerificationCode(
     phone: string,
-    code: string
+    code: string,
+    nickname?: string
 ): { success: boolean; message?: string } {
     const existing = verificationStore.get(phone);
 
-    // 检查发送冷却时间
     if (existing && Date.now() - existing.createdAt < SEND_COOLDOWN_MS) {
         const remaining = Math.ceil((SEND_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
         return { success: false, message: `请 ${remaining} 秒后再试` };
     }
 
-    // 检查发送次数
     if (existing && existing.sendCount >= MAX_SEND_COUNT) {
         return { success: false, message: '今日发送次数已达上限，请明天再试' };
     }
@@ -43,6 +43,7 @@ export function storeVerificationCode(
         expiresAt: Date.now() + CODE_TTL_MS,
         createdAt: Date.now(),
         sendCount: (existing?.sendCount || 0) + 1,
+        nickname: nickname || existing?.nickname,
     });
 
     return { success: true };
@@ -54,6 +55,7 @@ export function storeVerificationCode(
 export function verifyCode(phone: string, code: string): {
     success: boolean;
     message?: string;
+    nickname?: string;
 } {
     const record = verificationStore.get(phone);
 
@@ -70,9 +72,9 @@ export function verifyCode(phone: string, code: string): {
         return { success: false, message: '验证码错误' };
     }
 
-    // 验证成功，删除记录
+    const nickname = record.nickname;
     verificationStore.delete(phone);
-    return { success: true };
+    return { success: true, nickname };
 }
 
 /**

@@ -17,12 +17,12 @@ export interface SmsVerifyResult {
 /**
  * 发送短信验证码
  */
-export async function sendSmsCode(phone: string): Promise<SmsSendResult> {
+export async function sendSmsCode(phone: string, nickname?: string): Promise<SmsSendResult> {
     try {
         const response = await fetch('/api/sms/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ phone }),
+            body: JSON.stringify({ phone, nickname }),
         });
 
         const data = await response.json();

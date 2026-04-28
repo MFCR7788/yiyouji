@@ -10,7 +10,7 @@ import { storeVerificationCode } from '@/lib/sms/verification-store';
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { phone } = body as { phone?: string };
+        const { phone, nickname } = body as { phone?: string; nickname?: string };
 
         if (!phone) {
             return NextResponse.json(
@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
 
         console.info(`[SMS API] 生成验证码: ${phone} -> ${code}`);
 
-        const storeResult = storeVerificationCode(phone, code);
+        const storeResult = storeVerificationCode(phone, code, nickname);
         if (!storeResult.success) {
             console.warn(`[SMS API] 存储验证码失败: ${phone} -> ${storeResult.message}`);
             return NextResponse.json(

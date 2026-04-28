@@ -16,7 +16,7 @@ import { sendSmsCode, verifySmsCode } from '@/lib/sms/client';
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrengthIndicator';
 import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 
-type AuthMode = 'login' | 'verify-login' | 'register' | 'forgot' | 'verify-forgot' | 'reset-password';
+type AuthMode = 'login' | 'verify-login' | 'register' | 'verify-register' | 'forgot' | 'verify-forgot' | 'reset-password';
 type LoginMethod = 'password' | 'otp';
 
 interface AuthModalProps {
@@ -87,9 +87,6 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
                 countdown: 0,
                 mode: action.mode,
             };
-            if (action.mode === 'login') {
-                reset.loginMethod = 'otp';
-            }
             return { ...state, ...reset };
         }
         case 'TICK_COUNTDOWN':
@@ -159,10 +156,14 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         setField('sendingCode', true);
 
         try {
-            const result = await sendSmsCode(phone);
+            const result = await sendSmsCode(phone, nickname);
             if (result.success) {
                 setField('countdown', 60);
-                setField('mode', 'verify-login');
+                if (mode === 'register') {
+                    setField('mode', 'verify-register');
+                } else {
+                    setField('mode', 'verify-login');
+                }
                 setField('success', '验证码已发送到您的手机');
             } else {
                 setField('error', result.message || '发送失败');
@@ -324,6 +325,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     }
                     break;
                 case 'verify-login':
+                case 'verify-register':
                     await handleVerifyOTP();
                     break;
                 case 'register':
@@ -346,10 +348,23 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         }
     };
 
+    const showBackButton = mode === 'forgot' || mode === 'verify-forgot' || mode === 'reset-password' || mode === 'verify-login' || mode === 'verify-register';
+
+    const handleBack = () => {
+        if (mode === 'verify-login' || mode === 'verify-register') {
+            switchMode('login');
+        } else if (mode === 'verify-forgot' || mode === 'reset-password') {
+            switchMode('forgot');
+        } else {
+            switchMode('login');
+        }
+    };
+
     const getTitle = () => {
         switch (mode) {
             case 'login': return '登录';
             case 'verify-login': return '验证登录';
+            case 'verify-register': return '验证注册';
             case 'register': return '注册';
             case 'forgot': return '忘记密码';
             case 'verify-forgot': return '验证手机';
@@ -360,23 +375,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     const getSubmitText = () => {
         switch (mode) {
             case 'login': return loginMethod === 'password' ? '登录' : '发送验证码';
-            case 'verify-login': return '验证';
-            case 'register': return '注册';
+            case 'verify-login':
+            case 'verify-register': return '验证';
+            case 'register': return '发送验证码';
             case 'forgot': return '发送验证码';
             case 'verify-forgot': return '验证';
             case 'reset-password': return '重置密码';
-        }
-    };
-
-    const showBackButton = mode === 'forgot' || mode === 'verify-forgot' || mode === 'reset-password' || mode === 'verify-login';
-
-    const handleBack = () => {
-        if (mode === 'verify-login') {
-            switchMode('login');
-        } else if (mode === 'verify-forgot' || mode === 'reset-password') {
-            switchMode('forgot');
-        } else {
-            switchMode('login');
         }
     };
 
@@ -538,23 +542,13 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                         </div>
                     )}
 
-                    {/* 注册模式 */}
+                    {/* 注册模式 - 简化为仅手机号+验证码 */}
                     {mode === 'register' && (
                         <>
-                            {/* 昵称 */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground-secondary">昵称</label>
-                                <div className="relative">
-                                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
-                                    <input
-                                        type="text"
-                                        value={nickname}
-                                        onChange={(e) => setField('nickname', e.target.value)}
-                                        placeholder="输入您的昵称"
-                                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
-                                    />
-                                </div>
-                            </div>
+                            {/* 提示文字 */}
+                            <p className="text-sm text-foreground-secondary text-center">
+                                注册即表示同意我们的服务条款和隐私政策
+                            </p>
 
                             {/* 手机号 */}
                             <div className="space-y-2">
@@ -576,61 +570,6 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                                         className="w-full pl-10 pr-4 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
                                     />
                                 </div>
-                            </div>
-
-                            {/* 密码 */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground-secondary">密码</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
-                                    <input
-                                        type={showPassword ? 'text' : 'password'}
-                                        value={password}
-                                        onChange={(e) => setField('password', e.target.value)}
-                                        placeholder="设置密码"
-                                        required
-                                        minLength={8}
-                                        className="w-full pl-10 pr-10 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setField('showPassword', !showPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground transition-colors"
-                                    >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
-                                </div>
-                                <PasswordStrengthIndicator password={password} />
-                            </div>
-
-                            {/* 确认密码 */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium text-foreground-secondary">确认密码</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
-                                    <input
-                                        type={showConfirmPassword ? 'text' : 'password'}
-                                        value={confirmPassword}
-                                        onChange={(e) => setField('confirmPassword', e.target.value)}
-                                        placeholder="再次输入密码"
-                                        required
-                                        minLength={8}
-                                        className={`w-full pl-10 pr-10 py-3 rounded-xl bg-background-secondary border focus:outline-none transition-colors ${confirmPassword && password !== confirmPassword
-                                            ? 'border-red-500 focus:border-red-500'
-                                            : 'border-border focus:border-accent'
-                                        }`}
-                                    />
-                                    <button
-                                        type="button"
-                                        onClick={() => setField('showConfirmPassword', !showConfirmPassword)}
-                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-secondary hover:text-foreground transition-colors"
-                                    >
-                                        {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                                    </button>
-                                </div>
-                                {confirmPassword && password !== confirmPassword && (
-                                    <p className="text-xs text-red-500">两次输入的密码不一致</p>
-                                )}
                             </div>
 
                             {/* 验证码 */}
@@ -660,6 +599,36 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                                 />
                             </div>
                         </>
+                    )}
+
+                    {/* 验证注册模式 */}
+                    {mode === 'verify-register' && (
+                        <div className="space-y-4">
+                            <p className="text-sm text-foreground-secondary text-center">
+                                验证码已发送至 {phone}
+                            </p>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground-secondary text-center block">
+                                    输入验证码完成注册
+                                </label>
+                                <VerificationCodeInput
+                                    value={verificationCode}
+                                    onChange={(v) => setField('verificationCode', v)}
+                                    onComplete={handleVerifyOTP}
+                                    length={6}
+                                    disabled={loading}
+                                />
+                            </div>
+                            <button
+                                type="button"
+                                onClick={handleResendOTP}
+                                disabled={countdown > 0}
+                                className="flex items-center justify-center gap-2 w-full py-2 text-sm text-foreground-secondary hover:text-foreground disabled:opacity-50 transition-colors"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                {countdown > 0 ? `${countdown}秒后可重新发送` : '重新发送验证码'}
+                            </button>
+                        </div>
                     )}
 
                     {/* 忘记密码模式 */}
