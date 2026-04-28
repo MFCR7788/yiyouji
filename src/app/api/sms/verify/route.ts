@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
         if (signInError) {
             // 用户可能未注册，尝试注册
-            const { data: signUpData, error: signUpError } = await anonClient.auth.signUp({
+            const { error: signUpError } = await anonClient.auth.signUp({
                 email,
                 password: `phone_${phone}_default_password`,
                 options: {
