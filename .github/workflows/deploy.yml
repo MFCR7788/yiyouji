@@ -123,39 +123,39 @@ jobs:
 
             echo "=== 创建 .env 文件 ==="
             ENV_FILE="$APP_DIR/.env"
-            cat > "$ENV_FILE" << 'EOF'
-NODE_ENV=production
-USE_LOCAL_DB=false
-SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
-SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}
-SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}
-SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}
-INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}
-CRON_SECRET=${{ secrets.CRON_SECRET }}
-ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}
-ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}
-ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}
-ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}
-ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}
-DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}
-DIFY_API_URL=${{ secrets.DIFY_API_URL }}
-AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}
-VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}
-DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
-DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}
-GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}
-MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}
-MCP_HOST=0.0.0.0
-MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun
-MCP_TRUST_PROXY=true
-MCP_OAUTH_DEBUG=false
-KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4
-KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank
-VECTOR_SEARCH_ENABLED=false
-EOF
+            {
+            echo "NODE_ENV=production"
+            echo "USE_LOCAL_DB=false"
+            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
+            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
+            echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}"
+            echo "SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}"
+            echo "SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}"
+            echo "SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}"
+            echo "INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}"
+            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}"
+            echo "ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}"
+            echo "ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}"
+            echo "ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}"
+            echo "ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}"
+            echo "ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}"
+            echo "DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}"
+            echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}"
+            echo "AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}"
+            echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}"
+            echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}"
+            echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}"
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}"
+            echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}"
+            echo "MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}"
+            echo "MCP_HOST=0.0.0.0"
+            echo "MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun"
+            echo "MCP_TRUST_PROXY=true"
+            echo "MCP_OAUTH_DEBUG=false"
+            echo "KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4"
+            echo "KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank"
+            echo "VECTOR_SEARCH_ENABLED=false"
+            } > "$ENV_FILE"
 
             echo "=== 安装生产依赖 ==="
             pnpm install --prod
