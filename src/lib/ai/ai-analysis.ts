@@ -14,7 +14,6 @@ import {
     type AnalysisSourceType,
 } from '@/lib/source-contracts';
 import type { AIPersonality, ChatMessage } from '@/types';
-import type { SupabaseClient } from '@supabase/supabase-js';
 
 
 const SOURCE_PERSONALITY_MAP: Partial<Record<AnalysisSourceType, AIPersonality>> = {
