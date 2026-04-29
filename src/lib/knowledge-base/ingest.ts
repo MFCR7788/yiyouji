@@ -720,7 +720,7 @@ export async function backfillVectors(
                 embedding_dim: dimension
             }
         }))
-        .filter(u => Array.isArray(u.content_vector) && u.content_vector.length === dimension);
+        .filter((u: { id: string; content_vector: number[] | null }) => Array.isArray(u.content_vector) && u.content_vector.length === dimension);
 
     if (updates.length === 0) {
         return { entriesCreated: 0, chunks: 0, processed: 0, skipped: entries.length, alreadyExists: 0 };
@@ -784,7 +784,7 @@ export async function backfillVectorsAsService(
                 embedding_dim: dimension
             }
         }))
-        .filter(u => Array.isArray(u.content_vector) && u.content_vector.length === dimension);
+        .filter((u: { id: string; content_vector: number[] | null }) => Array.isArray(u.content_vector) && u.content_vector.length === dimension);
 
     if (updates.length === 0) {
         return { entriesCreated: 0, chunks: 0, processed: 0, skipped: entries.length, alreadyExists: 0 };
