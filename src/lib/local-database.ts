@@ -588,7 +588,7 @@ export function createDevSupabaseClient(userId: string = DEV_USER_ID) {
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
                     sourceType: (params?.p_source_type as any) || 'chat',
-                    sourceData: params?.p_source_data,
+                    sourceData: params?.p_source_data as Record<string, unknown> | undefined,
                     isArchived: false,
                     archivedKbIds: [],
                 });
