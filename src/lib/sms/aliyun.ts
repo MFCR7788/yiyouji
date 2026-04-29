@@ -113,16 +113,24 @@ export async function sendAliyunSms(
     console.debug('[SMS] 发送短信请求 - 手机号:', phone, '验证码:', code);
 
     if (!accessKeyId || !accessKeySecret || !signName || !templateCode) {
-        console.error('[SMS] 阿里云短信配置不完整:', {
+        const missing = [];
+        if (!accessKeyId) missing.push('ALIYUN_SMS_ACCESS_KEY_ID');
+        if (!accessKeySecret) missing.push('ALIYUN_SMS_ACCESS_KEY_SECRET');
+        if (!signName) missing.push('ALIYUN_SMS_SIGN_NAME');
+        if (!templateCode) missing.push('ALIYUN_SMS_TEMPLATE_CODE');
+        
+        console.error('[SMS] 阿里云短信配置不完整，缺失:', missing.join(', '));
+        console.error('[SMS] 当前配置状态:', {
             accessKeyId: !!accessKeyId,
             accessKeySecret: !!accessKeySecret,
             signName: !!signName,
             templateCode: !!templateCode,
             regionId: !!regionId,
         });
+        
         return {
             success: false,
-            message: '短信服务配置不完整',
+            message: `短信服务配置不完整，缺失: ${missing.join(', ')}`,
         };
     }
 
