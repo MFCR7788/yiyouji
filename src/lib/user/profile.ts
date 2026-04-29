@@ -129,22 +129,34 @@ export async function uploadAvatarForCurrentUser(userId: string, file: File | Bl
 
     console.debug('[Avatar Upload] Response status:', uploadResult.status);
     
-    const uploadPayload = await uploadResult.json().catch((e) => {
-      console.error('[Avatar Upload] Failed to parse response:', e);
-      return null;
-    }) as {
+    let uploadPayload: {
       data?: { publicUrl?: string | null } | null;
       error?: unknown;
-    } | null;
+    } | null = null;
+
+    try {
+      const responseText = await uploadResult.text();
+      console.debug('[Avatar Upload] Response text:', responseText);
+      
+      if (responseText.trim()) {
+        uploadPayload = JSON.parse(responseText);
+      }
+    } catch (parseError) {
+      console.error('[Avatar Upload] Failed to parse response JSON:', parseError);
+      uploadPayload = null;
+    }
 
     console.debug('[Avatar Upload] Response payload:', uploadPayload);
 
     if (!uploadResult.ok) {
-      const errorMsg = uploadPayload?.error 
-        ? typeof uploadPayload.error === 'object' && 'message' in uploadPayload.error
+      let errorMsg = `HTTP ${uploadResult.status}`;
+      
+      if (uploadPayload?.error) {
+        errorMsg = typeof uploadPayload.error === 'object' && 'message' in uploadPayload.error
           ? String((uploadPayload.error as { message: unknown }).message)
-          : String(uploadPayload.error)
-        : `HTTP ${uploadResult.status}`;
+          : String(uploadPayload.error);
+      }
+      
       console.error('[Avatar Upload] Server error:', errorMsg);
       return {
         success: false,

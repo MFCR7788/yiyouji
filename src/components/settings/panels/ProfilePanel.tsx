@@ -5,7 +5,6 @@ import type { ChangeEvent } from 'react';
 import { Camera, User as UserIcon } from 'lucide-react';
 import { ensureUserRecord, updateNickname } from '@/lib/auth';
 import { uploadAvatarForCurrentUser } from '@/lib/user/profile';
-import { getUserEmailDisplay } from '@/lib/user-email';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { StatusBanner } from '@/components/profile/StatusBanner';
@@ -160,7 +159,7 @@ export default function ProfilePanel() {
   }
 
   const hasNicknameChanges = nickname !== originalNickname;
-  const displayEmail = getUserEmailDisplay(user);
+  const displayPhone = (user.user_metadata?.phone as string) || '';
 
   return (
     <div className="space-y-8">
@@ -237,10 +236,10 @@ export default function ProfilePanel() {
 
               <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
                 <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">电子邮箱</p>
+                  <p className="text-sm font-medium text-foreground">手机号码</p>
                 </div>
                 <div className="rounded-md bg-background-secondary/50 px-3 py-2 font-mono text-sm text-foreground/50">
-                  {displayEmail}
+                  {displayPhone || '未绑定'}
                 </div>
               </div>
             </div>

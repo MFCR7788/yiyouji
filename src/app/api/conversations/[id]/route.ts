@@ -257,18 +257,27 @@ export async function PATCH(
     const db = resolveRequestDbClient(auth);
     if (!db) return jsonError('更新对话失败', 500);
 
-    const { data, error } = await db.rpc('update_conversation_with_messages', {
-        p_conversation_id: id,
-        p_title: normalizedTitle ?? null,
-        p_title_present: body.title !== undefined,
-        p_personality: body.personality ?? null,
-        p_personality_present: body.personality !== undefined,
-        p_messages: nextMessages,
-        p_messages_present: hasMessagesField,
-    });
+    console.log('[conversations] Updating conversation:', id, 'hasMessages:', hasMessagesField);
 
-    if (error) {
-        console.error('[conversations] failed to update conversation transactionally:', error);
+    try {
+        const { data, error } = await db.rpc('update_conversation_with_messages', {
+            p_conversation_id: id,
+            p_title: normalizedTitle ?? null,
+            p_title_present: body.title !== undefined,
+            p_personality: body.personality ?? null,
+            p_personality_present: body.personality !== undefined,
+            p_messages: nextMessages,
+            p_messages_present: hasMessagesField,
+        });
+
+        if (error) {
+            console.error('[conversations] failed to update conversation transactionally:', error);
+            return jsonError('更新对话失败', 500);
+        }
+
+        console.log('[conversations] Update result:', data);
+    } catch (e) {
+        console.error('[conversations] Exception during update:', e);
         return jsonError('更新对话失败', 500);
     }
 

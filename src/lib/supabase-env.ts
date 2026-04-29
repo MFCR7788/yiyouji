@@ -17,3 +17,7 @@ export function getSupabaseAnonKey(): string {
 export function getSupabaseAuthAdminKey(): string | null {
     return process.env.SUPABASE_SECRET_KEY || null;
 }
+
+export function getSupabaseServiceRoleKey(): string | null {
+    return process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY || null;
+}

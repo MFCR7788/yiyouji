@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestSupabaseClient, jsonError, jsonOk, requireUserContext } from '@/lib/api-utils';
+import { createRequestSupabaseClient, getServiceRoleClient, jsonError, jsonOk, requireUserContext } from '@/lib/api-utils';
 
 const ALLOWED_BUCKETS = new Set(['avatars']);
 const MAX_AVATAR_FILE_BYTES = 2 * 1024 * 1024;
@@ -43,15 +43,19 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  console.log('[Storage API] Upload request received');
+  
   const auth = await requireUserContext(request);
   if ('error' in auth) {
+    console.error('[Storage API] Auth error:', auth.error);
     return jsonError(auth.error.message, auth.error.status);
   }
 
   let formData: FormData;
   try {
     formData = await request.formData();
-  } catch {
+  } catch (e) {
+    console.error('[Storage API] Form data parse error:', e);
     return jsonError('Invalid form data', 400);
   }
 
@@ -77,6 +81,8 @@ export async function POST(request: NextRequest) {
     return jsonError('Missing upload file', 400);
   }
 
+  console.log('[Storage API] Uploading file:', file.name, 'size:', file.size, 'type:', file.type);
+
   if (bucket === 'avatars') {
     if (!file.type.startsWith('image/')) {
       return jsonError('Unsupported avatar file type', 400);
@@ -88,16 +94,27 @@ export async function POST(request: NextRequest) {
 
   const upsert = parseUpsert(formData.get('upsert'));
 
-  const { data, error } = await auth.db.storage
+  const serviceClient = getServiceRoleClient();
+  const storageClient = serviceClient?.storage;
+  
+  if (!storageClient) {
+    console.error('[Storage API] Storage client is undefined');
+    return jsonError('Storage service unavailable', 500);
+  }
+
+  const { data, error } = await storageClient
     .from(bucket)
     .upload(path, file, { upsert });
 
   if (error) {
+    console.error('[Storage API] Supabase upload error:', error);
     return jsonError(error.message || 'Upload failed', 400);
   }
 
-  const { data: publicData } = auth.db.storage.from(bucket).getPublicUrl(path);
-  return jsonOk({
+  console.log('[Storage API] Upload successful, data:', data);
+
+  const { data: publicData } = storageClient.from(bucket).getPublicUrl(path);
+  const response = jsonOk({
     data: {
       path: data?.path ?? path,
       fullPath: data?.fullPath ?? null,
@@ -106,4 +123,7 @@ export async function POST(request: NextRequest) {
     },
     error: null,
   });
+
+  console.log('[Storage API] Returning response with publicUrl:', publicData.publicUrl);
+  return response;
 }

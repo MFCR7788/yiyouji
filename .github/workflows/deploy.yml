@@ -1,4 +1,4 @@
-name: Deploy to Alibaba Cloud
+name: Deploy to Production
 
 on:
   push:
@@ -6,8 +6,46 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  # 运行测试和代码检查
+  test:
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build packages
+        run: |
+          pnpm -C packages/core build
+          pnpm -C packages/mcp build
+          pnpm -C packages/mcp-server build
+
+      - name: Run lint
+        run: pnpm lint
+
+      - name: Run tests
+        run: pnpm test
+        env:
+          NODE_ENV: test
+          USE_LOCAL_DB: true
+
+  # 构建和部署
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: production
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -65,13 +103,14 @@ jobs:
           script: |
             set -e
             APP_DIR="/opt/apps/yiyouji"
+            TIMESTAMP=$(date +%Y%m%d%H%M%S)
 
             echo "=== 停止旧服务 ==="
             pm2 stop yiyouji 2>/dev/null || true
 
             echo "=== 备份旧版本 ==="
             if [ -d "$APP_DIR" ]; then
-              mv "$APP_DIR" "${APP_DIR}-backup-$(date +%Y%m%d%H%M%S)" 2>/dev/null || rm -rf "$APP_DIR"
+              mv "$APP_DIR" "${APP_DIR}-backup-${TIMESTAMP}" || rm -rf "$APP_DIR"
             fi
 
             echo "=== 创建目录 ==="
@@ -84,30 +123,39 @@ jobs:
 
             echo "=== 创建 .env 文件 ==="
             ENV_FILE="$APP_DIR/.env"
-            echo "USE_LOCAL_DB=true" > "$ENV_FILE"
-            echo "NODE_ENV=production" >> "$ENV_FILE"
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> "$ENV_FILE"
-            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> "$ENV_FILE"
-            echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}" >> "$ENV_FILE"
-            echo "SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}" >> "$ENV_FILE"
-            echo "SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}" >> "$ENV_FILE"
-            echo "SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}" >> "$ENV_FILE"
-            echo "INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}" >> "$ENV_FILE"
-            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> "$ENV_FILE"
-            echo "ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}" >> "$ENV_FILE"
-            echo "ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}" >> "$ENV_FILE"
-            echo "ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}" >> "$ENV_FILE"
-            echo "ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}" >> "$ENV_FILE"
-            echo "ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}" >> "$ENV_FILE"
-            echo "DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}" >> "$ENV_FILE"
-            echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}" >> "$ENV_FILE"
-            echo "AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}" >> "$ENV_FILE"
-            echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}" >> "$ENV_FILE"
-            echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> "$ENV_FILE"
-            echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}" >> "$ENV_FILE"
-            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> "$ENV_FILE"
-            echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" >> "$ENV_FILE"
-            echo "MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}" >> "$ENV_FILE"
+            cat > "$ENV_FILE" << 'EOF'
+NODE_ENV=production
+USE_LOCAL_DB=false
+SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
+SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}
+SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}
+SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}
+INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}
+CRON_SECRET=${{ secrets.CRON_SECRET }}
+ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}
+ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}
+ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}
+ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}
+ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}
+DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}
+DIFY_API_URL=${{ secrets.DIFY_API_URL }}
+AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}
+VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}
+DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}
+GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}
+MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}
+MCP_HOST=0.0.0.0
+MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun
+MCP_TRUST_PROXY=true
+MCP_OAUTH_DEBUG=false
+KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4
+KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank
+VECTOR_SEARCH_ENABLED=false
+EOF
 
             echo "=== 安装生产依赖 ==="
             pnpm install --prod
@@ -117,11 +165,34 @@ jobs:
             pm2 save
 
             echo "=== 验证服务 ==="
-            sleep 5
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/)
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ 部署成功！服务返回 HTTP $HTTP_CODE"
-            else
-              echo "❌ 部署可能失败，服务返回 HTTP $HTTP_CODE"
+            MAX_RETRIES=30
+            RETRY_COUNT=0
+            while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ || echo "000")
+              if [ "$HTTP_CODE" = "200" ]; then
+                echo "✅ 部署成功！服务返回 HTTP $HTTP_CODE"
+                break
+              fi
+              echo "等待服务启动... (尝试 $((RETRY_COUNT + 1))/$MAX_RETRIES, HTTP 状态: $HTTP_CODE)"
+              sleep 2
+              RETRY_COUNT=$((RETRY_COUNT + 1))
+            done
+
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "❌ 部署失败：服务在规定时间内未正常启动"
+              echo "=== 回滚到上一个版本 ==="
+              if [ -d "${APP_DIR}-backup-${TIMESTAMP}" ]; then
+                pm2 delete yiyouji 2>/dev/null || true
+                rm -rf "$APP_DIR"
+                mv "${APP_DIR}-backup-${TIMESTAMP}" "$APP_DIR"
+                cd "$APP_DIR"
+                pm2 start "pnpm start" --name yiyouji -- -p 3000
+                pm2 save
+                echo "✅ 已回滚到上一个版本"
+              fi
               exit 1
             fi
+
+            echo "=== 清理旧备份（保留最近 3 个） ==="
+            cd /opt/apps
+            ls -dt yiyouji-backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf
