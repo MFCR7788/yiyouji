@@ -9,6 +9,7 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { X, Lock, ArrowLeft, RefreshCw, Eye, EyeOff, Phone } from 'lucide-react';
+import { openSettingsCenter } from '@/lib/settings-center';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { signInWithEmailProtected } from '@/lib/auth';
 import { supabase } from '@/lib/auth';
@@ -132,7 +133,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 // 直接检查用户信息，不依赖 getUser()
                 if (!userData.user_metadata?.nickname) {
                     onClose();
-                    router.push('/settings/profile');
+                    openSettingsCenter('profile');
                     return;
                 }
                 
@@ -149,7 +150,7 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                 if (profileData && !profileData.nickname) {
                     onClose();
-                    router.push('/settings/profile');
+                    openSettingsCenter('profile');
                     return;
                 }
             }

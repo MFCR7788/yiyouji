@@ -8,6 +8,7 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { X, ArrowLeft, RefreshCw, Phone } from 'lucide-react';
+import { openSettingsCenter } from '@/lib/settings-center';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 import { sendPhoneCode, verifyPhoneCode } from '@/lib/auth/phone-auth';
@@ -84,7 +85,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             if (process.env.NODE_ENV === 'development' && userData) {
                 const userDataTyped = userData as { user_metadata?: { nickname?: string } };
                 if (!userDataTyped.user_metadata?.nickname) {
-                    router.push('/settings/profile');
+                    openSettingsCenter('profile');
                     return;
                 }
 
@@ -98,7 +99,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 const profileData = await response.json();
 
                 if (profileData && !profileData.nickname) {
-                    router.push('/settings/profile');
+                    openSettingsCenter('profile');
                     return;
                 }
             }
