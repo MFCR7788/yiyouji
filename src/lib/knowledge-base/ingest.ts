@@ -708,7 +708,7 @@ export async function backfillVectors(
         return { entriesCreated: 0, chunks: 0, processed: 0, skipped: 0, alreadyExists: 0 };
     }
 
-    const embeddingResult = await generateEmbeddings(entries.map(e => e.content as string));
+    const embeddingResult = await generateEmbeddings(entries.map((e: { id: string; content: string }) => e.content));
     const { vectors, model, dimension } = embeddingResult;
 
     const updates = entries
@@ -772,7 +772,7 @@ export async function backfillVectorsAsService(
         return { entriesCreated: 0, chunks: 0, processed: 0, skipped: 0, alreadyExists: 0 };
     }
 
-    const embeddingResult = await generateEmbeddings(entries.map(e => e.content as string));
+    const embeddingResult = await generateEmbeddings(entries.map((e: { id: string; content: string }) => e.content));
     const { vectors, model, dimension } = embeddingResult;
 
     const updates = entries
