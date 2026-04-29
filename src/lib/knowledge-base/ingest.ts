@@ -712,7 +712,7 @@ export async function backfillVectors(
     const { vectors, model, dimension } = embeddingResult;
 
     const updates = entries
-        .map((entry, i) => ({
+        .map((entry: { id: string; content: string }, i: number) => ({
             id: entry.id as string,
             content_vector: vectors[i],
             metadata: {
@@ -776,7 +776,7 @@ export async function backfillVectorsAsService(
     const { vectors, model, dimension } = embeddingResult;
 
     const updates = entries
-        .map((entry, i) => ({
+        .map((entry: { id: string; content: string }, i: number) => ({
             id: entry.id as string,
             content_vector: vectors[i],
             metadata: {
