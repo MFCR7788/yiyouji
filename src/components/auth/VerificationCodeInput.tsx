@@ -15,6 +15,7 @@ interface VerificationCodeInputProps {
     onComplete?: (value: string) => void;
     length?: number;
     disabled?: boolean;
+    autoFocus?: boolean;
 }
 
 export function VerificationCodeInput({
@@ -23,6 +24,7 @@ export function VerificationCodeInput({
     onComplete,
     length = 6,
     disabled = false,
+    autoFocus = false,
 }: VerificationCodeInputProps) {
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -102,6 +104,7 @@ export function VerificationCodeInput({
                     onPaste={handlePaste}
                     onFocus={() => handleFocus(index)}
                     disabled={disabled}
+                    autoFocus={index === 0 && autoFocus}
                     className="w-10 h-12 text-center text-xl font-mono rounded-lg bg-background-secondary border border-border focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 transition-all disabled:opacity-50"
                 />
             ))}

@@ -2,6 +2,9 @@
  * 客户端短信验证码工具函数
  */
 
+import type { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { applySession } from '@/lib/auth';
+
 export interface SmsSendResult {
     success: boolean;
     message?: string;
@@ -10,8 +13,8 @@ export interface SmsSendResult {
 export interface SmsVerifyResult {
     success: boolean;
     message?: string;
-    session?: unknown;
-    user?: unknown;
+    session?: Session | null;
+    user?: SupabaseUser | null;
 }
 
 /**
@@ -53,12 +56,19 @@ export async function verifySmsCode(
         });
 
         const data = await response.json();
-        return {
+        const result = {
             success: data.success === true,
             message: data.message || (data.success ? '验证成功' : '验证失败'),
-            session: data.session,
-            user: data.user,
+            session: data.session as Session | null,
+            user: data.user as SupabaseUser | null,
         };
+        
+        // 验证成功后应用 session 到本地缓存
+        if (result.success && result.session) {
+            applySession(result.session, 'SIGNED_IN');
+        }
+        
+        return result;
     } catch {
         return {
             success: false,

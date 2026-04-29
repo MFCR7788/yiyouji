@@ -320,9 +320,9 @@ function WuxingEnergyChartInner({ data, compact = false }: WuxingEnergyChartProp
               {/* Stars */}
               {el.stars.length > 0 && (
                 <div className="flex gap-1 shrink-0 flex-wrap">
-                  {el.stars.map((star) => (
+                  {el.stars.map((star, starIdx) => (
                     <span
-                      key={star}
+                      key={`${key}-star-${starIdx}`}
                       className="text-[10px] px-1 py-0.5 rounded bg-background-secondary text-foreground-secondary"
                     >
                       {star}

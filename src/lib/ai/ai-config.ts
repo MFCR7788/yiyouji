@@ -149,11 +149,15 @@ export function buildModels(): AIModelConfig[] {
   if (envModels.length > 0) {
     return envModels;
   }
-  
+
   const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
   if (isDevMode) {
-    console.warn('[ai-config] No MINGAI_FALLBACK_MODELS_JSON env var found, using default dev model');
-    return [normalizeEnvFallbackModel({
+    console.warn('[ai-config] No MINGAI_FALLBACK_MODELS_JSON env var found, using default dev models');
+
+    const devModels: AIModelConfig[] = [];
+
+    // DeepSeek 聊天模型
+    const deepseekChat = normalizeEnvFallbackModel({
       id: 'deepseek-chat',
       name: 'DeepSeek Chat',
       vendor: 'deepseek',
@@ -161,9 +165,63 @@ export function buildModels(): AIModelConfig[] {
       apiUrl: 'https://api.deepseek.com/v1/chat/completions',
       apiKeyEnvVar: 'DEEPSEEK_API_KEY',
       supportsReasoning: false,
-    })].filter((m): m is AIModelConfig => m !== null);
+    });
+    if (deepseekChat) devModels.push(deepseekChat);
+
+    // DeepSeek V4 Flash 聊天模型
+    const deepseekV4Flash = normalizeEnvFallbackModel({
+      id: 'deepseek-v4-flash',
+      name: 'DeepSeek V4 Flash',
+      vendor: 'deepseek',
+      usageType: 'chat',
+      apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+      apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+      supportsReasoning: true,
+      isReasoningDefault: false,
+    });
+    if (deepseekV4Flash) devModels.push(deepseekV4Flash);
+
+    // DeepSeek V4 Pro 聊天模型
+    const deepseekV4Pro = normalizeEnvFallbackModel({
+      id: 'deepseek-v4-pro',
+      name: 'DeepSeek V4 Pro',
+      vendor: 'deepseek',
+      usageType: 'chat',
+      apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+      apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+      supportsReasoning: false,
+    });
+    if (deepseekV4Pro) devModels.push(deepseekV4Pro);
+
+    // Gemini 视觉模型 (用于面相、手相)
+    const geminiFlashVl = normalizeEnvFallbackModel({
+      id: 'gemini-2.0-flash-vl',
+      name: 'Gemini 2.0 Flash VL',
+      vendor: 'gemini-vl',
+      usageType: 'chat',
+      supportsVision: true,
+      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-vision',
+      apiKeyEnvVar: 'GEMINI_API_KEY',
+      supportsReasoning: false,
+    });
+    if (geminiFlashVl) devModels.push(geminiFlashVl);
+
+    // Qwen VL 视觉模型
+    const qwenVl = normalizeEnvFallbackModel({
+      id: 'qwen-vl-plus',
+      name: 'Qwen VL Plus',
+      vendor: 'qwen-vl',
+      usageType: 'chat',
+      supportsVision: true,
+      apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+      apiKeyEnvVar: 'QWEN_API_KEY',
+      supportsReasoning: false,
+    });
+    if (qwenVl) devModels.push(qwenVl);
+
+    return devModels;
   }
-  
+
   return [];
 }
 
@@ -221,4 +279,3 @@ export function getVendorName(vendor: string): string {
 
 /** 管理后台 vendor 下拉预设（从 VENDOR_NAMES 派生） */
 export const VENDOR_PRESETS = Object.keys(VENDOR_NAMES) as readonly string[];
-

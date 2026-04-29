@@ -24,7 +24,7 @@ const FAQ_LIST: FAQItem[] = [
   },
   {
     question: '为什么我的日运/月运功能缺少了？',
-    answer: '如果没有设置默认命盘，日运/月运将无法使用个性化命盘分析。请先在“我的命盘”中设置默认命盘。',
+    answer: '如果没有设置默认命盘，日运/月运将无法使用个性化命盘分析。请先在"我的命盘"中设置默认命盘。',
   },
   {
     question: '为什么真太阳时和出生时间不一致？',
@@ -38,7 +38,7 @@ const FAQ_LIST: FAQItem[] = [
 
 export default function HelpPanel() {
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
-  const projectRepoUrl = 'https://github.com/hhszzzz/taibu';
+  const projectRepoUrl = 'https://zjsifan.com';
 
   return (
     <div className="space-y-8">
@@ -74,12 +74,12 @@ export default function HelpPanel() {
         <div className="flex flex-col items-start justify-between gap-4 rounded-md border border-border bg-background p-4">
           <div className="space-y-1">
             <h3 className="text-sm font-medium text-foreground">需要更多帮助？</h3>
-            <p className="text-sm text-foreground-secondary">如果你没有找到需要的答案，可以通过邮件或 GitHub 仓库联系我们。</p>
+            <p className="text-sm text-foreground-secondary">如果你没有找到需要的答案，可以通过邮件或网站联系我们。</p>
           </div>
           <div className="flex w-full flex-col gap-3 sm:flex-row">
             <div className="inline-flex items-center gap-2 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm text-foreground">
               <Mail className="h-4 w-4 text-accent" />
-              <span>support@yiyouji.zjsifan.com</span>
+              <span>229888777@qq.com</span>
             </div>
             <a
               href={projectRepoUrl}
@@ -88,7 +88,7 @@ export default function HelpPanel() {
               className="inline-flex items-center gap-2 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm text-foreground transition-colors hover:bg-background-secondary/70"
             >
               <Github className="h-4 w-4 text-accent" />
-              <span>github.com/hhszzzz/taibu</span>
+              <span>zjsifan.com</span>
             </a>
           </div>
         </div>

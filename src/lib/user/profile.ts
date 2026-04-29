@@ -1,6 +1,6 @@
 import type { MembershipType } from '@/lib/user/membership';
 import type { UserSettingsSnapshot } from '@/lib/user/settings';
-import { normalizeBrowserApiError, requestBrowserJson } from '@/lib/browser-api';
+import { requestBrowserJson } from '@/lib/browser-api';
 
 export type UserProfile = {
   id: string;
@@ -120,41 +120,70 @@ export async function uploadAvatarForCurrentUser(userId: string, file: File | Bl
   formData.append('path', path);
   formData.append('upsert', 'true');
 
-  const uploadResult = await fetch('/api/supabase/storage', {
-    method: 'POST',
-    credentials: 'include',
-    body: formData,
-  });
+  try {
+    const uploadResult = await fetch('/api/supabase/storage', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
 
-  const uploadPayload = await uploadResult.json().catch(() => null) as {
-    data?: { publicUrl?: string | null } | null;
-    error?: unknown;
-  } | null;
+    console.debug('[Avatar Upload] Response status:', uploadResult.status);
+    
+    const uploadPayload = await uploadResult.json().catch((e) => {
+      console.error('[Avatar Upload] Failed to parse response:', e);
+      return null;
+    }) as {
+      data?: { publicUrl?: string | null } | null;
+      error?: unknown;
+    } | null;
 
-  const uploadError = !uploadResult.ok
-    ? normalizeBrowserApiError(uploadPayload?.error ?? null)
-    : null;
+    console.debug('[Avatar Upload] Response payload:', uploadPayload);
 
-  const publicUrl = uploadPayload?.data?.publicUrl ?? null;
-  if (uploadError || !publicUrl) {
+    if (!uploadResult.ok) {
+      const errorMsg = uploadPayload?.error 
+        ? typeof uploadPayload.error === 'object' && 'message' in uploadPayload.error
+          ? String((uploadPayload.error as { message: unknown }).message)
+          : String(uploadPayload.error)
+        : `HTTP ${uploadResult.status}`;
+      console.error('[Avatar Upload] Server error:', errorMsg);
+      return {
+        success: false,
+        publicUrl: null,
+        error: { message: `上传失败: ${errorMsg}` },
+      };
+    }
+
+    const publicUrl = uploadPayload?.data?.publicUrl ?? null;
+    if (!publicUrl) {
+      console.error('[Avatar Upload] No public URL returned');
+      return {
+        success: false,
+        publicUrl: null,
+        error: { message: '获取头像URL失败' },
+      };
+    }
+
+    const profileUpdate = await updateAvatarUrl(publicUrl);
+    if (!profileUpdate.success) {
+      console.error('[Avatar Upload] Failed to update profile:', profileUpdate.error);
+      return {
+        success: false,
+        publicUrl: null,
+        error: profileUpdate.error || { message: '头像保存失败' },
+      };
+    }
+
+    console.info('[Avatar Upload] Success:', publicUrl);
+    return {
+      success: true,
+      publicUrl,
+    };
+  } catch (error) {
+    console.error('[Avatar Upload] Exception:', error);
     return {
       success: false,
       publicUrl: null,
-      error: uploadError || { message: '头像上传失败' },
+      error: { message: `上传异常: ${error instanceof Error ? error.message : String(error)}` },
     };
   }
-
-  const profileUpdate = await updateAvatarUrl(publicUrl);
-  if (!profileUpdate.success) {
-    return {
-      success: false,
-      publicUrl: null,
-      error: profileUpdate.error || { message: '头像保存失败' },
-    };
-  }
-
-  return {
-    success: true,
-    publicUrl,
-  };
 }

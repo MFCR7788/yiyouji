@@ -155,10 +155,14 @@ export async function resolveSessionFromTokens(
 
 function applySessionCookies(writer: SessionCookieWriter, session: Session | null) {
   const secure = process.env.NODE_ENV === 'production';
+  const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
 
   if (!session) {
     writer.delete(ACCESS_COOKIE);
     writer.delete(REFRESH_COOKIE);
+    if (isDevMode) {
+      writer.delete('sb-dev-user');
+    }
     return;
   }
 
@@ -176,6 +180,22 @@ function applySessionCookies(writer: SessionCookieWriter, session: Session | nul
     path: '/',
     maxAge: 60 * 60 * 24 * 30,
   });
+
+  if (isDevMode && session.user) {
+    const userInfo = {
+      id: session.user.id,
+      email: session.user.email,
+      nickname: session.user.user_metadata?.nickname || '开发用户',
+      phone: session.user.user_metadata?.phone || '',
+    };
+    writer.set('sb-dev-user', JSON.stringify(userInfo), {
+      httpOnly: false,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: 60 * 60 * 24 * 30,
+    });
+  }
 }
 
 export function writeSessionCookies(cookieStore: SessionCookieWriter, session: Session | null) {

@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
         const search = searchParams.get('search');
         const sortBy = searchParams.get('sortBy') as PostFilters['sortBy'] || 'latest';
 
+        // 开发模式：返回空数据避免连接超时
+        if (process.env.NODE_ENV === 'development') {
+            return jsonOk({
+                posts: [],
+                total: 0,
+            });
+        }
+
         // 使用 serviceClient 和重试逻辑
         const serviceClient = getSystemAdminClient();
 

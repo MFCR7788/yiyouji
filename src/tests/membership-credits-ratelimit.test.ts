@@ -154,6 +154,20 @@ test('useCredit returns null when RPC fails', async () => {
 
     apiUtilsModule.getSystemAdminClient = () => ({
         rpc: async () => ({ data: null, error: { message: 'rpc error' } }),
+        from: () => ({
+            update: () => ({
+                eq: () => ({
+                    gt: () => ({
+                        select: () => ({
+                            maybeSingle: async () => ({
+                                data: null,
+                                error: { message: 'direct update failed' },
+                            }),
+                        }),
+                    }),
+                }),
+            }),
+        }),
     });
 
     try {
@@ -217,6 +231,18 @@ test('attemptCreditUse should keep rpc failures as deduction_failed even when ba
     apiUtilsModule.getSystemAdminClient = () => ({
         rpc: async () => ({ data: null, error: { message: 'rpc unavailable' } }),
         from: () => ({
+            update: () => ({
+                eq: () => ({
+                    gt: () => ({
+                        select: () => ({
+                            maybeSingle: async () => ({
+                                data: null,
+                                error: { message: 'No rows updated - balance may be 0' },
+                            }),
+                        }),
+                    }),
+                }),
+            }),
             select: () => ({
                 eq: () => ({
                     maybeSingle: async () => ({

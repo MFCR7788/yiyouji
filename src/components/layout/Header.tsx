@@ -22,7 +22,7 @@ import {
 } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { useTheme } from '@/components/ui/ThemeProvider';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { useHeaderMenuSafe } from '@/components/layout/HeaderMenuContext';
 import { useAnnouncementCenterSafe } from '@/components/providers/AnnouncementPopupHost';

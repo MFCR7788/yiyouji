@@ -15,7 +15,7 @@ test('user menu uses registry icons and removes heavy account shortcuts', () => 
   assert.equal(source.includes("{ tab: 'charts', label: '命盘' }"), true);
   assert.equal(source.includes('PROJECT_REPO_URL'), true);
   assert.equal(source.includes('PROJECT_ISSUES_URL'), true);
-  assert.equal(source.includes('https://github.com/hhszzzz/taibu'), true);
+  assert.equal(source.includes('https://zjsifan.com'), true);
   assert.equal(source.includes('https://docs.qq.com/smartsheet/DS3JSQ0dHTUdrVWFh'), true);
   assert.equal(source.includes('tab="help"'), true);
   assert.equal(source.includes('帮助中心'), true);

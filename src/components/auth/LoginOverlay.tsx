@@ -9,7 +9,7 @@
 
 import { useState } from 'react';
 import { LogIn, Lock } from 'lucide-react';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 
 interface LoginOverlayProps {

@@ -65,7 +65,7 @@ function emitAuthEvent(event: AuthChangeEvent, session: Session | null) {
     }
 }
 
-function applySession(session: Session | null, event?: AuthChangeEvent) {
+export function applySession(session: Session | null, event?: AuthChangeEvent) {
     cachedSession = session;
     cachedUser = session?.user ?? null;
     hasInitializedSession = true;
@@ -382,6 +382,18 @@ export async function signUpWithEmail(
 }
 
 export async function signOut(): Promise<AuthResult> {
+    // 开发模式下额外清除浏览器存储
+    if (process.env.NODE_ENV === 'development') {
+        try {
+            localStorage.removeItem('supabase-auth');
+            localStorage.removeItem('sb-access-token');
+            localStorage.removeItem('sb-refresh-token');
+            sessionStorage.clear();
+        } catch (e) {
+            console.warn('[auth] Failed to clear browser storage:', e);
+        }
+    }
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {

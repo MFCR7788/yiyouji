@@ -14,6 +14,7 @@ import {
     type AnalysisSourceType,
 } from '@/lib/source-contracts';
 import type { AIPersonality, ChatMessage } from '@/types';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 
 const SOURCE_PERSONALITY_MAP: Partial<Record<AnalysisSourceType, AIPersonality>> = {
@@ -53,6 +54,7 @@ export interface CreateAIAnalysisParams {
         type: 'mbti' | 'tarot' | 'hepan' | 'palm' | 'face' | 'qimen' | 'daliuren' | 'liuyao';
         payload: Record<string, unknown>;
     } | null;
+    client?: any;
 }
 
 /**
@@ -60,7 +62,7 @@ export interface CreateAIAnalysisParams {
  * 绕过 RLS，用于 API 路由中保存 AI 分析结果
  */
 export async function createAIAnalysisConversation(params: CreateAIAnalysisParams): Promise<string> {
-    const serviceClient = getSystemAdminClient();
+    const serviceClient = params.client || getSystemAdminClient();
     const normalizedSourceData = normalizeAnalysisSourceData(params.sourceType, params.sourceData);
 
     const modelId = getSourceDataModelId(normalizedSourceData) ?? undefined;

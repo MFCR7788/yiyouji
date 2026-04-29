@@ -20,6 +20,17 @@ export async function GET(request: NextRequest) {
         if ('error' in auth) {
             return jsonError(auth.error.message, auth.error.status);
         }
+        
+        // 开发模式：返回空数据避免连接问题
+        if (process.env.NODE_ENV === 'development') {
+            return jsonOk({
+                items: [],
+                summary: {
+                    todaySpent: 0,
+                },
+            });
+        }
+        
         const db = resolveRequestDbClient(auth);
         if (!db) {
             return jsonError('获取积分流水失败', 500);

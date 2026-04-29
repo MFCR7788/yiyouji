@@ -98,6 +98,7 @@ export default function ProfilePanel() {
     if (result.success) {
       setOriginalNickname(nickname.trim());
       setSuccess('昵称已更新');
+      await refreshProfile();
       window.setTimeout(() => setSuccess(''), 3000);
     } else {
       setError(result.error?.message || '保存失败');
@@ -217,10 +218,11 @@ export default function ProfilePanel() {
                     type="text"
                     value={nickname}
                     onChange={(event) => setNickname(event.target.value)}
-                    className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-colors duration-150 focus:ring-2 focus:ring-blue-500/30"
+                    disabled={saving}
+                    className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-colors duration-150 focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
                     placeholder={!originalNickname ? '请输入您的昵称' : ''}
                   />
-                  {hasNicknameChanges ? (
+                  {hasNicknameChanges && nickname.trim() ? (
                     <button
                       type="button"
                       onClick={handleSave}
@@ -252,7 +254,7 @@ export default function ProfilePanel() {
           <div className="mb-4 space-y-0.5">
             <p className="text-sm font-medium text-foreground">重置密码</p>
           </div>
-          <PasswordSection email={user.email || ''} />
+          <PasswordSection phone={((user.user_metadata?.phone as string) || '').replace(/[^0-9]/g, '').slice(0, 11) || ''} />
         </div>
       </section>
     </div>

@@ -16,6 +16,17 @@ interface LocalDbState {
     recordIdCounter: number;
     noteIdCounter: number;
     conversationIdCounter: number;
+    mockUsers: Record<string, {
+        id: string;
+        nickname: string | null;
+        avatar_url: string | null;
+        is_admin: boolean;
+        membership: string;
+        membership_expires_at: string | null;
+        ai_chat_count: number;
+    }>;
+    baziCharts: Record<string, Record<string, unknown>>;
+    ziweiCharts: Record<string, Record<string, unknown>>;
 }
 
 function getDbState(): LocalDbState {
@@ -27,6 +38,19 @@ function getDbState(): LocalDbState {
             recordIdCounter: 1,
             noteIdCounter: 1,
             conversationIdCounter: 1,
+            mockUsers: {
+                'dev-user-id': {
+                    id: 'dev-user-id',
+                    nickname: '开发用户',
+                    avatar_url: null,
+                    is_admin: true,
+                    membership: 'pro',
+                    membership_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+                    ai_chat_count: 999,
+                },
+            },
+            baziCharts: {},
+            ziweiCharts: {},
         };
     }
     return (globalThis as any)[globalKey];
@@ -70,7 +94,7 @@ export function createLocalRecord(userId: string, data: Partial<MingRecord>): Mi
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
     };
-    
+
     if (!recordsStore[userId]) {
         recordsStore[userId] = [];
     }
@@ -93,7 +117,7 @@ export function createLocalNote(userId: string, data: { content: string; note_da
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
     };
-    
+
     if (!notesStore[userId]) {
         notesStore[userId] = [];
     }
@@ -105,7 +129,7 @@ export function getLocalConversations(userId: string, limit: number, offset: num
     const conversations = (conversationsStore[userId] || []).slice(offset, offset + limit);
     const allConversations = conversationsStore[userId] || [];
     const hasMore = offset + limit < allConversations.length;
-    
+
     const items: ConversationListItem[] = conversations.map(c => ({
         id: c.id,
         userId: c.userId,
@@ -118,7 +142,7 @@ export function getLocalConversations(userId: string, limit: number, offset: num
         isArchived: false,
         archivedKbIds: [],
     }));
-    
+
     return {
         conversations: items,
         pagination: {
@@ -142,7 +166,7 @@ export function createLocalConversation(userId: string, data: { personality?: st
         isArchived: false,
         archivedKbIds: [],
     };
-    
+
     if (!conversationsStore[userId]) {
         conversationsStore[userId] = [];
     }
@@ -153,10 +177,10 @@ export function createLocalConversation(userId: string, data: { personality?: st
 export function saveLocalConversation(userId: string, conversationId: string, messages: ChatMessage[], title?: string): boolean {
     const conversations = conversationsStore[userId];
     if (!conversations) return false;
-    
+
     const index = conversations.findIndex(c => c.id === conversationId);
     if (index === -1) return false;
-    
+
     conversations[index] = {
         ...conversations[index],
         messages,
@@ -169,10 +193,10 @@ export function saveLocalConversation(userId: string, conversationId: string, me
 export function updateLocalConversation(userId: string, conversationId: string, updates: { title?: string; messages?: ChatMessage[]; personality?: string }): boolean {
     const conversations = conversationsStore[userId];
     if (!conversations) return false;
-    
+
     const index = conversations.findIndex(c => c.id === conversationId);
     if (index === -1) return false;
-    
+
     conversations[index] = {
         ...conversations[index],
         ...(updates.title !== undefined && { title: updates.title }),
@@ -192,10 +216,10 @@ export function getLocalConversation(userId: string, conversationId: string): Co
 export function deleteLocalConversation(userId: string, conversationId: string): boolean {
     const conversations = conversationsStore[userId];
     if (!conversations) return false;
-    
+
     const index = conversations.findIndex(c => c.id === conversationId);
     if (index === -1) return false;
-    
+
     conversations.splice(index, 1);
     return true;
 }
@@ -203,7 +227,7 @@ export function deleteLocalConversation(userId: string, conversationId: string):
 // 模拟数据
 export function initMockData() {
     const mockUserId = 'mock_user_id';
-    
+
     if (!recordsStore[mockUserId]) {
         recordsStore[mockUserId] = [
             {
@@ -236,7 +260,7 @@ export function initMockData() {
             },
         ];
     }
-    
+
     if (!conversationsStore[mockUserId]) {
         conversationsStore[mockUserId] = [
             {
@@ -271,35 +295,24 @@ export function initMockData() {
 
 const DEV_USER_ID = 'dev-user-id';
 
-const mockUsersTable: Record<string, {
-    id: string;
-    nickname: string | null;
-    avatar_url: string | null;
-    is_admin: boolean;
-    membership: string;
-    membership_expires_at: string | null;
-    ai_chat_count: number;
-}> = {
-    [DEV_USER_ID]: {
-        id: DEV_USER_ID,
-        nickname: '开发用户',
-        avatar_url: null,
-        is_admin: true,
-        membership: 'pro',
-        membership_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-        ai_chat_count: 999,
-    },
-};
+function getOrCreateMockUser(userId: string) {
+    if (!dbState.mockUsers[userId]) {
+        // 从 userId 中提取手机号（格式：dev-user-13800138000）
+        const phoneMatch = userId.match(/^dev-user-(\d+)$/);
+        const phone = phoneMatch ? phoneMatch[1] : null;
 
-const mockUserSettingsTable: Record<string, Record<string, unknown>> = {
-    [DEV_USER_ID]: {
-        user_id: DEV_USER_ID,
-        expression_style: 'direct',
-        chart_prompt_detail_level: 'default',
-        custom_instructions: '',
-        prompt_kb_ids: [],
-    },
-};
+        dbState.mockUsers[userId] = {
+            id: userId,
+            nickname: phone ? `用户${phone.slice(-4)}` : '开发用户',
+            avatar_url: null,
+            is_admin: true,
+            membership: 'pro',
+            membership_expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            ai_chat_count: 999,
+        };
+    }
+    return dbState.mockUsers[userId];
+}
 
 type MockQueryResult<T = Record<string, unknown> | Record<string, unknown>[]> = {
     data: T | null;
@@ -312,20 +325,50 @@ function createMockSelectChain(userId: string, tableName: string, selectOpts?: {
 
     const resolveData = (): Record<string, unknown> | null => {
         if (tableName === 'users') {
-            const user = mockUsersTable[userId];
-            if (!user) return null;
+            let targetUserId: string | null = null;
+
             for (const f of filters) {
-                if (f.op === 'eq' && f.column === 'id' && f.value !== userId) return null;
+                if (f.op === 'eq' && f.column === 'id') {
+                    targetUserId = f.value as string;
+                    break;
+                }
             }
+
+            if (!targetUserId) {
+                targetUserId = userId;
+            }
+
+            const user = getOrCreateMockUser(targetUserId);
             return user as unknown as Record<string, unknown>;
         }
         if (tableName === 'user_settings') {
-            const settings = mockUserSettingsTable[userId];
-            if (!settings) return null;
-            for (const f of filters) {
-                if (f.op === 'eq' && f.column === 'user_id' && f.value !== userId) return null;
-            }
+            const settings = {
+                user_id: userId,
+                expression_style: 'direct',
+                chart_prompt_detail_level: 'default',
+                custom_instructions: '',
+                prompt_kb_ids: [],
+            };
             return settings;
+        }
+        if (tableName === 'bazi_charts' || tableName === 'ziwei_charts') {
+            const db = getDbState();
+            const store = tableName === 'bazi_charts' ? db.baziCharts : db.ziweiCharts;
+            
+            let targetId: string | null = null;
+            
+            for (const f of filters) {
+                if (f.op === 'eq' && f.column === 'id') {
+                    targetId = f.value as string;
+                    break;
+                }
+            }
+            
+            if (targetId && store[targetId]) {
+                return store[targetId];
+            }
+            
+            return null;
         }
         return null;
     };
@@ -370,6 +413,31 @@ function createMockSelectChain(userId: string, tableName: string, selectOpts?: {
         },
         order(_column: string, _opts?: { ascending?: boolean }) {
             return chain;
+        },
+        then<T>(executor: (value: MockQueryResult<Record<string, unknown>[]>) => T, _reject?: (reason: unknown) => T): Promise<T> {
+            const hasIdFilter = filters.some(f => f.op === 'eq' && f.column === 'id');
+            
+            if (hasIdFilter) {
+                const data = resolveData();
+                return Promise.resolve({ data: data ? [data] : [], error: null }).then(executor) as Promise<T>;
+            }
+            
+            if (tableName === 'bazi_charts' || tableName === 'ziwei_charts') {
+                const db = getDbState();
+                const store = tableName === 'bazi_charts' ? db.baziCharts : db.ziweiCharts;
+                const allRecords = Object.values(store);
+                
+                const userIdFilter = filters.find(f => f.op === 'eq' && f.column === 'user_id');
+                if (userIdFilter) {
+                    const filtered = allRecords.filter(rec => rec.user_id === userIdFilter.value);
+                    return Promise.resolve({ data: filtered, error: null }).then(executor) as Promise<T>;
+                }
+                
+                return Promise.resolve({ data: allRecords, error: null }).then(executor) as Promise<T>;
+            }
+            
+            const data = resolveData();
+            return Promise.resolve({ data: data ? [data] : [], error: null }).then(executor) as Promise<T>;
         },
         select(_columns?: string, opts?: { count?: string }) {
             if (opts?.count) {
@@ -419,7 +487,7 @@ function createMockFrom(userId: string, tableName: string) {
                     return updateChain;
                 },
                 maybeSingle(): MockQueryResult {
-                    const user = mockUsersTable[userId];
+                    const user = getOrCreateMockUser(userId);
                     return { data: user as unknown as Record<string, unknown>, error: null };
                 },
                 select(_columns?: string) {
@@ -431,8 +499,44 @@ function createMockFrom(userId: string, tableName: string) {
         upsert(_payload: Record<string, unknown>, _opts?: { onConflict?: string }) {
             return { error: null };
         },
-        insert(_rows: Record<string, unknown>[]) {
-            return { error: null };
+        insert(rows: Record<string, unknown>[]) {
+            const db = getDbState();
+            const newId = `mock-${tableName}-${Date.now()}`;
+            
+            // 存储数据
+            if (tableName === 'bazi_charts' || tableName === 'ziwei_charts') {
+                const store = tableName === 'bazi_charts' ? db.baziCharts : db.ziweiCharts;
+                const rowsArray = Array.isArray(rows) ? rows : [rows];
+                for (const row of rowsArray) {
+                    const chartData = { 
+                        ...row, 
+                        id: newId, 
+                        user_id: userId,
+                        created_at: new Date().toISOString(), 
+                        updated_at: new Date().toISOString() 
+                    };
+                    store[newId] = chartData;
+                }
+            }
+            
+            const insertChain: Record<string, any> = {
+                select(_columns?: string) {
+                    return insertChain;
+                },
+                maybeSingle(): MockQueryResult {
+                    return { data: { id: newId }, error: null };
+                },
+                maybeSingleAsync(): Promise<MockQueryResult> {
+                    return Promise.resolve({ data: { id: newId }, error: null });
+                },
+                single(): MockQueryResult {
+                    return { data: { id: newId }, error: null };
+                },
+                then<T>(executor: (value: MockQueryResult) => T, _reject?: (reason: unknown) => T): Promise<T> {
+                    return Promise.resolve({ data: { id: newId }, error: null }).then(executor) as Promise<T>;
+                },
+            };
+            return insertChain;
         },
         delete() {
             const deleteChain: Record<string, any> = {
@@ -453,18 +557,56 @@ export function createDevSupabaseClient(userId: string = DEV_USER_ID) {
         from(tableName: string) {
             return createMockFrom(userId, tableName);
         },
-        rpc(_fn: string, _params?: Record<string, unknown>) {
+        rpc(fn: string, params?: Record<string, unknown>) {
+            if (fn === 'decrement_ai_chat_count') {
+                const user = getOrCreateMockUser(userId);
+                if (user.ai_chat_count > 0) {
+                    user.ai_chat_count -= 1;
+                }
+                return Promise.resolve({ data: user.ai_chat_count, error: null });
+            }
+            if (fn === 'increment_ai_chat_count') {
+                const user = getOrCreateMockUser(userId);
+                const amount = (params?.amount as number) || 1;
+                user.ai_chat_count += amount;
+                return Promise.resolve({ data: user.ai_chat_count, error: null });
+            }
+            if (fn === 'create_conversation_with_messages' || fn === 'create_analysis_conversation_with_history_as_service') {
+                const db = getDbState();
+                const newId = generateId();
+                
+                if (!db.conversationsStore[userId]) {
+                    db.conversationsStore[userId] = [];
+                }
+                
+                db.conversationsStore[userId].unshift({
+                    id: newId,
+                    userId,
+                    personality: (params?.p_personality as any) || 'general',
+                    title: (params?.p_title as string) || '新对话',
+                    messages: (params?.p_messages as any[]) || [],
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    sourceType: (params?.p_source_type as any) || 'chat',
+                    sourceData: params?.p_source_data,
+                    isArchived: false,
+                    archivedKbIds: [],
+                });
+                
+                return Promise.resolve({ data: newId, error: null });
+            }
             return Promise.resolve({ data: null, error: null });
         },
         auth: {
             getUser(_token?: string) {
+                const user = getOrCreateMockUser(userId);
                 return Promise.resolve({
                     data: {
                         user: {
                             id: userId,
-                            email: 'dev@example.com',
+                            email: userId.includes('@') ? userId : `user_${userId.replace('dev-user-', '')}@mingai.fun`,
                             app_metadata: {},
-                            user_metadata: { nickname: '开发用户' },
+                            user_metadata: { nickname: user.nickname },
                             aud: 'authenticated',
                             role: 'authenticated',
                             created_at: new Date().toISOString(),

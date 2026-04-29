@@ -1,19 +1,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Eye, EyeOff, Lock, Mail, RefreshCw } from 'lucide-react';
+import { Eye, EyeOff, Lock, Phone, RefreshCw } from 'lucide-react';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
-import { sendOTP, verifyOTP } from '@/lib/auth';
 import { supabase } from '@/lib/auth';
+import { sendPhoneCode, verifyPhoneCode } from '@/lib/auth/phone-auth';
 import { PasswordStrengthIndicator, validatePasswordStrength } from '@/components/auth/PasswordStrengthIndicator';
 import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 
 type PasswordChangeStep = 'idle' | 'send-code' | 'verify' | 'set-password';
 
 export function PasswordSection({
-    email,
+    phone,
 }: {
-    email: string;
+    phone: string;
 }) {
     const [step, setStep] = useState<PasswordChangeStep>('idle');
     const [verificationCode, setVerificationCode] = useState('');
@@ -48,8 +48,8 @@ export function PasswordSection({
 
     // 发送验证码
     const handleSendCode = async () => {
-        if (!email) {
-            setError('无法获取邮箱地址');
+        if (!phone) {
+            setError('无法获取手机号');
             return;
         }
 
@@ -57,13 +57,13 @@ export function PasswordSection({
         setLoading(true);
 
         try {
-            const result = await sendOTP(email, 'recovery');
+            const result = await sendPhoneCode(phone, 'login');
             if (result.success) {
                 setCountdown(60);
                 setStep('verify');
-                setSuccess('验证码已发送到您的邮箱');
+                setSuccess('验证码已发送到您的手机');
             } else {
-                setError(result.error?.message || '发送失败');
+                setError(result.message || '发送失败');
             }
         } catch {
             setError('发送失败，请重试');
@@ -83,12 +83,12 @@ export function PasswordSection({
         setLoading(true);
 
         try {
-            const result = await verifyOTP(email, verificationCode, 'recovery');
+            const result = await verifyPhoneCode(phone, verificationCode);
             if (result.success) {
                 setStep('set-password');
                 setSuccess('验证成功，请设置新密码');
             } else {
-                setError(result.error?.message || '验证失败');
+                setError(result.message || '验证失败');
             }
         } catch {
             setError('验证失败，请重试');
@@ -143,8 +143,18 @@ export function PasswordSection({
     return (
         <div className="space-y-2">
 
+            {/* 手机号为空时显示提示 */}
+            {!phone && (
+                <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                    <p className="text-sm text-amber-800">
+                        您的账号未绑定手机号，无法使用手机验证码重置密码。
+                        请重新登录以绑定手机号，或联系客服获取帮助。
+                    </p>
+                </div>
+            )}
+
             {/* 初始状态 - 显示修改密码按钮 */}
-            {step === 'idle' && (
+            {phone && step === 'idle' && (
                 <button
                     onClick={() => setStep('send-code')}
                     className="w-full px-4 py-3 rounded-xl bg-background-secondary border border-border text-left flex items-center gap-3 hover:border-accent transition-colors"
@@ -155,18 +165,18 @@ export function PasswordSection({
             )}
 
             {/* 发送验证码步骤 */}
-            {step === 'send-code' && (
+            {phone && step === 'send-code' && (
                 <div className="space-y-4 p-4 rounded-xl bg-background-secondary border border-border">
                     <p className="text-sm text-foreground-secondary">
                         为了安全，修改密码需要先验证您的身份
                     </p>
 
-                    {/* 显示邮箱 */}
+                    {/* 显示手机号 */}
                     <div className="relative">
-                        <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
+                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-foreground-secondary" />
                         <input
-                            type="email"
-                            value={email}
+                            type="tel"
+                            value={phone}
                             disabled
                             className="w-full pl-10 pr-4 py-3 rounded-lg bg-background border border-border text-foreground-secondary"
                         />
@@ -196,10 +206,10 @@ export function PasswordSection({
             )}
 
             {/* 验证码验证步骤 */}
-            {step === 'verify' && (
+            {phone && step === 'verify' && (
                 <div className="space-y-4 p-4 rounded-xl bg-background-secondary border border-border">
                     <p className="text-sm text-foreground-secondary text-center">
-                        验证码已发送至 <span className="font-medium text-foreground">{email}</span>
+                        验证码已发送至 <span className="font-medium text-foreground">{phone}</span>
                     </p>
 
                     <VerificationCodeInput
@@ -247,7 +257,7 @@ export function PasswordSection({
             )}
 
             {/* 设置新密码步骤 */}
-            {step === 'set-password' && (
+            {phone && step === 'set-password' && (
                 <div className="space-y-4 p-4 rounded-xl bg-background-secondary border border-border">
                     <p className="text-sm text-foreground-secondary">
                         身份验证成功，请设置新密码

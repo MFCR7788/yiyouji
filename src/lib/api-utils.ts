@@ -42,7 +42,6 @@ export type RequestAuthError = SessionResolutionError;
 
 export type AuthContextResult = {
     db: RequestDbClient;
-    // `db` 是包装鉴权上下文的规范字段；`supabase` 仅保留给旧调用点过渡使用。
     supabase: RequestDbClient;
     accessToken: string | null;
     user: User | null;
@@ -68,7 +67,6 @@ export async function createRequestSupabaseClient() {
         cookieStore = await cookies();
         cookieValues = cookieStore.getAll();
     } catch {
-        // 在测试环境中可能没有 Next.js request scope，此时降级为无 cookie 客户端
         cookieValues = [];
         cookieStore = null;
     }
@@ -87,7 +85,6 @@ export async function createRequestSupabaseClient() {
                             cookieStore.set(name, value, options);
                         }
                     } catch {
-                        // 在只读 cookies 上下文（如部分 Server Component）中忽略写入
                     }
                 },
             },
@@ -95,7 +92,13 @@ export async function createRequestSupabaseClient() {
     );
 }
 
-// 统一从请求中解析用户身份，支持 Bearer 与 Cookie 会话
+interface DevUserInfo {
+    id: string;
+    email: string;
+    nickname: string;
+    phone: string;
+}
+
 export async function getAuthContext(
     request: NextRequest,
     dependencies: GetAuthContextDependencies = {},
@@ -103,20 +106,44 @@ export async function getAuthContext(
     const bearer = request.headers.get('authorization');
     const accessToken = bearer?.replace(/Bearer\s+/i, '') || request.cookies.get(ACCESS_COOKIE)?.value || null;
     const refreshToken = request.cookies.get(REFRESH_COOKIE)?.value || null;
-    
+
     if (IS_DEV_MODE) {
-        const mockUser: User | null = accessToken ? {
-            id: 'dev-user-id',
-            app_metadata: {},
-            user_metadata: { nickname: '开发用户' },
-            aud: 'authenticated',
-            role: 'authenticated',
-            email: 'dev@example.com',
-            email_confirmed_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        } : null;
-        const devClient = createDevSupabaseClient('dev-user-id') as any;
+        let mockUser: User | null = null;
+        const devUserCookie = request.cookies.get('sb-dev-user')?.value;
+        if (devUserCookie) {
+            try {
+                const userInfo: DevUserInfo = JSON.parse(devUserCookie);
+                mockUser = {
+                    id: userInfo.id,
+                    app_metadata: {},
+                    user_metadata: { nickname: userInfo.nickname, phone: userInfo.phone },
+                    aud: 'authenticated',
+                    role: 'authenticated',
+                    email: userInfo.email,
+                    email_confirmed_at: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+            } catch {
+                mockUser = null;
+            }
+        }
+
+        if (!mockUser && accessToken) {
+            mockUser = {
+                id: 'dev-user-id',
+                app_metadata: {},
+                user_metadata: { nickname: '开发用户' },
+                aud: 'authenticated',
+                role: 'authenticated',
+                email: 'dev@example.com',
+                email_confirmed_at: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+        }
+
+        const devClient = createDevSupabaseClient(mockUser?.id || 'dev-user-id') as any;
         return {
             db: devClient,
             supabase: devClient,
@@ -125,7 +152,7 @@ export async function getAuthContext(
             authError: null,
         };
     }
-    
+
     const authResolverClient = dependencies.authResolverClient ?? createAnonClient();
     const authedClientFactory = dependencies.authedClientFactory ?? createAuthedClient;
     const { session, refreshed, error: resolverError } = await resolveSessionFromTokens(authResolverClient, {
@@ -198,7 +225,6 @@ async function getWritableCookieStore(): Promise<WritableCookieStore | null> {
     }
 }
 
-// 仅用于必须使用 Bearer Token 的接口
 export async function requireBearerUser(
     request: NextRequest,
     dependencies: Pick<GetAuthContextDependencies, 'authResolverClient'> = {},
@@ -233,23 +259,55 @@ export async function requireUserContext(
     | { error: { message: string; status: number } }
 > {
     const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
-    
+
     if (isDevMode) {
         const authHeader = request.headers.get('authorization');
-        const mockUser: User = {
-            id: 'dev-user-id',
-            app_metadata: {},
-            user_metadata: { nickname: '开发用户' },
-            aud: 'authenticated',
-            role: 'authenticated',
-            email: 'dev@example.com',
-            email_confirmed_at: new Date().toISOString(),
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-        };
-        
-        const devClient = createDevSupabaseClient('dev-user-id') as unknown as RequestDbClient;
-        
+        const devUserCookie = request.cookies.get('sb-dev-user')?.value;
+        let mockUser: User;
+
+        if (devUserCookie) {
+            try {
+                const userInfo: DevUserInfo = JSON.parse(devUserCookie);
+                mockUser = {
+                    id: userInfo.id,
+                    app_metadata: {},
+                    user_metadata: { nickname: userInfo.nickname, phone: userInfo.phone },
+                    aud: 'authenticated',
+                    role: 'authenticated',
+                    email: userInfo.email,
+                    email_confirmed_at: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+            } catch {
+                mockUser = {
+                    id: 'dev-user-id',
+                    app_metadata: {},
+                    user_metadata: { nickname: '开发用户' },
+                    aud: 'authenticated',
+                    role: 'authenticated',
+                    email: 'dev@example.com',
+                    email_confirmed_at: new Date().toISOString(),
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                };
+            }
+        } else {
+            mockUser = {
+                id: 'dev-user-id',
+                app_metadata: {},
+                user_metadata: { nickname: '开发用户' },
+                aud: 'authenticated',
+                role: 'authenticated',
+                email: 'dev@example.com',
+                email_confirmed_at: new Date().toISOString(),
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+        }
+
+        const devClient = createDevSupabaseClient(mockUser.id) as unknown as RequestDbClient;
+
         return {
             db: devClient,
             supabase: devClient,
@@ -257,7 +315,7 @@ export async function requireUserContext(
             user: mockUser,
         };
     }
-    
+
     const { db, supabase, accessToken, user, authError } = await getAuthContext(request);
     if (authError) {
         return { error: { message: authError.message, status: authError.status } };
@@ -278,6 +336,14 @@ async function checkIsAdmin(
     | { ok: true; isAdmin: boolean }
     | { ok: false; error: { message: string; status: number } }
 > {
+    // 开发模式下允许所有用户访问管理员功能
+    if (process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true') {
+        return {
+            ok: true,
+            isAdmin: true,
+        };
+    }
+
     const { data: userData, error } = await supabase
         .from('users')
         .select('is_admin')
@@ -347,6 +413,10 @@ export async function requireAdminContext(
 }
 
 export function getSystemAdminClient() {
+    const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
+    if (isDevMode) {
+        return createDevSupabaseClient('dev-user-id') as any;
+    }
     return getPrivilegedSystemAdminClient();
 }
 
@@ -368,10 +438,6 @@ export function createAnonClient() {
     );
 }
 
-/**
- * 创建带有用户 access token 的 Supabase 客户端
- * 用于需要 RLS 策略识别用户身份的场景
- */
 export function createAuthedClient(accessToken: string) {
     return createClient(
         getSupabaseUrl(),
@@ -387,9 +453,6 @@ export function createAuthedClient(accessToken: string) {
     );
 }
 
-/**
- * 从请求中获取 access token（优先 Bearer，其次 session）
- */
 export async function getAccessToken(request: NextRequest): Promise<string | null> {
     const { accessToken } = await getAuthContext(request);
     return accessToken;

@@ -15,7 +15,7 @@ import Image from 'next/image';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { Bell, LogIn } from 'lucide-react';
 import { useState, useCallback, useMemo, Suspense } from 'react';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { SidebarUserCard } from '@/components/layout/UserMenu';
 import { SidebarConversations } from '@/components/layout/SidebarConversations';
 import { useSessionSafe } from '@/components/providers/ClientProviders';

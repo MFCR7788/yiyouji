@@ -5,9 +5,31 @@
  * 使用本地验证码验证 + Supabase 密码登录
  */
 import { NextRequest, NextResponse } from 'next/server';
+import type { Session } from '@supabase/supabase-js';
 import { verifyCode } from '@/lib/sms/verification-store';
 import { createAnonClient } from '@/lib/api-utils';
 import { setSessionCookies } from '@/lib/auth-session';
+
+function buildDevSession(phone: string): Session {
+    return {
+        access_token: `dev-token-${phone}`,
+        refresh_token: `dev-refresh-token-${phone}`,
+        expires_at: Date.now() / 1000 + 3600,
+        expires_in: 3600,
+        token_type: 'bearer',
+        user: {
+            id: `dev-user-${phone}`,
+            app_metadata: {},
+            user_metadata: { nickname: phone.slice(-4) === '0000' ? '测试用户' : `用户${phone.slice(-4)}`, phone },
+            aud: 'authenticated',
+            role: 'authenticated',
+            email: `user_${phone}@mingai.fun`,
+            email_confirmed_at: new Date().toISOString(),
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        },
+    };
+}
 
 export async function POST(request: NextRequest) {
     try {
@@ -44,8 +66,21 @@ export async function POST(request: NextRequest) {
             );
         }
 
+        if (process.env.NODE_ENV === 'development') {
+            console.info(`[SMS API] 开发模式：验证码验证通过，创建开发 session: ${phone}`);
+            const devSession = buildDevSession(phone);
+            const response = NextResponse.json({
+                success: true,
+                message: '登录成功（开发模式）',
+                session: devSession,
+                user: devSession.user,
+            });
+            setSessionCookies(response, devSession);
+            return response;
+        }
+
         const anonClient = createAnonClient();
-        const email = `${phone}@phone.xingbu.app`;
+        const email = `user_${phone}@mingai.fun`;
         const nickname = localResult.nickname || '命理爱好者';
 
         const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
@@ -54,6 +89,18 @@ export async function POST(request: NextRequest) {
         });
 
         if (signInError) {
+            const isEmailNotConfirmed = signInError.code === 'email_not_confirmed';
+            if (isEmailNotConfirmed) {
+                console.info(`[SMS API] 用户已注册但 email 未确认: ${phone}`);
+                const response = NextResponse.json({
+                    success: true,
+                    message: '登录成功',
+                    session: null,
+                    user: { email },
+                });
+                return response;
+            }
+
             const { error: signUpError } = await anonClient.auth.signUp({
                 email,
                 password: `phone_${phone}_default_password`,
@@ -78,7 +125,7 @@ export async function POST(request: NextRequest) {
                 password: `phone_${phone}_default_password`,
             });
 
-            if (newSignInError || !newSignInData.session) {
+            if (newSignInError || !newSignInData?.session) {
                 console.error('[SMS API] 登录失败:', newSignInError?.message);
                 return NextResponse.json(
                     { success: false, message: '登录失败，请重试' },

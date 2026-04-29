@@ -39,7 +39,7 @@ test('renderAuthorizePage should include OAuth hidden fields and credential inpu
   assert.ok(html.includes('name="password"'));
   assert.ok(html.includes('授权登录 - 易有吉'));
   assert.ok(html.includes('请求访问你的易有吉账户'));
-  assert.ok(html.includes('https://www.mingai.fun/Logo.svg'));
+  assert.ok(html.includes('https://yiyouji.zjsifan.com/Logo.svg'));
 });
 
 test('renderAuthorizePage should escape client and error text to prevent XSS', async () => {

@@ -69,23 +69,26 @@ test('liuyao route uses divination created_at for analysis date', async (t) => {
                 };
             }
             if (table === 'liuyao_divinations') {
-                return {
-                    select: () => ({
-                        eq: () => ({
-                            eq: () => ({
-                                maybeSingle: async () => ({
-                                    data: { created_at: createdAt.toISOString() },
-                                    error: null,
-                                }),
-                            }),
-                        }),
+                const resultObj = {
+                    maybeSingle: async () => ({
+                        data: { created_at: createdAt.toISOString(), question: '测试问题', yongshen_targets: ['官鬼'] },
+                        error: null,
                     }),
+                };
+                const secondEqObj = {
+                    eq: () => resultObj,
+                };
+                const firstEqObj = {
+                    eq: () => secondEqObj,
+                };
+                return {
+                    select: () => firstEqObj,
                     update: () => ({
                         eq: () => ({
-                            eq: async () => ({ error: null }),
+                            eq: async () => ({ data: { id: 'divination-1' }, error: null }),
                         }),
                     }),
-                    insert: async () => ({ error: null }),
+                    insert: async () => ({ data: { id: 'divination-1' }, error: null }),
                 };
             }
             if (table === 'conversations') {

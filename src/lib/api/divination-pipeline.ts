@@ -402,6 +402,7 @@ export function createDirectInterpretHandlers<
     input: T;
     userId: string;
     promptContext?: TContext;
+    db: any;
   };
 
   type ResolvedPreparedWithPrompts = ResolvedPreparedBase & {
@@ -452,6 +453,7 @@ export function createDirectInterpretHandlers<
         input,
         userId: authContext.userId,
         promptContext,
+        db: authContext.db,
       };
     }
 
@@ -467,6 +469,7 @@ export function createDirectInterpretHandlers<
       input,
       userId: authContext.userId,
       promptContext,
+      db: authContext.db,
       systemPrompt,
       userPrompt,
     };
@@ -479,6 +482,7 @@ export function createDirectInterpretHandlers<
     content,
     reasoningText,
     customModelId,
+    db,
   }: {
     input: T;
     userId: string;
@@ -486,6 +490,7 @@ export function createDirectInterpretHandlers<
     content: string;
     reasoningText: string | null;
     customModelId: string;
+    db?: any;
   }): Promise<string> => {
     const persistedModelId = `custom:${customModelId}`;
     const sourceData = buildSourceData(input, persistedModelId, false, promptContext);
@@ -507,6 +512,7 @@ export function createDirectInterpretHandlers<
       historyBinding: buildHistoryBinding
         ? buildHistoryBinding(input, userId, promptContext)
         : null,
+      client: db,
     });
 
     if (typeof conversationId !== 'string' || conversationId.trim().length === 0) {
@@ -584,6 +590,7 @@ export function createDirectInterpretHandlers<
           content,
           reasoningText,
           customModelId: resolveDirectPersistModelId(body.customModelId),
+          db: prepared.db,
         });
 
         return jsonOk({
@@ -733,20 +740,20 @@ export function createInterpretHandler<
       if (isVision && buildVisionOptions) {
         return await handleVisionCall(
           input, user.id, resolvedModelId, modelConfig, reasoningEnabled,
-          systemPrompt, userPrompt, promptContext,
+          systemPrompt, userPrompt, promptContext, authContext.db,
         );
       }
 
       if (stream) {
         return await handleStreamCall(
           input, user.id, resolvedModelId, reasoningEnabled,
-          systemPrompt, userPrompt, promptContext,
+          systemPrompt, userPrompt, promptContext, authContext.db,
         );
       }
 
       return await handleNonStreamCall(
         input, user.id, resolvedModelId, reasoningEnabled,
-        systemPrompt, userPrompt, promptContext,
+        systemPrompt, userPrompt, promptContext, authContext.db,
       );
     } catch (aiError) {
       if (aiError instanceof AIAnalysisConversationPersistenceError) {
@@ -767,6 +774,7 @@ export function createInterpretHandler<
     _modelConfig: AIModelConfig, reasoningEnabled: boolean,
     systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
+    client?: any,
   ): Promise<Response> {
     const visionOpts = buildVisionOptions!(input);
     const analysisResult = await callAIVision(
@@ -778,7 +786,7 @@ export function createInterpretHandler<
     );
 
     const conversationId = await persistConversation(
-      input, userId, resolvedModelId, reasoningEnabled, analysisResult, null, promptContext,
+      input, userId, resolvedModelId, reasoningEnabled, analysisResult, null, promptContext, client,
     );
     if (persistRecord) {
       await persistRecord(input, userId, conversationId, promptContext);
@@ -795,6 +803,7 @@ export function createInterpretHandler<
     input: T, userId: string, resolvedModelId: string,
     reasoningEnabled: boolean, systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
+    client?: any,
   ): Promise<Response> {
     const streamResult = await callAIUIMessageResult(
       [{ role: 'user', content: userPrompt }],
@@ -812,7 +821,7 @@ export function createInterpretHandler<
             return { error: emptyResultMessage };
           }
           const conversationId = await persistConversation(
-            input, userId, resolvedModelId, reasoningEnabled, content, reasoning, promptContext,
+            input, userId, resolvedModelId, reasoningEnabled, content, reasoning, promptContext, client,
           );
           if (persistRecord) {
             await persistRecord(input, userId, conversationId, promptContext);
@@ -832,6 +841,7 @@ export function createInterpretHandler<
     input: T, userId: string, resolvedModelId: string,
     reasoningEnabled: boolean, systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
+    client?: any,
   ): Promise<Response> {
     const { content, reasoning: reasoningText } = await callAIWithReasoning(
       [{ role: 'user', content: userPrompt }],
@@ -846,7 +856,7 @@ export function createInterpretHandler<
     }
 
     const conversationId = await persistConversation(
-      input, userId, resolvedModelId, reasoningEnabled, content, reasoningText ?? null, promptContext,
+      input, userId, resolvedModelId, reasoningEnabled, content, reasoningText ?? null, promptContext, client,
     );
     if (persistRecord) {
       await persistRecord(input, userId, conversationId, promptContext);
@@ -867,6 +877,7 @@ export function createInterpretHandler<
     input: T, userId: string, resolvedModelId: string,
     reasoningEnabled: boolean, aiResponse: string, reasoningText: string | null,
     promptContext?: TContext,
+    client?: any,
   ): Promise<string> {
     const sourceData = buildSourceData(input, resolvedModelId, reasoningEnabled, promptContext);
     if (reasoningText) {
@@ -884,6 +895,7 @@ export function createInterpretHandler<
       historyBinding: buildHistoryBinding
         ? buildHistoryBinding(input, userId, promptContext)
         : null,
+      client,
     });
 
     if (typeof conversationId !== 'string' || conversationId.trim().length === 0) {

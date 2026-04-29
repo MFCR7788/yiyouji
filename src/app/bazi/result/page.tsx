@@ -372,6 +372,7 @@ function BaziResultContent() {
 
             if (error) throw error;
             setSaved(true);
+            showToast('success', '命盘保存成功');
             setChartFromDb(formData);
             if (chartId) {
                 router.replace(`/bazi/result?chart=${chartId}`);

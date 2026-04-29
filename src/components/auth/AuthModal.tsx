@@ -96,7 +96,7 @@ function authReducer(state: AuthState, action: AuthAction): AuthState {
     }
 }
 
-export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
+export function AuthModal({ isOpen, onClose }: AuthModalProps) {
     const router = useRouter();
     const [state, dispatch] = useReducer(authReducer, initialAuthState);
     const verifyingRef = useRef(false);
@@ -124,26 +124,43 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
     if (!isOpen) return null;
 
-    const completeAuth = async () => {
-        onSuccess?.();
-        onClose();
-        
+    const completeAuth = async (userData?: { id: string; email?: string; user_metadata?: { nickname?: string; phone?: string } } | null) => {
         try {
+            if (process.env.NODE_ENV === 'development' && userData) {
+                console.info('[AuthModal] 开发模式：使用登录返回的用户信息', userData);
+                
+                // 直接检查用户信息，不依赖 getUser()
+                if (!userData.user_metadata?.nickname) {
+                    onClose();
+                    router.push('/settings/profile');
+                    return;
+                }
+                
+                // 先关闭弹窗，再刷新
+                onClose();
+                router.refresh();
+                return;
+            }
+            
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const response = await fetch('/api/user/profile');
                 const profileData = await response.json();
-                
+
                 if (profileData && !profileData.nickname) {
+                    onClose();
                     router.push('/settings/profile');
                     return;
                 }
             }
+            
+            onClose();
+            router.refresh();
         } catch (error) {
             console.error('Failed to check user profile:', error);
+            onClose();
+            router.refresh();
         }
-        
-        router.refresh();
     };
 
     const handleSendOTP = async () => {
@@ -195,8 +212,9 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         try {
             const result = await verifySmsCode(phone, codeToVerify);
             if (result.success) {
+                // 验证成功后，重新从服务器加载 session
                 await supabase.auth.revalidateSession();
-                completeAuth();
+                completeAuth(result.user);
             } else {
                 setField('error', result.message || '验证失败');
             }

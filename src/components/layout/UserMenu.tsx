@@ -71,7 +71,7 @@ const MENU_PANEL_CLASS = 'absolute bottom-full mb-2 z-[100] overflow-visible rou
 const MENU_ITEM_CLASS = 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-[#37352f]/78 transition-colors hover:bg-[#efedea] hover:text-[#37352f]';
 const MENU_ICON_CLASS = 'h-[18px] w-[18px] shrink-0 text-[#37352f]/42';
 const HELP_SUBMENU_CLASS = 'absolute bottom-0 left-full z-[110] w-[168px] overflow-hidden rounded-2xl border border-gray-200/90 bg-white p-2 shadow-[0_20px_50px_rgba(15,23,42,0.14)] animate-in fade-in zoom-in-95 duration-100 origin-left';
-const PROJECT_REPO_URL = 'https://github.com/hhszzzz/taibu';
+const PROJECT_REPO_URL = 'https://zjsifan.com';
 const PROJECT_ISSUES_URL = 'https://docs.qq.com/smartsheet/DS3JSQ0dHTUdrVWFh';
 
 type UserMenuShortcut = {
@@ -234,7 +234,7 @@ export function SidebarUserCard({ user, collapsed = false }: SidebarUserCardProp
                         className={MENU_ITEM_CLASS}
                       >
                         <Github className={MENU_ICON_CLASS} />
-                        <span>GitHub</span>
+                        <span>网站</span>
                       </a>
                       <a
                         href={PROJECT_ISSUES_URL}

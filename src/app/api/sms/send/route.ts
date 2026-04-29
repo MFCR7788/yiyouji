@@ -28,8 +28,6 @@ export async function POST(request: NextRequest) {
 
         const code = generateVerificationCode();
 
-        console.info(`[SMS API] 生成验证码: ${phone} -> ${code}`);
-
         const storeResult = storeVerificationCode(phone, code, nickname);
         if (!storeResult.success) {
             console.warn(`[SMS API] 存储验证码失败: ${phone} -> ${storeResult.message}`);
@@ -43,6 +41,16 @@ export async function POST(request: NextRequest) {
 
         if (!smsResult.success) {
             console.error(`[SMS API] 短信发送失败: ${phone} -> ${smsResult.message} (code: ${smsResult.code})`);
+
+            if (process.env.NODE_ENV === 'development') {
+                console.info(`[SMS API] 开发模式：验证码为 ${code}`);
+                return NextResponse.json({
+                    success: true,
+                    message: '开发模式：验证码已打印到控制台',
+                    devCode: code,
+                });
+            }
+
             return NextResponse.json(
                 { success: false, message: smsResult.message || '短信发送失败' },
                 { status: 500 }

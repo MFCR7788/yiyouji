@@ -956,7 +956,7 @@ test('conversations GET should forward chartId filter to source_data query', asy
     user: { id: 'user-1' },
     supabase: {
       from(table: string) {
-        assert.equal(table, 'conversations_with_archive_status');
+        assert.equal(table, 'conversations');
         const query = {
           select() {
             return query;

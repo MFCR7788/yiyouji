@@ -51,20 +51,24 @@ async function resolveSession(request: NextRequest): Promise<{
   });
 }
 
-function buildDevSession(): Session {
+function buildDevSession(token: string): Session {
+  const phoneMatch = token.match(/dev-token-(.+)/);
+  const phone = phoneMatch ? phoneMatch[1] : 'dev-user';
+  const nickname = phone.startsWith('dev-') ? '开发用户' : `用户${phone.slice(-4)}`;
+
   return {
-    access_token: 'dev-token',
-    refresh_token: 'dev-refresh-token',
+    access_token: `dev-token-${phone}`,
+    refresh_token: `dev-refresh-token-${phone}`,
     expires_at: Date.now() / 1000 + 3600,
     expires_in: 3600,
     token_type: 'bearer',
     user: {
-      id: 'dev-user-id',
+      id: `dev-user-${phone}`,
       app_metadata: {},
-      user_metadata: { nickname: '开发用户' },
+      user_metadata: { nickname, phone: phone.startsWith('dev-') ? undefined : phone },
       aud: 'authenticated',
       role: 'authenticated',
-      email: 'dev@example.com',
+      email: phone.startsWith('dev-') ? 'dev@example.com' : `user_${phone}@mingai.fun`,
       email_confirmed_at: new Date().toISOString(),
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -75,8 +79,10 @@ function buildDevSession(): Session {
 export async function GET(request: NextRequest) {
   if (IS_DEV_MODE) {
     const authHeader = request.headers.get('authorization');
-    if (authHeader?.startsWith('Bearer ')) {
-      const mockSession = buildDevSession();
+    const accessToken = request.cookies.get(ACCESS_COOKIE)?.value || null;
+
+    if ((authHeader?.startsWith('Bearer ') && authHeader.startsWith('Bearer dev-token-')) || (accessToken && accessToken.startsWith('dev-token-'))) {
+      const mockSession = buildDevSession(accessToken || authHeader?.replace('Bearer ', '') || 'dev-token');
       return authSuccess({ session: mockSession, user: mockSession.user });
     }
     return authSuccess({ session: null, user: null });
@@ -105,7 +111,7 @@ export async function POST(request: NextRequest) {
   if (!action) return authFailure('Missing auth action', 400);
 
   if (IS_DEV_MODE) {
-    return handleDevModeAction(action, payload);
+    return handleDevModeAction(action, payload, request);
   }
 
   const anonymousClient = createAnonClient();
@@ -271,8 +277,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function handleDevModeAction(action: AuthAction, payload: Record<string, unknown>) {
-  const mockSession = buildDevSession();
+function handleDevModeAction(action: AuthAction, payload: Record<string, unknown>, request: NextRequest) {
+  const accessToken = request.cookies.get(ACCESS_COOKIE)?.value || null;
+  const hasValidSession = accessToken && accessToken.startsWith('dev-token-');
+  const mockSession = buildDevSession(accessToken || 'dev-token');
 
   switch (action) {
     case 'signInWithPassword': {
@@ -291,6 +299,9 @@ function handleDevModeAction(action: AuthAction, payload: Record<string, unknown
       return response;
     }
     case 'updateUser': {
+      if (!hasValidSession) {
+        return authFailure('Unauthorized', 401);
+      }
       const attributes = (payload.attributes as Record<string, unknown> | undefined) || {};
       const updatedUser = {
         ...mockSession.user,
@@ -320,9 +331,15 @@ function handleDevModeAction(action: AuthAction, payload: Record<string, unknown
       if (explicitToken) {
         return authSuccess({ user: mockSession.user });
       }
+      if (!hasValidSession) {
+        return authSuccess({ user: null });
+      }
       return authSuccess({ user: mockSession.user });
     }
     case 'getSession': {
+      if (!hasValidSession) {
+        return authSuccess({ session: null, user: null });
+      }
       return authSuccess({ session: mockSession, user: mockSession.user });
     }
     case 'checkLoginAttempts': {

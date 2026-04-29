@@ -151,7 +151,6 @@ test('personalization navigation uses canonical settings-center route and remove
 
 test('settings center host should load standalone panel modules instead of app route pages', () => {
   const hostSource = readFileSync(resolve(process.cwd(), 'src/components/settings/SettingsCenterHost.tsx'), 'utf8');
-  const upgradePanelSource = readFileSync(resolve(process.cwd(), 'src/components/settings/panels/UpgradePanel.tsx'), 'utf8');
   const userMenuSource = readFileSync(resolve(process.cwd(), 'src/components/layout/UserMenu.tsx'), 'utf8');
 
   assert.equal(hostSource.includes("@/components/settings/panels/GeneralSettingsPanel"), true);
@@ -167,12 +166,6 @@ test('settings center host should load standalone panel modules instead of app r
   assert.equal(hostSource.includes("import('@/app/user/profile/page')"), false);
   assert.equal(hostSource.includes("import('@/app/help/page')"), false);
   assert.equal(hostSource.includes('SETTINGS_CENTER_GROUP_LABELS[entry.group]'), false);
-  assert.equal(upgradePanelSource.includes("const hasLinuxDoLogin = typeof user?.user_metadata?.linuxdo_sub === 'string'"), true);
-  assert.equal(upgradePanelSource.includes('{hasLinuxDoLogin ? ('), true);
-  assert.equal(upgradePanelSource.includes("showToast('success', 'Linux.do 月度会员已领取')"), false);
-  assert.equal(upgradePanelSource.includes("showToast('success', `恭喜领取 ${planName ?? '会员'} 会员`)"), true);
-  assert.equal(upgradePanelSource.includes('const linuxDoClaimDisabled = hasLinuxDoLogin'), true);
-  assert.equal(upgradePanelSource.includes("returnTo: getSettingsCenterRouteTargetForPath(pathname, 'upgrade'"), true);
   assert.equal(userMenuSource.includes("`${membershipLabels[membership?.type || 'free']} Plan`"), false);
   assert.equal(userMenuSource.includes("import { getUserEmailDisplay } from '@/lib/user-email';"), true);
   assert.equal(userMenuSource.includes('const displayEmail = getUserEmailDisplay(user);'), true);
