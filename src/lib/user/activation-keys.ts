@@ -98,7 +98,7 @@ export async function createActivationKeys(
 
         return {
             success: true,
-            keys: data?.map(k => k.key_code) || []
+            keys: data?.map((k: { key_code: string }) => k.key_code) || []
         };
     } catch (error) {
         console.error('[activation-keys] Error creating keys:', error);
