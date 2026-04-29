@@ -488,7 +488,7 @@ export async function scheduleAllUsersReminders(): Promise<number> {
 
     if (!subscriptions || subscriptions.length === 0) return 0;
 
-    const userIds = Array.from(new Set(subscriptions.map(sub => sub.user_id)));
+    const userIds = Array.from(new Set(subscriptions.map((sub: { user_id: string }) => sub.user_id)));
     const settingsMap = new Map<string, { notifications_enabled?: boolean; notify_site?: boolean }>();
     if (userIds.length > 0) {
         const { data: settingsRows, error: settingsError } = await serviceClient
