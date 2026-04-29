@@ -77,7 +77,7 @@ export async function getReminderSubscriptions(
         throw new ReminderReadError('获取提醒订阅失败');
     }
 
-    return (data || []).map(d => ({
+    return (data || []).map((d: { id: string; user_id: string; reminder_type: string; enabled: boolean; notify_email: boolean; notify_site: boolean }) => ({
         id: d.id,
         userId: d.user_id,
         reminderType: d.reminder_type as ReminderType,
