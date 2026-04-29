@@ -84,7 +84,9 @@ jobs:
 
             echo "=== 创建 .env 文件 ==="
             ENV_FILE="$APP_DIR/.env"
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > "$ENV_FILE"
+            echo "USE_LOCAL_DB=true" > "$ENV_FILE"
+            echo "NODE_ENV=production" >> "$ENV_FILE"
+            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> "$ENV_FILE"
             echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> "$ENV_FILE"
             echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}" >> "$ENV_FILE"
             echo "SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}" >> "$ENV_FILE"
@@ -101,6 +103,9 @@ jobs:
             echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}" >> "$ENV_FILE"
             echo "AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}" >> "$ENV_FILE"
             echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}" >> "$ENV_FILE"
+            echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> "$ENV_FILE"
+            echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}" >> "$ENV_FILE"
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> "$ENV_FILE"
             echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" >> "$ENV_FILE"
             echo "MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}" >> "$ENV_FILE"
 
