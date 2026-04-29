@@ -105,7 +105,7 @@ export async function resolveChatRequest(
       email_confirmed_at: new Date().toISOString(),
       app_metadata: {},
       user_metadata: { name: 'Developer' },
-    } as any;
+    } as ChatAuthUser;
     authDb = null;
   } else if (canSkipCredit) {
     const auth = await getAuthContext(request);

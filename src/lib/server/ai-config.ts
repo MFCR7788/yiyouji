@@ -294,7 +294,7 @@ export async function getModelConfigAsync(
 ): Promise<AIModelConfig | undefined> {
   const models = await getModelsAsync();
   
-  let direct = models.find((model) => model.id === modelId);
+  const direct = models.find((model) => model.id === modelId);
   if (direct && hasAvailableSource(direct)) {
     return direct;
   }

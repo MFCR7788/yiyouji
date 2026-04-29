@@ -1,0 +1,6 @@
+start-prod.js
+deploy-package/
+android/
+ios/
+node_modules/
+.next/
