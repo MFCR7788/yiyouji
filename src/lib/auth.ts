@@ -287,7 +287,7 @@ export const supabase = {
     },
 
     // Realtime channel 桩（auth-only 模式下不支持，保留接口兼容）
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     channel(name: string): any {
         console.warn(`[auth] channel("${name}") is not supported in auth-only mode`);
         const noop = () => channelObj;

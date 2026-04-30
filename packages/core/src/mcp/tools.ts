@@ -16,7 +16,7 @@ import { ziweiManifest } from './domains/ziwei/tool.js';
 import type { ToolContract } from './contract.js';
 
 // Registry only needs the shared runtime surface, not each tool's concrete generic pair.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type AnyTool = ToolContract<any, any>;
 
 export const tools: AnyTool[] = [

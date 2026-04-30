@@ -59,8 +59,7 @@ next-env.d.ts
 # pnpm cache
 .pnpm-store
 
-# migration files
-supabase/migrations
+# migration files (keep in git for CI checks)
 
 # docs
 docs/*

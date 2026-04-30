@@ -93,7 +93,7 @@ export default function ChartRenderer({ data, compact = false, className = '' }:
   return (
     <ChartErrorBoundary resetKey={normalizedData}>
       <Suspense fallback={<ChartSkeleton />}>
-        {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+        { }
         <ChartComponent data={normalizedData as any} compact={compact} className={className} />
       </Suspense>
     </ChartErrorBoundary>
