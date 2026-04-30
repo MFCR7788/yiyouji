@@ -14,6 +14,8 @@ export interface VerifyCodeResult {
     message: string;
     session?: Session;
     user?: unknown;
+    needRegister?: boolean;
+    phone?: string;
 }
 
 export async function sendPhoneCode(
@@ -60,7 +62,9 @@ export async function verifyPhoneCode(
             success: data.success === true,
             message: data.message || (data.success ? '验证成功' : '验证失败'),
             session: data.session,
-            user: data.user
+            user: data.user,
+            needRegister: data.needRegister,
+            phone: data.phone
         };
     } catch (error) {
         console.error('[Phone Auth] 验证验证码失败:', error);

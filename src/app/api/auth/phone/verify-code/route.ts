@@ -121,8 +121,19 @@ export async function POST(request: NextRequest) {
                 });
             });
             signInData = result.data;
-        } catch (error) {
+        } catch (error: any) {
             console.error('[SMS Verify API] 登录失败:', error);
+            
+            if (error.code === 'invalid_credentials' && type === 'login') {
+                console.info('[SMS Verify API] 用户不存在，需要注册:', phone);
+                return NextResponse.json({
+                    success: false,
+                    message: '用户不存在，请先注册',
+                    needRegister: true,
+                    phone
+                }, { status: 404 });
+            }
+            
             return NextResponse.json(
                 { success: false, message: '网络连接超时，请稍后重试' },
                 { status: 503 }
@@ -130,7 +141,7 @@ export async function POST(request: NextRequest) {
         }
 
         if (!signInData.session) {
-            if (type === 'register' || true) {
+            if (type === 'register') {
                 const secretKey = getSupabaseSecretKey();
                 if (!secretKey) {
                     console.error('[SMS Verify API] 缺少 SUPABASE_SECRET_KEY 环境变量');

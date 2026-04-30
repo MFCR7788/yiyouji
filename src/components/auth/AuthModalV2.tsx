@@ -14,7 +14,8 @@ import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 import { sendPhoneCode, verifyPhoneCode } from '@/lib/auth/phone-auth';
 import { supabase, applySession } from '@/lib/auth';
 
-type AuthMode = 'phone-input' | 'code-verify' | 'complete';
+type AuthMode = 'phone-input' | 'code-verify' | 'register' | 'complete';
+type AuthActionType = 'login' | 'register';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -26,11 +27,13 @@ interface AuthState {
     mode: AuthMode;
     phone: string;
     verificationCode: string;
+    nickname: string;
     loading: boolean;
     sendingCode: boolean;
     error: string;
     success: string;
     countdown: number;
+    authAction: AuthActionType;
 }
 
 type AuthAction =
@@ -42,11 +45,13 @@ const initialAuthState: AuthState = {
     mode: 'phone-input',
     phone: '',
     verificationCode: '',
+    nickname: '',
     loading: false,
     sendingCode: false,
     error: '',
     success: '',
-    countdown: 0
+    countdown: 0,
+    authAction: 'login'
 };
 
 function authReducer(state: AuthState, action: AuthAction): AuthState {
@@ -67,7 +72,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     const [state, dispatch] = useReducer(authReducer, initialAuthState);
     const verifyingRef = useRef(false);
 
-    const { mode, phone, verificationCode, loading, sendingCode, error, success, countdown } = state;
+    const { mode, phone, verificationCode, nickname, loading, sendingCode, error, success, countdown, authAction } = state;
 
     const setField = useCallback(<K extends keyof AuthState>(field: K, value: AuthState[K]) => {
         dispatch({ type: 'SET_FIELD', field, value });
@@ -126,7 +131,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         verifyingRef.current = true;
 
         try {
-            const result = await verifyPhoneCode(phone, codeToVerify, 'login');
+            const result = await verifyPhoneCode(phone, codeToVerify, authAction);
 
             if (result.success) {
                 if (result.session) {
@@ -135,6 +140,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
 
                 await supabase.auth.revalidateSession();
                 completeAuth(result.user);
+            } else if (result.needRegister) {
+                setField('mode', 'register');
+                setField('success', '');
+                setField('error', '');
             } else {
                 setField('error', result.message || '验证失败');
             }
@@ -144,7 +153,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             setField('loading', false);
             verifyingRef.current = false;
         }
-    }, [phone, verificationCode, completeAuth, setField]);
+    }, [phone, verificationCode, authAction, completeAuth, setField]);
 
     useEffect(() => {
         if (countdown > 0) {
@@ -159,7 +168,7 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         }
     }, [isOpen, resetForm]);
 
-    const handleSendCode = async () => {
+    const handleSendCode = async (action: AuthActionType = authAction) => {
         if (!phone || phone.length !== 11 || !/^1[3-9]\d{9}$/.test(phone)) {
             setField('error', '请输入正确的11位手机号');
             return;
@@ -168,9 +177,10 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
         setField('error', '');
         setField('success', '');
         setField('sendingCode', true);
+        setField('authAction', action);
 
         try {
-            const result = await sendPhoneCode(phone, 'login');
+            const result = await sendPhoneCode(phone, action);
 
             if (result.success) {
                 setField('countdown', 60);
@@ -204,8 +214,47 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
     const handleBackToPhone = () => {
         setField('mode', 'phone-input');
         setField('verificationCode', '');
+        setField('nickname', '');
         setField('error', '');
         setField('success', '');
+    };
+
+    const handleBackToCodeVerify = () => {
+        setField('mode', 'code-verify');
+        setField('nickname', '');
+        setField('error', '');
+        setField('success', '');
+    };
+
+    const handleRegister = async (e: React.FormEvent) => {
+        e.preventDefault();
+        
+        if (!nickname.trim()) {
+            setField('error', '请输入昵称');
+            return;
+        }
+
+        setField('error', '');
+        setField('loading', true);
+
+        try {
+            const result = await verifyPhoneCode(phone, verificationCode, 'register', nickname.trim());
+
+            if (result.success) {
+                if (result.session) {
+                    applySession(result.session, 'SIGNED_IN');
+                }
+
+                await supabase.auth.revalidateSession();
+                completeAuth(result.user);
+            } else {
+                setField('error', result.message || '注册失败');
+            }
+        } catch {
+            setField('error', '注册失败，请重试');
+        } finally {
+            setField('loading', false);
+        }
     };
 
     if (!isOpen) return null;
@@ -332,6 +381,47 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                             >
                                 {loading && <SoundWaveLoader variant="inline" />}
                                 验证并登录
+                            </button>
+                        </form>
+                    )}
+
+                    {/* Register Mode */}
+                    {mode === 'register' && (
+                        <form onSubmit={handleRegister} className="space-y-4">
+                            <div className="flex items-center gap-2 mb-4">
+                                <button
+                                    onClick={handleBackToCodeVerify}
+                                    className="p-1 rounded-lg hover:bg-background-secondary transition-colors"
+                                >
+                                    <ArrowLeft className="w-5 h-5" />
+                                </button>
+                                <h3 className="text-lg font-semibold">完善资料</h3>
+                            </div>
+
+                            <p className="text-sm text-foreground-secondary text-center mb-4">
+                                您的手机号 <span className="font-medium">{phone}</span> 尚未注册，请完善资料
+                            </p>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium text-foreground-secondary">设置昵称</label>
+                                <input
+                                    type="text"
+                                    value={nickname}
+                                    onChange={(e) => setField('nickname', e.target.value)}
+                                    placeholder="请输入昵称"
+                                    maxLength={20}
+                                    autoFocus
+                                    className="w-full px-4 py-3 rounded-xl bg-background-secondary border border-border focus:border-accent focus:outline-none transition-colors"
+                                />
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading || !nickname.trim()}
+                                className="w-full py-3 rounded-xl bg-accent text-white font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {loading && <SoundWaveLoader variant="inline" />}
+                                完成注册
                             </button>
                         </form>
                     )}
