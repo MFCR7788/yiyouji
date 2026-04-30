@@ -152,7 +152,13 @@ export async function POST(request: NextRequest) {
                             email_confirm: true,
                             user_metadata: { nickname: userNickname, phone }
                         });
-                        if (error) throw error;
+                        if (error) {
+                            if (error.code === 'email_exists') {
+                                console.info('[SMS Verify API] 用户已存在，跳过创建');
+                                return;
+                            }
+                            throw error;
+                        }
                     });
                 } catch (error) {
                     console.error('[SMS Verify API] 注册失败:', error);
