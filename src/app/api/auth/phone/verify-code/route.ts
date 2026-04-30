@@ -130,17 +130,27 @@ export async function POST(request: NextRequest) {
             console.log('[SMS Verify API] 尝试使用密码登录');
             const result = await retryWithBackoff(async () => {
                 console.log('[SMS Verify API] 调用 signInWithPassword');
-                return await supabase.auth.signInWithPassword({
+                const authResult = await supabase.auth.signInWithPassword({
                     email,
                     password: defaultPassword
                 });
+                console.log('[SMS Verify API] signInWithPassword 完整结果:', {
+                    data: !!authResult.data,
+                    error: !!authResult.error,
+                    errorMessage: authResult.error?.message,
+                    errorCode: authResult.error?.code
+                });
+                if (authResult.error) {
+                    throw authResult.error;
+                }
+                return authResult;
             });
             signInData = result.data;
             console.log('[SMS Verify API] signInWithPassword 结果:', { hasSession: !!result.data.session, hasUser: !!result.data.user });
         } catch (error) {
             console.error('[SMS Verify API] 登录失败:', error);
-            const err = error as { code?: string };
-            console.log('[SMS Verify API] 错误代码:', err.code);
+            const err = error as { code?: string; message?: string };
+            console.log('[SMS Verify API] 错误信息:', { code: err.code, message: err.message });
             
             if (err.code === 'invalid_credentials' && type === 'login') {
                 console.info('[SMS Verify API] 用户不存在，需要注册:', phone);
@@ -153,7 +163,7 @@ export async function POST(request: NextRequest) {
             }
             
             return NextResponse.json(
-                { success: false, message: '网络连接超时，请稍后重试' },
+                { success: false, message: err.message || '网络连接超时，请稍后重试' },
                 { status: 503 }
             );
         }
@@ -226,9 +236,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log('[SMS Verify API] 最终检查 session:', { hasSession: !!signInData?.session });
+        console.log('[SMS Verify API] 最终检查 session:', { hasSession: !!signInData?.session, signInData: !!signInData });
         if (!signInData?.session) {
-            console.error('[SMS Verify API] 无法获取 session');
+            console.error('[SMS Verify API] 无法获取 session，完整的 signInData:', signInData);
             return NextResponse.json(
                 { success: false, message: '登录失败，请稍后重试' },
                 { status: 500 }
