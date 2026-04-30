@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const localResult = verifyCode(phone, code);
+        const localResult = await verifyCode(phone, code);
 
         if (!localResult.success) {
             return NextResponse.json(

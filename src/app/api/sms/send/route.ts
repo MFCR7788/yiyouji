@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
 
         const code = generateVerificationCode();
 
-        const storeResult = storeVerificationCode(phone, code, nickname);
+        const storeResult = await storeVerificationCode(phone, code, nickname);
         if (!storeResult.success) {
             console.warn(`[SMS API] 存储验证码失败: ${phone} -> ${storeResult.message}`);
             return NextResponse.json(

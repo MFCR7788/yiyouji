@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const verifyResult = verifyCode(phone, code);
+        const verifyResult = await verifyCode(phone, code);
         if (!verifyResult.success) {
             return NextResponse.json(
                 { success: false, message: verifyResult.message },

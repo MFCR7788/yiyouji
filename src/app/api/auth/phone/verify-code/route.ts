@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
         }
 
         console.log('[SMS Verify API] 开始验证验证码');
-        const verifyResult = verifyCode(phone, code);
+        const verifyResult = await verifyCode(phone, code);
         console.log('[SMS Verify API] 验证码验证结果:', verifyResult);
         
         if (!verifyResult.success) {
