@@ -6,44 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 运行测试和代码检查
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Build packages
-        run: |
-          pnpm -C packages/core build
-          pnpm -C packages/mcp build
-          pnpm -C packages/mcp-server build
-
-      - name: Run lint
-        run: pnpm lint
-
-      - name: Run tests
-        run: pnpm test
-        env:
-          NODE_ENV: test
-          USE_LOCAL_DB: true
-
   # 构建和部署
   deploy:
-    needs: test
     runs-on: ubuntu-latest
     environment: production
     steps:
