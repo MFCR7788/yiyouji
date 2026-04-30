@@ -55,14 +55,18 @@ export function storeVerificationCode(
     code: string,
     nickname?: string
 ): { success: boolean; message?: string } {
+    console.info(`[SMS] 存储验证码请求: phone=${phone}, code=${code}`);
+    
     const existing = verificationStore.get(phone);
 
     if (existing && Date.now() - existing.createdAt < SEND_COOLDOWN_MS) {
         const remaining = Math.ceil((SEND_COOLDOWN_MS - (Date.now() - existing.createdAt)) / 1000);
+        console.warn(`[SMS] 冷却中: ${remaining}秒`);
         return { success: false, message: `请 ${remaining} 秒后再试` };
     }
 
     if (existing && existing.sendCount >= MAX_SEND_COUNT) {
+        console.warn(`[SMS] 发送次数已达上限: ${existing.sendCount}`);
         return { success: false, message: '今日发送次数已达上限，请明天再试' };
     }
 
@@ -74,6 +78,7 @@ export function storeVerificationCode(
         nickname: nickname || existing?.nickname,
     });
 
+    console.info(`[SMS] 验证码已存储: phone=${phone}, 发送次数=${(existing?.sendCount || 0) + 1}`);
     return { success: true };
 }
 
@@ -85,6 +90,8 @@ export function verifyCode(phone: string, code: string): {
     message?: string;
     nickname?: string;
 } {
+    console.info(`[SMS] 验证验证码请求: phone=${phone}, code=${code}, NODE_ENV=${process.env.NODE_ENV}`);
+    
     // 开发模式：接受任意6位数字验证码
     if (process.env.NODE_ENV === 'development') {
         console.info(`[SMS] 开发模式：验证通过 ${phone}, code: ${code}`);
@@ -92,6 +99,7 @@ export function verifyCode(phone: string, code: string): {
     }
 
     const record = verificationStore.get(phone);
+    console.info(`[SMS] 找到记录:`, record ? { ...record, code: '***' } : null);
 
     if (!record) {
         return { success: false, message: '请先获取验证码' };
