@@ -276,21 +276,21 @@ export async function PATCH(
         }
 
         console.log('[conversations] Update result:', data);
+
+        const result = (Array.isArray(data) ? data[0] : data) as { status?: string } | null;
+        if (result?.status === 'not_found') {
+            return jsonError('对话不存在', 404);
+        }
+        if (result?.status !== 'ok') {
+            console.error('[conversations] unexpected update rpc result:', result);
+            return jsonError('更新对话失败', 500);
+        }
+
+        return jsonOk({ success: true, id });
     } catch (e) {
         console.error('[conversations] Exception during update:', e);
         return jsonError('更新对话失败', 500);
     }
-
-    const result = (Array.isArray(data) ? data[0] : data) as { status?: string } | null;
-    if (result?.status === 'not_found') {
-        return jsonError('对话不存在', 404);
-    }
-    if (result?.status !== 'ok') {
-        console.error('[conversations] unexpected update rpc result:', result);
-        return jsonError('更新对话失败', 500);
-    }
-
-    return jsonOk({ success: true, id });
 }
 
 export async function DELETE(

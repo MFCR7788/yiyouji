@@ -134,10 +134,10 @@ export async function GET(request: NextRequest) {
     const [featureToggleState, viewerState] = await Promise.all([
       Promise.race([
         readFeatureTogglesState(),
-        new Promise<{ loaded: true; toggles: object }>((resolve) => {
+        new Promise<{ loaded: true; toggles: Record<string, boolean> }>((resolve) => {
           setTimeout(() => {
             console.warn('[bootstrap] readFeatureTogglesState timeout, falling back to defaults');
-            resolve({ loaded: true, toggles: {} as object });
+            resolve({ loaded: true, toggles: {} });
           }, 8000);
         })
       ]),

@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
-    
+
     if (isDevMode) {
         const hasAuth = request.headers.get('Authorization');
         if (!hasAuth) {
@@ -12,7 +12,7 @@ export async function middleware(request: NextRequest) {
             return response;
         }
     }
-    
+
     return NextResponse.next();
 }
 

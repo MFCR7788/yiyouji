@@ -111,7 +111,7 @@ export async function POST(request: NextRequest) {
         const email = `user_${phone}@mingai.fun`;
         const defaultPassword = `phone_${phone}_default_password`;
 
-        let signInData: { session?: Session; user?: unknown };
+        let signInData: { session?: Session | null; user?: unknown };
 
         try {
             const result = await retryWithBackoff(async () => {

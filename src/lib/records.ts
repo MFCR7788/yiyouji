@@ -42,7 +42,7 @@ export interface MingNote {
     updated_at: string;
 }
 
-interface RecordInput {
+export interface RecordInput {
     title: string;
     content?: string | null;
     category?: RecordCategory;

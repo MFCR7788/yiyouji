@@ -75,11 +75,11 @@ interface RouteTestOptions {
 export function setupRouteTest(options: RouteTestOptions = {}): RouteTestSetup {
     const consoleCapture = captureConsoleErrors();
 
-    /* eslint-disable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
+     
     const credits = require('../../lib/user/credits') as any;
     const supabaseModule = require('../../lib/auth') as any;
     const supabaseServerModule = require('../../lib/supabase-server') as any;
-    /* eslint-enable @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any */
+     
 
     const originals: Array<() => void> = [consoleCapture.restore];
 
@@ -115,14 +115,14 @@ export function setupRouteTest(options: RouteTestOptions = {}): RouteTestSetup {
     // Fetch mock
     if (options.fetchResponse) {
         const originalFetch = global.fetch;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+         
         global.fetch = async () => options.fetchResponse as any;
         originals.push(() => { global.fetch = originalFetch; });
     }
 
     // AI mocks
     if (options.aiResponse) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+         
         const aiModule = require('../../lib/ai/ai') as any;
         const originalCallAI = aiModule.callAIWithReasoning;
         aiModule.callAIWithReasoning = async () => options.aiResponse;
@@ -130,7 +130,7 @@ export function setupRouteTest(options: RouteTestOptions = {}): RouteTestSetup {
     }
 
     if (options.aiStream) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+         
         const aiModule = require('../../lib/ai/ai') as any;
         const originalCallAIStream = aiModule.callAIStream;
         aiModule.callAIStream = async () => options.aiStream;
@@ -138,7 +138,7 @@ export function setupRouteTest(options: RouteTestOptions = {}): RouteTestSetup {
     }
 
     if (options.createConversation) {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-explicit-any
+         
         const aiAnalysisModule = require('../../lib/ai/ai-analysis') as any;
         const originalCreate = aiAnalysisModule.createAIAnalysisConversation;
         const handler = options.createConversation;

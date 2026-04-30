@@ -101,8 +101,11 @@ export async function resolveChatRequest(
     userId = 'dev-user-id';
     authUser = {
       id: userId,
+      aud: 'authenticated',
+      role: 'authenticated',
       email: 'dev@example.com',
       email_confirmed_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
       app_metadata: {},
       user_metadata: { name: 'Developer' },
     } as ChatAuthUser;

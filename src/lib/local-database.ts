@@ -4,7 +4,7 @@
  */
 
 import type { MingRecord, MingNote } from './records';
-import type { ConversationListItem, ChatMessage, Conversation } from '@/types';
+import type { ConversationListItem, ChatMessage, Conversation, AIPersonality } from '@/types';
 
 // 使用全局对象存储，防止模块热更新导致数据丢失
 const globalKey = '__LOCAL_DB__';
@@ -621,12 +621,12 @@ export function createDevSupabaseClient(userId: string = DEV_USER_ID) {
                 db.conversationsStore[userId].unshift({
                     id: newId,
                     userId,
-                    personality: (params?.p_personality as string) || 'general',
+                    personality: (params?.p_personality as AIPersonality) || 'general',
                     title: (params?.p_title as string) || '新对话',
                     messages: (params?.p_messages as ChatMessage[]) || [],
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
-                    sourceType: (params?.p_source_type as string) || 'chat',
+                    sourceType: (params?.p_source_type as string) as ConversationListItem['sourceType'] || 'chat',
                     sourceData: params?.p_source_data as Record<string, unknown> | undefined,
                     isArchived: false,
                     archivedKbIds: [],
