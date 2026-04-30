@@ -100,6 +100,7 @@ export default function FaceResultPage() {
                     setLoading(false);
                     return;
                 } catch {
+                // ignore parsing errors
                 }
             }
 

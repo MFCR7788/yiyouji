@@ -85,6 +85,7 @@ export async function createRequestSupabaseClient() {
                             cookieStore.set(name, value, options);
                         }
                     } catch {
+                        // ignore cookie errors
                     }
                 },
             },
@@ -143,7 +144,7 @@ export async function getAuthContext(
             };
         }
 
-        const devClient = createDevSupabaseClient(mockUser?.id || 'dev-user-id') as any;
+        const devClient = createDevSupabaseClient(mockUser?.id || 'dev-user-id') as unknown as SupabaseClient;
         return {
             db: devClient,
             supabase: devClient,
@@ -412,9 +413,9 @@ export async function requireAdminContext(
     return resolvedAuthResult;
 }
 
-export function getSystemAdminClient() {
+export function getSystemAdminClient(): SupabaseClient {
     if (process.env.USE_LOCAL_DB === 'true') {
-        return createDevSupabaseClient('dev-user-id') as any;
+        return createDevSupabaseClient('dev-user-id') as unknown as SupabaseClient;
     }
     return getPrivilegedSystemAdminClient();
 }

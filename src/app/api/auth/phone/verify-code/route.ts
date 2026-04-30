@@ -121,10 +121,11 @@ export async function POST(request: NextRequest) {
                 });
             });
             signInData = result.data;
-        } catch (error: any) {
+        } catch (error) {
             console.error('[SMS Verify API] 登录失败:', error);
+            const err = error as { code?: string };
             
-            if (error.code === 'invalid_credentials' && type === 'login') {
+            if (err.code === 'invalid_credentials' && type === 'login') {
                 console.info('[SMS Verify API] 用户不存在，需要注册:', phone);
                 return NextResponse.json({
                     success: false,

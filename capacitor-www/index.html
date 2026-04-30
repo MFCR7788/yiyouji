@@ -1,13 +1,158 @@
-cat > capacitor-www/index.html <<'EOF'
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>MingAI</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <title>易有吉</title>
+    <style>
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #1a1a2e;
+        color: #e0e0e0;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+      }
+      .container {
+        text-align: center;
+        padding: 2rem;
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        margin: 0 auto 24px;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      .logo svg {
+        width: 100%;
+        height: 100%;
+        fill: #e8b84b;
+      }
+      h1 {
+        font-size: 1.5rem;
+        color: #e8b84b;
+        margin-bottom: 8px;
+        letter-spacing: 2px;
+      }
+      .subtitle {
+        font-size: 0.875rem;
+        color: #888;
+        margin-bottom: 32px;
+      }
+      .loader {
+        width: 40px;
+        height: 40px;
+        margin: 0 auto 16px;
+        border: 3px solid rgba(232, 184, 75, 0.2);
+        border-top-color: #e8b84b;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+      }
+      .status {
+        font-size: 0.875rem;
+        color: #999;
+        transition: all 0.3s;
+      }
+      .error .status { color: #ff6b6b; }
+      .retry-btn {
+        display: none;
+        margin-top: 20px;
+        padding: 10px 28px;
+        background: #e8b84b;
+        color: #1a1a2e;
+        border: none;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+      .retry-btn:hover { background: #d4a43e; }
+      .error .retry-btn { display: inline-block; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.05); opacity: 0.8; }
+      }
+    </style>
   </head>
   <body>
-    Loading MingAI...
+    <div class="container" id="app">
+      <div class="logo">
+        <svg viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
+          <g transform="translate(0,600) scale(0.1,-0.1)" fill="currentColor">
+            <path d="M1420 4923 c-222 -37 -437 -170 -566 -349 -59 -82 -119 -211 -146 -314 l-23 -85 0 -1225 c0 -1384 -5 -1287 80 -1465 74 -153 183 -264 330 -335 154 -75 300 -94 457 -62 217 45 389 170 504 364 47 81 452 839 674 1263 250 478 318 603 360 665 63 92 194 243 287 330 96 91 845 656 933 705 51 28 62 30 155 30 91 0 105 -3 158 -30 77 -38 158 -126 188 -202 26 -68 31 -193 10 -233 -13 -22 -232 -312 -486 -640 -107 -139 -202 -263 -429 -560 -94 -123 -196 -251 -226 -284 -124 -134 -291 -239 -466 -292 -80 -25 -104 -28 -244 -28 -138 0 -164 3 -240 26 -47 15 -85 26 -86 25 -15 -21 -214 -407 -214 -415 0 -14 129 -54 265 -84 145 -31 417 -31 562 0 135 29 258 73 372 133 229 120 368 251 628 594 349 460 532 700 557 730 l26 30 -3 -735 c-2 -725 -2 -736 -23 -781 -59 -128 -205 -183 -329 -125 -61 28 -100 71 -152 167 -22 41 -73 134 -113 207l-72 132 -77 -75 c-83 -81 -170 -151 -243 -197 -27 -16 -48 -32 -48 -35 0 -15 154 -301 194 -362 92 -138 208 -232 356 -287 197 -75 385 -66 575 26 179 87 302 228 372 425 l28 80 0 1280 c0 1436 6 1324 -75 1492 -56 118 -107 189 -198 274 -157 147 -314 214 -527 226 -185 10 -349 -35 -504 -137 -114 -75 -742 -546 -856 -642 -113 -94 -229 -215 -331 -344 -133 -167 -165 -222 -479 -819 -87 -165 -237 -446 -333 -625 -96 -179 -197 -368 -224 -420 -123 -231 -159 -289 -204 -329 -101 -89 -233 -83 -331 15 -89 88 -83 -5 -83 1318 0 1276 -3 1216 62 1323 40 66 93 114 168 151 71 35 184 42 260 17 51 -17 235 -149 733 -528 103 -78 193 -143 200 -144 6 -1 40 35 74 80 34 45 101 126 148 180 47 53 83 102 79 108 -7 12 -657 501 -820 617 -126 90 -231 139 -348 163 -84 17 -230 23 -296 12z"/>
+            <path d="M3360 3481 c-123 -154 -161 -207 -211 -294 -32 -56 -59 -108 -59 -116 0 -14 281 -565 305 -598 12 -16 14 -16 41 2 57 37 168 152 241 248 l73 99 -74 141 c-150 288 -288 537 -296 537 -3 -1 -12 -9 -20 -19z"/>
+          </g>
+        </svg>
+      </div>
+      <h1>易有吉</h1>
+      <p class="subtitle">命理智慧 · AI 解读</p>
+      <div class="loader" id="loader"></div>
+      <p class="status" id="status">正在连接服务器...</p>
+      <button class="retry-btn" id="retryBtn" onclick="location.reload()">重新连接</button>
+    </div>
+    <script>
+      var statusEl = document.getElementById('status');
+      var appEl = document.getElementById('app');
+      var loaderEl = document.getElementById('loader');
+      var retryBtn = document.getElementById('retryBtn');
+      var retryCount = 0;
+      var maxRetries = 3;
+
+      function showError(msg) {
+        appEl.classList.add('error');
+        loaderEl.style.display = 'none';
+        statusEl.textContent = msg;
+      }
+
+      function checkConnection() {
+        if (navigator.onLine) {
+          statusEl.textContent = '正在连接服务器...';
+          retryCount++;
+          if (retryCount > maxRetries) {
+            showError('无法连接到服务器，请检查网络后重试');
+            return;
+          }
+          var img = new Image();
+          img.onload = function() {
+            statusEl.textContent = '连接成功，正在加载...';
+            setTimeout(function() { location.reload(); }, 500);
+          };
+          img.onerror = function() {
+            statusEl.textContent = '服务器暂无响应，正在重试 (' + retryCount + '/' + maxRetries + ')...';
+            setTimeout(checkConnection, 3000);
+          };
+          img.src = 'https://yiyouji.zjsian.com/favicon.svg?t=' + Date.now();
+        } else {
+          showError('网络未连接，请检查网络设置');
+        }
+      }
+
+      window.addEventListener('offline', function() {
+        showError('网络已断开，请检查网络设置');
+      });
+
+      window.addEventListener('online', function() {
+        appEl.classList.remove('error');
+        loaderEl.style.display = 'block';
+        retryCount = 0;
+        checkConnection();
+      });
+
+      setTimeout(function() {
+        if (!navigator.onLine) {
+          showError('网络未连接，请检查网络设置');
+        } else {
+          checkConnection();
+        }
+      }, 5000);
+    </script>
   </body>
 </html>
-EOF

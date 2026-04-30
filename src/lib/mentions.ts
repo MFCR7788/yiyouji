@@ -13,6 +13,7 @@ export function parseMentions(content: string): Mention[] {
             const parsed = JSON.parse(raw) as Mention;
             if (parsed && parsed.type && parsed.name) results.push(parsed);
         } catch {
+            // ignore parse errors
         }
     }
 
@@ -26,11 +27,13 @@ export function parseMentions(content: string): Mention[] {
                 continue;
             }
         } catch {
+            // ignore parse errors
         }
         try {
             const parsed = JSON.parse(`{${raw}}`) as Mention;
             if (parsed && parsed.type && parsed.name) results.push(parsed);
         } catch {
+            // ignore parse errors
         }
     }
     return results;

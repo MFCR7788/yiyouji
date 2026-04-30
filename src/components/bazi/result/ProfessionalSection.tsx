@@ -66,8 +66,8 @@ export function ProfessionalSection({
                 <div className="px-4 mt-4 border-t border-border/60 space-y-2 text-xs text-foreground/45 font-medium">
                         <div>
                             起运：{proData.startAgeDetail}
-                        {canonicalChart.基本信息.胎元 ? `　胎元：${canonicalChart.基本信息.胎元}` : ''}
-                        {canonicalChart.基本信息.命宫 ? `　命宫：${canonicalChart.基本信息.命宫}` : ''}
+                        {canonicalChart.基本信息.胎元 && ` 胎元：${canonicalChart.基本信息.胎元}`}
+                        {canonicalChart.基本信息.命宫 && ` 命宫：${canonicalChart.基本信息.命宫}`}
                     </div>
                     {hasGanZhiHighlights ? (
                         <div>

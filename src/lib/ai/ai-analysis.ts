@@ -5,6 +5,7 @@
  * 统一存入 conversations 表，通过 source_type 区分来源
  */
 
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getSystemAdminClient } from '@/lib/api-utils';
 import {
     getSourceDataModelId,
@@ -53,7 +54,7 @@ export interface CreateAIAnalysisParams {
         type: 'mbti' | 'tarot' | 'hepan' | 'palm' | 'face' | 'qimen' | 'daliuren' | 'liuyao';
         payload: Record<string, unknown>;
     } | null;
-    client?: any;
+    client?: SupabaseClient;
 }
 
 /**

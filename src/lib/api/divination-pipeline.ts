@@ -14,6 +14,7 @@
 
 import { type NextRequest } from 'next/server';
 import { createUIMessageStream, createUIMessageStreamResponse, type FinishReason } from 'ai';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getSystemAdminClient,
   jsonError,
@@ -402,7 +403,7 @@ export function createDirectInterpretHandlers<
     input: T;
     userId: string;
     promptContext?: TContext;
-    db: any;
+    db: DivinationDbClient;
   };
 
   type ResolvedPreparedWithPrompts = ResolvedPreparedBase & {
@@ -490,7 +491,7 @@ export function createDirectInterpretHandlers<
     content: string;
     reasoningText: string | null;
     customModelId: string;
-    db?: any;
+    db?: DivinationDbClient;
   }): Promise<string> => {
     const persistedModelId = `custom:${customModelId}`;
     const sourceData = buildSourceData(input, persistedModelId, false, promptContext);
@@ -774,7 +775,7 @@ export function createInterpretHandler<
     _modelConfig: AIModelConfig, reasoningEnabled: boolean,
     systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
-    client?: any,
+    client?: SupabaseClient,
   ): Promise<Response> {
     const visionOpts = buildVisionOptions!(input);
     const analysisResult = await callAIVision(
@@ -803,7 +804,7 @@ export function createInterpretHandler<
     input: T, userId: string, resolvedModelId: string,
     reasoningEnabled: boolean, systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
-    client?: any,
+    client?: SupabaseClient,
   ): Promise<Response> {
     const streamResult = await callAIUIMessageResult(
       [{ role: 'user', content: userPrompt }],
@@ -841,7 +842,7 @@ export function createInterpretHandler<
     input: T, userId: string, resolvedModelId: string,
     reasoningEnabled: boolean, systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
-    client?: any,
+    client?: SupabaseClient,
   ): Promise<Response> {
     const { content, reasoning: reasoningText } = await callAIWithReasoning(
       [{ role: 'user', content: userPrompt }],
@@ -877,7 +878,7 @@ export function createInterpretHandler<
     input: T, userId: string, resolvedModelId: string,
     reasoningEnabled: boolean, aiResponse: string, reasoningText: string | null,
     promptContext?: TContext,
-    client?: any,
+    client?: SupabaseClient,
   ): Promise<string> {
     const sourceData = buildSourceData(input, resolvedModelId, reasoningEnabled, promptContext);
     if (reasoningText) {

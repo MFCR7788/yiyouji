@@ -5,7 +5,7 @@
  */
 
 import { NextRequest } from 'next/server';
-import { RecordCategory, RecordFilters, normalizeRecordInput } from '@/lib/records';
+import { RecordCategory, RecordFilters, normalizeRecordInput, type RecordInput } from '@/lib/records';
 import { requireUserContext, jsonError, jsonOk } from '@/lib/api-utils';
 import { quotePostgrestString } from '@/lib/utils/postgrest';
 import { IS_DEV_MODE, initDevMode } from '@/lib/dev-mode';
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 
         // 开发模式：使用本地数据库
         if (IS_DEV_MODE) {
-            const record = createLocalRecord(user.id, normalized.data as any);
+            const record = createLocalRecord(user.id, normalized.data as Partial<RecordInput>);
             return jsonOk(record);
         }
 

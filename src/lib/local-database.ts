@@ -29,9 +29,14 @@ interface LocalDbState {
     ziweiCharts: Record<string, Record<string, unknown>>;
 }
 
+type GlobalThisWithLocalDb = typeof globalThis & {
+    __LOCAL_DB__?: LocalDbState;
+}
+
 function getDbState(): LocalDbState {
-    if (!(globalKey in globalThis)) {
-        (globalThis as any)[globalKey] = {
+    const globalWithDb = globalThis as GlobalThisWithLocalDb;
+    if (!globalWithDb[globalKey]) {
+        globalWithDb[globalKey] = {
             recordsStore: {},
             notesStore: {},
             conversationsStore: {},
@@ -53,7 +58,7 @@ function getDbState(): LocalDbState {
             ziweiCharts: {},
         };
     }
-    return (globalThis as any)[globalKey];
+    return globalWithDb[globalKey]!;
 }
 
 const dbState = getDbState();
@@ -373,7 +378,25 @@ function createMockSelectChain(userId: string, tableName: string, selectOpts?: {
         return null;
     };
 
-    const chain: Record<string, any> = {
+    interface MockQueryChain {
+    eq(column: string, value: unknown): MockQueryChain;
+    gte(column: string, value: unknown): MockQueryChain;
+    lte(column: string, value: unknown): MockQueryChain;
+    neq(column: string, value: unknown): MockQueryChain;
+    in(column: string, values: unknown[]): MockQueryChain;
+    like(column: string, pattern: string): MockQueryChain;
+    ilike(column: string, pattern: string): MockQueryChain;
+    is(column: string, value: unknown): MockQueryChain;
+    maybeSingle(): MockQueryResult;
+    single(): MockQueryResult;
+    limit(n: number): MockQueryChain;
+    range(start: number, end: number): MockQueryResult<Record<string, unknown>[]>;
+    order(column: string, opts?: { ascending?: boolean }): MockQueryChain;
+    then<T>(executor: (value: MockQueryResult<Record<string, unknown>[]>) => T, reject?: (reason: unknown) => T): Promise<T>;
+    select(columns?: string, opts?: { count?: string }): MockQueryChain & { count?: number };
+}
+
+const chain: MockQueryChain = {
         eq(column: string, value: unknown) {
             filters.push({ column, value, op: 'eq' });
             return chain;
@@ -459,10 +482,10 @@ function createMockSelectChain(userId: string, tableName: string, selectOpts?: {
 
     if (selectOpts?.count === 'exact') {
         const result = resolveData();
-        (chain as any).count = result ? 1 : 0;
+        (chain as MockQueryChain & { count: number }).count = result ? 1 : 0;
     }
 
-    return chain as any;
+    return chain;
 }
 
 function createMockFrom(userId: string, tableName: string) {
@@ -482,7 +505,12 @@ function createMockFrom(userId: string, tableName: string) {
             return createMockSelectChain(userId, tableName, opts);
         },
         update(_payload: Record<string, unknown>) {
-            const updateChain: Record<string, any> = {
+            interface MockUpdateChain {
+                eq(column: string, value: string): MockUpdateChain;
+                maybeSingle(): MockQueryResult;
+                select(columns?: string): MockUpdateChain;
+            }
+            const updateChain: MockUpdateChain = {
                 eq(_column: string, _value: string) {
                     return updateChain;
                 },
@@ -519,7 +547,14 @@ function createMockFrom(userId: string, tableName: string) {
                 }
             }
             
-            const insertChain: Record<string, any> = {
+            interface MockInsertChain {
+                select(columns?: string): MockInsertChain;
+                maybeSingle(): MockQueryResult;
+                maybeSingleAsync(): Promise<MockQueryResult>;
+                single(): MockQueryResult;
+                then<T>(executor: (value: MockQueryResult) => T, reject?: (reason: unknown) => T): Promise<T>;
+            }
+            const insertChain: MockInsertChain = {
                 select(_columns?: string) {
                     return insertChain;
                 },
@@ -539,7 +574,11 @@ function createMockFrom(userId: string, tableName: string) {
             return insertChain;
         },
         delete() {
-            const deleteChain: Record<string, any> = {
+            interface MockDeleteChain {
+                eq(column: string, value: string): MockDeleteChain;
+                in(column: string, values: string[]): MockDeleteChain;
+            }
+            const deleteChain: MockDeleteChain = {
                 eq(_column: string, _value: string) {
                     return deleteChain;
                 },
@@ -582,12 +621,12 @@ export function createDevSupabaseClient(userId: string = DEV_USER_ID) {
                 db.conversationsStore[userId].unshift({
                     id: newId,
                     userId,
-                    personality: (params?.p_personality as any) || 'general',
+                    personality: (params?.p_personality as string) || 'general',
                     title: (params?.p_title as string) || '新对话',
-                    messages: (params?.p_messages as any[]) || [],
+                    messages: (params?.p_messages as ChatMessage[]) || [],
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString(),
-                    sourceType: (params?.p_source_type as any) || 'chat',
+                    sourceType: (params?.p_source_type as string) || 'chat',
                     sourceData: params?.p_source_data as Record<string, unknown> | undefined,
                     isArchived: false,
                     archivedKbIds: [],

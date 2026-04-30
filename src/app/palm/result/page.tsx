@@ -101,6 +101,7 @@ export default function PalmResultPage() {
                     setLoading(false);
                     return;
                 } catch {
+                // ignore parsing errors
                 }
             }
 

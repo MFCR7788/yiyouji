@@ -77,6 +77,7 @@ export async function POST(request: NextRequest) {
             await backfillVectorsAsService(body.kbId, user.id, 100);
             await triggerVectorIndexCreation();
         } catch {
+            // ignore errors - backfill is best-effort
         }
     }
 
