@@ -45,8 +45,8 @@ export async function GET(request: NextRequest) {
     const sourceType = searchParams.get('sourceType');
     const chartId = searchParams.get('chartId');
 
-    // 开发模式：使用本地数据库
-    if (IS_DEV_MODE) {
+    // 本地数据库模式：使用内存数据库
+    if (USE_LOCAL_DB) {
         const result = getLocalConversations(auth.user.id, limit, offset);
         
         let conversations = result.conversations;
@@ -139,8 +139,8 @@ export async function POST(request: NextRequest) {
         }
     }
 
-    // 开发模式：使用本地数据库
-    if (IS_DEV_MODE) {
+    // 本地数据库模式：使用内存数据库
+    if (USE_LOCAL_DB) {
         const conversation = createLocalConversation(auth.user.id, {
             personality: body.personality || 'general',
             title: normalizedTitle || '新对话',
@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
         return jsonOk({ id: conversation.id }, 201);
     }
 
-    // 生产模式：使用远程数据库
+    // 远程数据库模式：使用 Supabase
     const db = resolveRequestDbClient(auth);
     if (!db) return jsonError('创建对话失败', 500);
 

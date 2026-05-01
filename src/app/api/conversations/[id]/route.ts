@@ -4,7 +4,7 @@ import { extractAnalysisFromConversation } from '@/lib/ai/ai-analysis-query';
 import { isValidChatMessagePayload, loadAllConversationMessages, loadConversationAnalysisMessage, loadConversationMessagePage } from '@/lib/server/conversation-messages';
 import { deleteConversationGraph } from '@/lib/chat/conversation-delete';
 import { isValidUUID } from '@/lib/validation';
-import { IS_DEV_MODE } from '@/lib/dev-mode';
+import { IS_DEV_MODE, USE_LOCAL_DB } from '@/lib/dev-mode';
 import { updateLocalConversation } from '@/lib/local-database';
 import type { ChatMessage } from '@/types';
 
@@ -242,7 +242,7 @@ export async function PATCH(
         }
     }
 
-    if (IS_DEV_MODE) {
+    if (USE_LOCAL_DB) {
         const success = updateLocalConversation(auth.user.id, id, {
             title: normalizedTitle || undefined,
             messages: nextMessages || undefined,
