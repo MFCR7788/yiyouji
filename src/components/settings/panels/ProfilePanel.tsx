@@ -227,8 +227,11 @@ export default function ProfilePanel() {
                     value={nickname}
                     onChange={(event) => setNickname(event.target.value)}
                     disabled={saving}
-                    className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-all duration-150 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:opacity-50"
-                    placeholder={!originalNickname ? '请输入您的昵称' : ''}
+                    autoComplete="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                    className="w-48 rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-all duration-150 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:opacity-50 dark:bg-background-secondary [user-select:text] [&:not(:disabled)]:cursor-text"
+                    placeholder={!originalNickname ? '请输入您的昵称' : '修改昵称...'}
                   />
                   <button
                     type="button"
