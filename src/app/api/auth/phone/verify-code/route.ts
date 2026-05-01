@@ -128,11 +128,17 @@ export async function POST(request: NextRequest) {
             });
             
             if (authResult.error) {
-                throw authResult.error;
+                // 如果是 register 类型且错误是 invalid_credentials，不抛出错误，继续执行创建用户
+                if (type === 'register' && authResult.error.code === 'invalid_credentials') {
+                    console.info('[SMS Verify API] 用户不存在，开始创建用户');
+                    signInData = { session: null, user: null };
+                } else {
+                    throw authResult.error;
+                }
+            } else {
+                signInData = authResult.data;
+                console.log('[SMS Verify API] signInWithPassword 结果:', { hasSession: !!signInData.session, hasUser: !!signInData.user });
             }
-            
-            signInData = authResult.data;
-            console.log('[SMS Verify API] signInWithPassword 结果:', { hasSession: !!signInData.session, hasUser: !!signInData.user });
         } catch (error) {
             console.error('[SMS Verify API] 登录失败:', error);
             const err = error as { code?: string; message?: string };
