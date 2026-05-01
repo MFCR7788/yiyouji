@@ -179,6 +179,8 @@ export async function POST(request: NextRequest) {
                     auth: { persistSession: false, autoRefreshToken: false }
                 });
 
+                let existingUserId: string | null = null;
+
                 try {
                     const { data, error } = await adminClient.auth.admin.createUser({
                         email,
@@ -190,14 +192,46 @@ export async function POST(request: NextRequest) {
                     console.log('[SMS Verify API] createUser 结果:', { data: !!data, error: !!error, errorCode: error?.code });
                     if (error) {
                         if (error.code === 'email_exists') {
-                            console.info('[SMS Verify API] 用户已存在，跳过创建');
+                            console.info('[SMS Verify API] 用户已存在，查找并更新密码');
+                            
+                            // 通过 listUsers 查找已存在的用户
+                            const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
+                            if (listError) {
+                                throw new Error('查询用户列表失败: ' + listError.message);
+                            }
+                            
+                            // 从用户列表中找到匹配的用户
+                            const existingUser = usersData.users.find(u => 
+                                u.email === email || u.user_metadata?.phone === phone
+                            );
+                            
+                            if (!existingUser) {
+                                throw new Error('未找到对应用户');
+                            }
+                            
+                            existingUserId = existingUser.id;
+                            console.log('[SMS Verify API] 找到已存在用户 ID:', existingUserId);
+                            
+                            // 更新用户密码为默认密码
+                            const { error: updateError } = await adminClient.auth.admin.updateUserById(existingUserId, {
+                                password: defaultPassword,
+                                user_metadata: { nickname: userNickname, phone }
+                            });
+                            
+                            if (updateError) {
+                                throw new Error('更新密码失败: ' + updateError.message);
+                            }
+                            
+                            console.log('[SMS Verify API] 密码更新成功');
                         } else {
                             throw error;
                         }
+                    } else {
+                        existingUserId = data.user?.id || null;
+                        console.log('[SMS Verify API] 用户创建成功:', existingUserId);
                     }
-                    console.log('[SMS Verify API] 用户创建成功:', data?.user?.id);
                 } catch (error) {
-                    console.error('[SMS Verify API] 注册失败:', error);
+                    console.error('[SMS Verify API] 注册/更新失败:', error);
                     return NextResponse.json(
                         { success: false, message: '注册失败，请稍后重试' },
                         { status: 500 }
@@ -205,22 +239,24 @@ export async function POST(request: NextRequest) {
                 }
 
                 try {
-                    console.log('[SMS Verify API] 再次尝试登录');
+                    console.log('[SMS Verify API] 尝试登录');
                     const authResult = await supabase.auth.signInWithPassword({
                         email,
                         password: defaultPassword
                     });
                     
                     if (authResult.error) {
+                        console.error('[SMS Verify API] 登录失败:', authResult.error.message, authResult.error.code);
                         throw authResult.error;
                     }
                     
                     signInData = authResult.data;
-                    console.log('[SMS Verify API] 第二次登录结果:', { hasSession: !!signInData.session });
+                    console.log('[SMS Verify API] 登录结果:', { hasSession: !!signInData.session, userId: signInData.session?.user?.id });
                 } catch (error) {
-                    console.error('[SMS Verify API] 登录失败:', error);
+                    console.error('[SMS Verify API] 登录异常:', error);
+                    const err = error as { code?: string; message?: string };
                     return NextResponse.json(
-                        { success: false, message: '网络连接超时，请稍后重试' },
+                        { success: false, message: err.message || '网络连接超时，请稍后重试' },
                         { status: 503 }
                     );
                 }
