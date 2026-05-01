@@ -227,19 +227,26 @@ export default function ProfilePanel() {
                     value={nickname}
                     onChange={(event) => setNickname(event.target.value)}
                     disabled={saving}
-                    className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-colors duration-150 focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
+                    className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-all duration-150 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:opacity-50"
                     placeholder={!originalNickname ? '请输入您的昵称' : ''}
                   />
-                  {hasNicknameChanges ? (
-                    <button
-                      type="button"
-                      onClick={handleSave}
-                      disabled={saving}
-                      className="rounded-md border border-border bg-transparent px-3 py-2 text-xs font-medium text-foreground transition-colors duration-150 hover:bg-[#efedea] active:bg-[#e3e1db] disabled:opacity-50 dark:hover:bg-background-secondary dark:active:bg-background-tertiary"
-                    >
-                      {saving ? '保存中...' : '保存'}
-                    </button>
-                  ) : null}
+                  <button
+                    type="button"
+                    onClick={handleSave}
+                    disabled={saving || !hasNicknameChanges || nickname.trim() === ''}
+                    className={`rounded-md px-3 py-2 text-xs font-medium transition-all duration-150 ${
+                      saving || !hasNicknameChanges || nickname.trim() === ''
+                        ? 'cursor-not-allowed border border-border bg-background-secondary text-foreground/40'
+                        : 'border border-primary bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30'
+                    }`}
+                  >
+                    {saving ? (
+                      <span className="flex items-center gap-1">
+                        <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>
+                        保存中
+                      </span>
+                    ) : hasNicknameChanges && nickname.trim() !== '' ? '保存' : '已保存'}
+                  </button>
                 </div>
               </div>
 
