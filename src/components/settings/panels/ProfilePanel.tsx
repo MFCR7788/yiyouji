@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Camera, User as UserIcon } from 'lucide-react';
