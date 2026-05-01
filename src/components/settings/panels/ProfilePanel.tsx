@@ -37,6 +37,98 @@ function Avatar({ src, alt }: { src: string | null; alt: string }) {
   );
 }
 
+/**
+ * 昵称编辑器组件 - 独立的、可完全编辑的输入控件
+ */
+function NicknameEditor({
+  initialValue,
+  saving,
+  hasChanges,
+  onSave,
+  onChange,
+}: {
+  initialValue: string;
+  saving: boolean;
+  hasChanges: boolean;
+  onSave: () => void;
+  onChange: (value: string) => void;
+}) {
+  const [localValue, setLocalValue] = useState(initialValue);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setLocalValue(initialValue);
+  }, [initialValue]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    onChange(newValue);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && hasChanges && localValue.trim() !== '' && !saving) {
+      e.preventDefault();
+      onSave();
+    }
+  };
+
+  const canSave = hasChanges && localValue.trim() !== '' && !saving;
+
+  return (
+    <div className="flex items-center gap-2">
+      <input
+        ref={inputRef}
+        type="text"
+        value={localValue}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        disabled={saving}
+        maxLength={20}
+        placeholder="输入昵称..."
+        style={{
+          width: '180px',
+          padding: '6px 12px',
+          borderRadius: '6px',
+          border: '1px solid #d1d5db',
+          background: '#fff',
+          color: '#111827',
+          fontSize: '14px',
+          outline: 'none',
+          cursor: saving ? 'not-allowed' : 'text',
+          opacity: saving ? 0.5 : 1,
+        }}
+        onFocus={(e) => {
+          e.target.style.borderColor = '#3b82f6';
+          e.target.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.15)';
+        }}
+        onBlur={(e) => {
+          e.target.style.borderColor = '#d1d5db';
+          e.target.style.boxShadow = 'none';
+        }}
+      />
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={!canSave}
+        style={{
+          padding: '6px 14px',
+          borderRadius: '6px',
+          fontSize: '13px',
+          fontWeight: 500,
+          cursor: canSave ? 'pointer' : 'not-allowed',
+          border: `1px solid ${canSave ? '#3b82f6' : '#e5e7eb'}`,
+          background: canSave ? '#eff6ff' : '#f9fafb',
+          color: canSave ? '#2563eb' : '#9ca3af',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {saving ? '保存中...' : canSave ? '保存' : '已保存'}
+      </button>
+    </div>
+  );
+}
+
 export default function ProfilePanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ensuredUserIdRef = useRef<string | null>(null);
@@ -217,49 +309,24 @@ export default function ProfilePanel() {
             </div>
 
             <div className="min-w-0 flex-1 overflow-hidden rounded-md border border-border bg-background divide-y divide-border/60">
-              <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">显示昵称</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={nickname}
-                    onChange={(event) => setNickname(event.target.value)}
-                    disabled={saving}
-                    autoComplete="off"
-                    autoCapitalize="off"
-                    spellCheck={false}
-                    className="w-48 rounded-md border border-border bg-white px-3 py-2 text-sm text-foreground outline-none transition-all duration-150 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:opacity-50 dark:bg-background-secondary [user-select:text] [&:not(:disabled)]:cursor-text"
-                    placeholder={!originalNickname ? '请输入您的昵称' : '修改昵称...'}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleSave}
-                    disabled={saving || !hasNicknameChanges || nickname.trim() === ''}
-                    className={`rounded-md px-3 py-2 text-xs font-medium transition-all duration-150 ${
-                      saving || !hasNicknameChanges || nickname.trim() === ''
-                        ? 'cursor-not-allowed border border-border bg-background-secondary text-foreground/40'
-                        : 'border border-primary bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30'
-                    }`}
-                  >
-                    {saving ? (
-                      <span className="flex items-center gap-1">
-                        <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>
-                        保存中
-                      </span>
-                    ) : hasNicknameChanges && nickname.trim() !== '' ? '保存' : '已保存'}
-                  </button>
-                </div>
+              {/* 昵称编辑行 */}
+              <div className="flex items-center justify-between gap-4 p-4">
+                <p className="text-sm font-medium text-foreground shrink-0">显示昵称</p>
+                <NicknameEditor
+                  initialValue={nickname}
+                  saving={saving}
+                  hasChanges={hasNicknameChanges}
+                  onSave={handleSave}
+                  onChange={setNickname}
+                />
               </div>
 
-              <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
-                <div className="space-y-0.5">
-                  <p className="text-sm font-medium text-foreground">手机号码</p>
-                </div>
-                <div className="rounded-md bg-background-secondary/50 px-3 py-2 font-mono text-sm text-foreground/50">
+              {/* 手机号行 */}
+              <div className="flex items-center justify-between gap-4 p-4">
+                <p className="text-sm font-medium text-foreground shrink-0">手机号码</p>
+                <span className="rounded-md bg-background-secondary/50 px-3 py-2 font-mono text-sm text-foreground/50 truncate max-w-[200px]">
                   {displayPhone || '未绑定'}
-                </div>
+                </span>
               </div>
             </div>
           </div>
