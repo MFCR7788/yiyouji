@@ -87,19 +87,26 @@ export async function POST(request: NextRequest) {
             return response;
         }
 
-        // 从 Cookie 中获取验证码并验证
-        const verificationCookie = request.cookies.get(VERIFICATION_COOKIE_NAME)?.value;
-        console.log('[SMS Verify API] 从 Cookie 获取验证码');
-        
-        const verifyResult = verifyCodeFromCookie(phone, code, verificationCookie || '');
-        console.log('[SMS Verify API] 验证码验证结果:', verifyResult);
-        
-        if (!verifyResult.success) {
-            console.log('[SMS Verify API] 验证码验证失败');
-            return NextResponse.json(
-                { success: false, message: verifyResult.message },
-                { status: 400 }
-            );
+        // 测试账号固定验证码（跳过短信验证）
+        const TEST_PHONE = '13800138000';
+        const TEST_CODE = '888888';
+        if (phone === TEST_PHONE && code === TEST_CODE) {
+            console.log('[SMS Verify API] 测试账号登录，跳过验证码验证');
+        } else {
+            // 从 Cookie 中获取验证码并验证
+            const verificationCookie = request.cookies.get(VERIFICATION_COOKIE_NAME)?.value;
+            console.log('[SMS Verify API] 从 Cookie 获取验证码');
+            
+            const verifyResult = verifyCodeFromCookie(phone, code, verificationCookie || '');
+            console.log('[SMS Verify API] 验证码验证结果:', verifyResult);
+            
+            if (!verifyResult.success) {
+                console.log('[SMS Verify API] 验证码验证失败');
+                return NextResponse.json(
+                    { success: false, message: verifyResult.message },
+                    { status: 400 }
+                );
+            }
         }
 
         const userNickname = nickname || `用户${phone.slice(-4)}`;
@@ -275,6 +282,23 @@ export async function POST(request: NextRequest) {
         }
 
         console.info(`[SMS Verify API] 登录成功: ${phone}`);
+
+        // 新注册用户自动赠送 100 积分
+        if (type === 'register' && signInData?.session?.user?.id) {
+            try {
+                const { error: creditError } = await supabase.rpc('increment_ai_chat_count', { 
+                    user_id: signInData.session.user.id, 
+                    amount: 100 
+                });
+                if (creditError) {
+                    console.error('[SMS Verify API] 注册赠送积分失败:', creditError);
+                } else {
+                    console.info('[SMS Verify API] 新用户注册赠送 100 积分成功');
+                }
+            } catch (e) {
+                console.error('[SMS Verify API] 赠送积分异常:', e);
+            }
+        }
 
         const response = NextResponse.json({
             success: true,
