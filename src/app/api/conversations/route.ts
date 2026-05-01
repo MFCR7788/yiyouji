@@ -2,7 +2,7 @@ import { type NextRequest } from 'next/server';
 import { jsonError, jsonOk, requireUserContext, resolveRequestDbClient } from '@/lib/api-utils';
 import { isValidChatMessagePayload } from '@/lib/server/conversation-messages';
 import type { ChatMessage } from '@/types';
-import { IS_DEV_MODE, initDevMode } from '@/lib/dev-mode';
+import { initDevMode, USE_LOCAL_DB } from '@/lib/dev-mode';
 import { getLocalConversations, createLocalConversation } from '@/lib/local-database';
 
 // 初始化开发模式
