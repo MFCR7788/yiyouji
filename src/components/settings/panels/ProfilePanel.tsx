@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
+import { useRouter } from 'next/navigation';
 import { Camera, User as UserIcon } from 'lucide-react';
 import { ensureUserRecord, updateNickname } from '@/lib/auth';
 import { uploadAvatarForCurrentUser } from '@/lib/user/profile';
@@ -155,6 +156,7 @@ function NicknameEditor({
 export default function ProfilePanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ensuredUserIdRef = useRef<string | null>(null);
+  const router = useRouter();
   const { user, loading: sessionLoading } = useSessionSafe();
   const { profile, loading: profileLoading, resolved: profileResolved, error: profileError, refresh: refreshProfile } = useCurrentUserProfile({ enabled: !!user });
   const [nickname, setNickname] = useState('');
@@ -218,6 +220,8 @@ export default function ProfilePanel() {
         setOriginalNickname(nickname.trim());
         setSuccess('昵称已更新');
         await refreshProfile();
+        // 强制刷新页面数据，确保侧边栏同步更新
+        router.refresh();
         window.setTimeout(() => setSuccess(''), 3000);
       } else {
         setError(result.error?.message || '保存失败');
