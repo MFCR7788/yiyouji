@@ -38,7 +38,7 @@ function Avatar({ src, alt }: { src: string | null; alt: string }) {
 }
 
 /**
- * 昵称编辑器组件 - 独立的、可完全编辑的输入控件
+ * 昵称编辑器组件 - 完全非受控模式，确保可编辑性
  */
 function NicknameEditor({
   initialValue,
@@ -53,77 +53,100 @@ function NicknameEditor({
   onSave: () => void;
   onChange: (value: string) => void;
 }) {
-  const [localValue, setLocalValue] = useState(initialValue);
   const inputRef = useRef<HTMLInputElement>(null);
+  const isInitialized = useRef(false);
 
+  // 只在首次挂载或 initialValue 真正变化（非空→有值）时设置初始值
   useEffect(() => {
-    setLocalValue(initialValue);
+    if (inputRef.current && !isInitialized.current) {
+      inputRef.current.value = initialValue || '';
+      isInitialized.current = true;
+    }
   }, [initialValue]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    setLocalValue(newValue);
+    console.log('[NicknameEditor] 输入变化:', { newValue, oldValue: e.target.defaultValue });
     onChange(newValue);
   };
 
+  const handleFocus = () => {
+    console.log('[NicknameEditor] 获得焦点');
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && hasChanges && localValue.trim() !== '' && !saving) {
+    if (e.key === 'Enter' && !saving) {
       e.preventDefault();
       onSave();
     }
   };
-
-  const canSave = hasChanges && localValue.trim() !== '' && !saving;
 
   return (
     <div className="flex items-center gap-2">
       <input
         ref={inputRef}
         type="text"
-        value={localValue}
+        defaultValue={initialValue}
         onChange={handleChange}
+        onFocus={handleFocus}
         onKeyDown={handleKeyDown}
         disabled={saving}
         maxLength={20}
-        placeholder="输入昵称..."
+        placeholder="点击这里输入昵称..."
+        autoComplete="off"
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
         style={{
           width: '180px',
-          padding: '6px 12px',
-          borderRadius: '6px',
-          border: '1px solid #d1d5db',
-          background: '#fff',
-          color: '#111827',
+          padding: '8px 12px',
+          borderRadius: '8px',
+          border: '2px solid #e5e7eb',
+          background: '#ffffff',
+          color: '#1f2937',
           fontSize: '14px',
+          fontWeight: '500',
           outline: 'none',
           cursor: saving ? 'not-allowed' : 'text',
-          opacity: saving ? 0.5 : 1,
+          opacity: saving ? 0.6 : 1,
+          transition: 'all 0.15s ease',
+          WebkitUserSelect: 'text',
+          userSelect: 'text',
         }}
-        onFocus={(e) => {
-          e.target.style.borderColor = '#3b82f6';
-          e.target.style.boxShadow = '0 0 0 2px rgba(59,130,246,0.15)';
+        onMouseEnter={(e) => {
+          if (!saving) {
+            e.currentTarget.style.borderColor = '#3b82f6';
+            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
+          }
         }}
-        onBlur={(e) => {
-          e.target.style.borderColor = '#d1d5db';
-          e.target.style.boxShadow = 'none';
+        onMouseLeave={(e) => {
+          if (!saving && document.activeElement !== e.currentTarget) {
+            e.currentTarget.style.borderColor = '#e5e7eb';
+            e.currentTarget.style.boxShadow = 'none';
+          }
         }}
       />
       <button
         type="button"
-        onClick={onSave}
-        disabled={!canSave}
+        onClick={() => {
+          console.log('[NicknameEditor] 点击保存按钮');
+          onSave();
+        }}
+        disabled={!hasChanges || saving}
         style={{
-          padding: '6px 14px',
-          borderRadius: '6px',
+          padding: '8px 16px',
+          borderRadius: '8px',
           fontSize: '13px',
-          fontWeight: 500,
-          cursor: canSave ? 'pointer' : 'not-allowed',
-          border: `1px solid ${canSave ? '#3b82f6' : '#e5e7eb'}`,
-          background: canSave ? '#eff6ff' : '#f9fafb',
-          color: canSave ? '#2563eb' : '#9ca3af',
+          fontWeight: 600,
+          cursor: hasChanges && !saving ? 'pointer' : 'not-allowed',
+          border: `1.5px solid ${hasChanges && !saving ? '#3b82f6' : '#e5e7eb'}`,
+          background: hasChanges && !saving ? '#eff6ff' : '#f9fafb',
+          color: hasChanges && !saving ? '#2563eb' : '#9ca3af',
           whiteSpace: 'nowrap',
+          transition: 'all 0.15s ease',
         }}
       >
-        {saving ? '保存中...' : canSave ? '保存' : '已保存'}
+        {saving ? '⏳ 保存中...' : hasChanges ? '💾 保存' : '✓ 已保存'}
       </button>
     </div>
   );
