@@ -87,7 +87,7 @@ export default function ProfilePanel() {
   }, [profile, profileError, profileLoading, profileResolved, refreshProfile, sessionLoading, user]);
 
   const handleSave = async () => {
-    if (!user || !nickname.trim()) return;
+    if (!user) return;
 
     setSaving(true);
     setError('');
@@ -221,7 +221,7 @@ export default function ProfilePanel() {
                     className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-colors duration-150 focus:ring-2 focus:ring-blue-500/30 disabled:opacity-50"
                     placeholder={!originalNickname ? '请输入您的昵称' : ''}
                   />
-                  {hasNicknameChanges && nickname.trim() ? (
+                  {hasNicknameChanges ? (
                     <button
                       type="button"
                       onClick={handleSave}
