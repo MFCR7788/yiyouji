@@ -93,14 +93,23 @@ export default function ProfilePanel() {
     setError('');
     setSuccess('');
 
-    const result = await updateNickname(user.id, nickname.trim());
-    if (result.success) {
-      setOriginalNickname(nickname.trim());
-      setSuccess('昵称已更新');
-      await refreshProfile();
-      window.setTimeout(() => setSuccess(''), 3000);
-    } else {
-      setError(result.error?.message || '保存失败');
+    console.log('[ProfilePanel] 开始保存昵称:', { nickname, originalNickname });
+
+    try {
+      const result = await updateNickname(user.id, nickname.trim());
+      console.log('[ProfilePanel] 保存结果:', result);
+      
+      if (result.success) {
+        setOriginalNickname(nickname.trim());
+        setSuccess('昵称已更新');
+        await refreshProfile();
+        window.setTimeout(() => setSuccess(''), 3000);
+      } else {
+        setError(result.error?.message || '保存失败');
+      }
+    } catch (e) {
+      console.error('[ProfilePanel] 保存异常:', e);
+      setError('保存失败，请重试');
     }
 
     setSaving(false);
