@@ -39,7 +39,7 @@ function Avatar({ src, alt }: { src: string | null; alt: string }) {
 }
 
 /**
- * 昵称编辑器组件 - 完全非受控模式，确保可编辑性
+ * 昵称编辑器组件 - 失焦自动保存模式
  */
 function NicknameEditor({
   initialValue,
@@ -57,7 +57,7 @@ function NicknameEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   const isInitialized = useRef(false);
 
-  // 只在首次挂载或 initialValue 真正变化（非空→有值）时设置初始值
+  // 只在首次挂载时设置初始值
   useEffect(() => {
     if (inputRef.current && !isInitialized.current) {
       inputRef.current.value = initialValue || '';
@@ -67,18 +67,21 @@ function NicknameEditor({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
-    console.log('[NicknameEditor] 输入变化:', { newValue, oldValue: e.target.defaultValue });
     onChange(newValue);
   };
 
-  const handleFocus = () => {
-    console.log('[NicknameEditor] 获得焦点');
+  // 失焦时自动保存（如果有变化）
+  const handleBlur = () => {
+    if (hasChanges && !saving) {
+      console.log('[NicknameEditor] 输入框失触，触发自动保存');
+      onSave();
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && !saving) {
+    if (e.key === 'Enter' && hasChanges && !saving) {
       e.preventDefault();
-      onSave();
+      inputRef.current?.blur(); // 触发 blur → 自动保存
     }
   };
 
@@ -89,20 +92,20 @@ function NicknameEditor({
         type="text"
         defaultValue={initialValue}
         onChange={handleChange}
-        onFocus={handleFocus}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         disabled={saving}
         maxLength={20}
-        placeholder="点击这里输入昵称..."
+        placeholder="点击修改昵称..."
         autoComplete="off"
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck={false}
         style={{
-          width: '180px',
-          padding: '8px 12px',
+          width: '220px',
+          padding: '8px 14px',
           borderRadius: '8px',
-          border: '2px solid #e5e7eb',
+          border: `2px solid ${hasChanges ? '#3b82f6' : '#e5e7eb'}`,
           background: '#ffffff',
           color: '#1f2937',
           fontSize: '14px',
@@ -110,45 +113,30 @@ function NicknameEditor({
           outline: 'none',
           cursor: saving ? 'not-allowed' : 'text',
           opacity: saving ? 0.6 : 1,
-          transition: 'all 0.15s ease',
+          transition: 'all 0.2s ease',
           WebkitUserSelect: 'text',
           userSelect: 'text',
         }}
-        onMouseEnter={(e) => {
-          if (!saving) {
-            e.currentTarget.style.borderColor = '#3b82f6';
-            e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.1)';
-          }
-        }}
-        onMouseLeave={(e) => {
-          if (!saving && document.activeElement !== e.currentTarget) {
-            e.currentTarget.style.borderColor = '#e5e7eb';
-            e.currentTarget.style.boxShadow = 'none';
-          }
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = '#3b82f6';
+          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.12)';
         }}
       />
-      <button
-        type="button"
-        onClick={() => {
-          console.log('[NicknameEditor] 点击保存按钮');
-          onSave();
-        }}
-        disabled={!hasChanges || saving}
-        style={{
-          padding: '8px 16px',
-          borderRadius: '8px',
-          fontSize: '13px',
-          fontWeight: 600,
-          cursor: hasChanges && !saving ? 'pointer' : 'not-allowed',
-          border: `1.5px solid ${hasChanges && !saving ? '#3b82f6' : '#e5e7eb'}`,
-          background: hasChanges && !saving ? '#eff6ff' : '#f9fafb',
-          color: hasChanges && !saving ? '#2563eb' : '#9ca3af',
-          whiteSpace: 'nowrap',
-          transition: 'all 0.15s ease',
-        }}
-      >
-        {saving ? '⏳ 保存中...' : hasChanges ? '💾 保存' : '✓ 已保存'}
-      </button>
+      {saving && (
+        <span style={{ fontSize: '13px', color: '#6b7280', whiteSpace: 'nowrap' }}>
+          ⏳ 保存中...
+        </span>
+      )}
+      {!saving && hasChanges && (
+        <span style={{ fontSize: '13px', color: '#3b82f6', whiteSpace: 'nowrap' }}>
+          ✓ 已修改
+        </span>
+      )}
+      {!saving && !hasChanges && (
+        <span style={{ fontSize: '13px', color: '#9ca3af', whiteSpace: 'nowrap' }}>
+          自动保存
+        </span>
+      )}
     </div>
   );
 }
