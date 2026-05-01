@@ -1,11 +1,14 @@
 /**
- * 验证短信验证码并完成登录/注册
+ * 验证短信验证码并完成登录/注册 - 使用 Cookie 中的验证码
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { createAnonClient } from '@/lib/api-utils';
 import { setSessionCookies } from '@/lib/auth-session';
-import { verifyCode } from '@/lib/sms/verification-store';
+import { 
+    verifyCodeFromCookie, 
+    VERIFICATION_COOKIE_NAME 
+} from '@/lib/sms/secure-verification';
 import { IS_DEV_MODE } from '@/lib/dev-mode';
 
 function getSupabaseUrl() {
@@ -40,26 +43,6 @@ function buildDevSession(phone: string, nickname?: string): Session {
     };
 }
 
-async function retryWithBackoff<T>(fn: () => Promise<T>, maxRetries: number = 2, baseDelay: number = 1000): Promise<T> {
-    let lastError: Error | undefined;
-    
-    for (let i = 0; i <= maxRetries; i++) {
-        try {
-            return await fn();
-        } catch (error) {
-            lastError = error instanceof Error ? error : new Error(String(error));
-            console.warn(`[SMS Verify API] 操作失败，第 ${i + 1} 次尝试:`, lastError.message);
-            
-            if (i < maxRetries) {
-                const delay = baseDelay * Math.pow(2, i);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
-    }
-    
-    throw lastError || new Error('重试次数已用完');
-}
-
 export async function POST(request: NextRequest) {
     try {
         console.log('[SMS Verify API] 开始处理请求');
@@ -89,8 +72,26 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        console.log('[SMS Verify API] 开始验证验证码');
-        const verifyResult = await verifyCode(phone, code);
+        // 开发模式：接受任意6位数字验证码
+        if (IS_DEV_MODE) {
+            console.info('[SMS Verify API] 开发模式：验证通过', { phone, code });
+            const userNickname = nickname || `用户${phone.slice(-4)}`;
+            const devSession = buildDevSession(phone, userNickname);
+            const response = NextResponse.json({
+                success: true,
+                message: '登录成功',
+                session: devSession,
+                user: devSession.user
+            });
+            setSessionCookies(response, devSession);
+            return response;
+        }
+
+        // 从 Cookie 中获取验证码并验证
+        const verificationCookie = request.cookies.get(VERIFICATION_COOKIE_NAME)?.value;
+        console.log('[SMS Verify API] 从 Cookie 获取验证码');
+        
+        const verifyResult = verifyCodeFromCookie(phone, code, verificationCookie || '');
         console.log('[SMS Verify API] 验证码验证结果:', verifyResult);
         
         if (!verifyResult.success) {
@@ -101,22 +102,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const userNickname = nickname || verifyResult.nickname || `用户${phone.slice(-4)}`;
+        const userNickname = nickname || `用户${phone.slice(-4)}`;
         console.log('[SMS Verify API] 用户昵称:', userNickname);
-
-        if (IS_DEV_MODE) {
-            console.info(`[SMS Verify API] 开发模式：登录成功 ${phone}`);
-            const devSession = buildDevSession(phone, userNickname);
-            const response = NextResponse.json({
-                success: true,
-                message: '登录成功',
-                session: devSession,
-                user: devSession.user
-            });
-            setSessionCookies(response, devSession);
-            console.log('[SMS Verify API] 开发模式响应已发送');
-            return response;
-        }
 
         console.log('[SMS Verify API] 生产环境：开始 Supabase 登录');
         const supabase = createAnonClient();
@@ -128,25 +115,24 @@ export async function POST(request: NextRequest) {
 
         try {
             console.log('[SMS Verify API] 尝试使用密码登录');
-            const result = await retryWithBackoff(async () => {
-                console.log('[SMS Verify API] 调用 signInWithPassword');
-                const authResult = await supabase.auth.signInWithPassword({
-                    email,
-                    password: defaultPassword
-                });
-                console.log('[SMS Verify API] signInWithPassword 完整结果:', {
-                    data: !!authResult.data,
-                    error: !!authResult.error,
-                    errorMessage: authResult.error?.message,
-                    errorCode: authResult.error?.code
-                });
-                if (authResult.error) {
-                    throw authResult.error;
-                }
-                return authResult;
+            const authResult = await supabase.auth.signInWithPassword({
+                email,
+                password: defaultPassword
             });
-            signInData = result.data;
-            console.log('[SMS Verify API] signInWithPassword 结果:', { hasSession: !!result.data.session, hasUser: !!result.data.user });
+            
+            console.log('[SMS Verify API] signInWithPassword 完整结果:', {
+                data: !!authResult.data,
+                error: !!authResult.error,
+                errorMessage: authResult.error?.message,
+                errorCode: authResult.error?.code
+            });
+            
+            if (authResult.error) {
+                throw authResult.error;
+            }
+            
+            signInData = authResult.data;
+            console.log('[SMS Verify API] signInWithPassword 结果:', { hasSession: !!signInData.session, hasUser: !!signInData.user });
         } catch (error) {
             console.error('[SMS Verify API] 登录失败:', error);
             const err = error as { code?: string; message?: string };
@@ -188,24 +174,22 @@ export async function POST(request: NextRequest) {
                 });
 
                 try {
-                    await retryWithBackoff(async () => {
-                        console.log('[SMS Verify API] 调用 admin.createUser');
-                        const { data, error } = await adminClient.auth.admin.createUser({
-                            email,
-                            password: defaultPassword,
-                            email_confirm: true,
-                            user_metadata: { nickname: userNickname, phone }
-                        });
-                        console.log('[SMS Verify API] createUser 结果:', { data: !!data, error: !!error, errorCode: error?.code });
-                        if (error) {
-                            if (error.code === 'email_exists') {
-                                console.info('[SMS Verify API] 用户已存在，跳过创建');
-                                return;
-                            }
+                    const { data, error } = await adminClient.auth.admin.createUser({
+                        email,
+                        password: defaultPassword,
+                        email_confirm: true,
+                        user_metadata: { nickname: userNickname, phone }
+                    });
+                    
+                    console.log('[SMS Verify API] createUser 结果:', { data: !!data, error: !!error, errorCode: error?.code });
+                    if (error) {
+                        if (error.code === 'email_exists') {
+                            console.info('[SMS Verify API] 用户已存在，跳过创建');
+                        } else {
                             throw error;
                         }
-                        console.log('[SMS Verify API] 用户创建成功:', data?.user?.id);
-                    });
+                    }
+                    console.log('[SMS Verify API] 用户创建成功:', data?.user?.id);
                 } catch (error) {
                     console.error('[SMS Verify API] 注册失败:', error);
                     return NextResponse.json(
@@ -216,14 +200,17 @@ export async function POST(request: NextRequest) {
 
                 try {
                     console.log('[SMS Verify API] 再次尝试登录');
-                    const result = await retryWithBackoff(async () => {
-                        return await supabase.auth.signInWithPassword({
-                            email,
-                            password: defaultPassword
-                        });
+                    const authResult = await supabase.auth.signInWithPassword({
+                        email,
+                        password: defaultPassword
                     });
-                    signInData = result.data;
-                    console.log('[SMS Verify API] 第二次登录结果:', { hasSession: !!result.data.session });
+                    
+                    if (authResult.error) {
+                        throw authResult.error;
+                    }
+                    
+                    signInData = authResult.data;
+                    console.log('[SMS Verify API] 第二次登录结果:', { hasSession: !!signInData.session });
                 } catch (error) {
                     console.error('[SMS Verify API] 登录失败:', error);
                     return NextResponse.json(
@@ -236,9 +223,9 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        console.log('[SMS Verify API] 最终检查 session:', { hasSession: !!signInData?.session, signInData: !!signInData });
+        console.log('[SMS Verify API] 最终检查 session:', { hasSession: !!signInData?.session });
         if (!signInData?.session) {
-            console.error('[SMS Verify API] 无法获取 session，完整的 signInData:', signInData);
+            console.error('[SMS Verify API] 无法获取 session');
             return NextResponse.json(
                 { success: false, message: '登录失败，请稍后重试' },
                 { status: 500 }
@@ -256,6 +243,9 @@ export async function POST(request: NextRequest) {
 
         console.log('[SMS Verify API] 设置 session cookies');
         setSessionCookies(response, signInData.session);
+
+        // 清理验证码 cookie
+        response.cookies.delete(VERIFICATION_COOKIE_NAME);
 
         console.log('[SMS Verify API] 发送响应');
         return response;

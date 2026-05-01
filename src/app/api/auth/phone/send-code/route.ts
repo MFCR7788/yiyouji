@@ -1,10 +1,14 @@
 /**
  * 发送短信验证码 API
- * 支持登录和注册场景
+ * 支持登录和注册场景 - 使用加密的 Cookie 存储验证码
  */
 import { NextRequest, NextResponse } from 'next/server';
 import { createAnonClient } from '@/lib/api-utils';
-import { sendVerificationCode } from '@/lib/sms/verification-store';
+import { 
+    generateVerificationCode, 
+    generateVerificationCookie,
+    VERIFICATION_COOKIE_NAME 
+} from '@/lib/sms/secure-verification';
 import { sendAliyunSms } from '@/lib/sms/aliyun';
 
 export async function POST(request: NextRequest) {
@@ -42,35 +46,26 @@ export async function POST(request: NextRequest) {
             }
         }
 
-        // 生成并存储验证码
-        console.log('[SMS Send API] 生成并存储验证码');
-        const result = await sendVerificationCode(phone, type);
-        console.log('[SMS Send API] 验证码生成结果:', { success: result.success, code: result.code ? '***' : 'N/A' });
-
-        if (!result.success) {
-            console.log('[SMS Send API] 验证码存储失败:', result.message);
-            return NextResponse.json(
-                { success: false, message: result.message },
-                { status: 400 }
-            );
-        }
+        // 生成验证码
+        const code = generateVerificationCode();
+        console.log('[SMS Send API] 验证码已生成:', code ? '***' : 'N/A');
 
         console.info(`[SMS API] 准备发送验证码到 ${phone}`);
 
         // 发送真实短信
         console.log('[SMS Send API] 调用阿里云短信服务');
-        const smsResult = await sendAliyunSms(phone, result.code);
+        const smsResult = await sendAliyunSms(phone, code);
         console.log('[SMS Send API] 短信发送结果:', smsResult);
 
         if (!smsResult.success) {
             console.error('[SMS API] 短信发送失败:', smsResult.message);
 
             if (process.env.NODE_ENV === 'development') {
-                console.info(`[SMS API] 开发模式：验证码为 ${result.code}`);
+                console.info(`[SMS API] 开发模式：验证码为 ${code}`);
                 return NextResponse.json({
                     success: true,
                     message: '验证码已发送到您的手机',
-                    devCode: result.code,
+                    devCode: code,
                 });
             }
 
@@ -82,10 +77,22 @@ export async function POST(request: NextRequest) {
 
         console.info('[SMS API] 短信发送成功');
 
-        return NextResponse.json(
+        // 创建响应并设置加密的 Cookie
+        const response = NextResponse.json(
             { success: true, message: '验证码已发送到您的手机' },
             { status: 200 }
         );
+
+        const cookieValue = generateVerificationCookie(phone, code);
+        response.cookies.set(VERIFICATION_COOKIE_NAME, cookieValue, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            maxAge: 5 * 60, // 5 分钟
+            path: '/',
+            sameSite: 'lax'
+        });
+
+        return response;
     } catch (error) {
         console.error('[SMS Send API] Error:', error);
         return NextResponse.json(
