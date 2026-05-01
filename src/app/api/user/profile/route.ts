@@ -135,6 +135,8 @@ export async function PATCH(request: NextRequest) {
     const auth = await requireUserContext(request);
     if ('error' in auth) return jsonError(auth.error.message, auth.error.status);
 
+    console.log('[Profile PATCH] 开始更新, userId:', auth.user.id);
+
     let body: UserProfilePatchBody;
     try {
         body = await request.json() as UserProfilePatchBody;
@@ -145,6 +147,8 @@ export async function PATCH(request: NextRequest) {
     const profileInput = body.profile ?? {};
     const nicknameInput = profileInput.nickname ?? body.nickname;
     const avatarUrlInput = profileInput.avatar_url ?? body.avatar_url;
+
+    console.log('[Profile PATCH] 输入数据:', { nicknameInput, avatarUrlInput });
 
     const updatePayload: Record<string, unknown> = {
         updated_at: new Date().toISOString(),
@@ -164,18 +168,28 @@ export async function PATCH(request: NextRequest) {
         return jsonError('没有可更新的资料字段', 400);
     }
 
+    console.log('[Profile PATCH] 更新Payload:', updatePayload);
+    console.log('[Profile PATCH] 更新条件: id =', auth.user.id);
+
     const [updateResult, settingsResult] = await Promise.all([
         auth.db
-        .from('users')
-        .update(updatePayload)
-        .eq('id', auth.user.id)
-        .select('id, nickname, avatar_url, is_admin, membership, membership_expires_at, ai_chat_count')
-        .maybeSingle(),
+            .from('users')
+            .update(updatePayload)
+            .eq('id', auth.user.id)
+            .select('id, nickname, avatar_url, is_admin, membership, membership_expires_at, ai_chat_count')
+            .maybeSingle(),
         loadSettings(auth),
     ]);
 
+    console.log('[Profile PATCH] 更新结果:', { 
+        error: updateResult.error, 
+        data: updateResult.data,
+        rowCount: Array.isArray(updateResult.data) ? updateResult.data.length : (updateResult.data ? 1 : 0)
+    });
+
     if (updateResult.error || settingsResult.error) {
-        return jsonError('更新用户资料失败', 500);
+        console.error('[Profile PATCH] 更新失败:', updateResult.error);
+        return jsonError('更新用户资料失败: ' + (updateResult.error as { message?: string })?.message, 500);
     }
 
     return jsonOk({
