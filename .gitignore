@@ -83,6 +83,10 @@ setup-admin.sh
 setup-db.*
 test-supabase-auth.sh
 
+# deploy packages
+*.tar.gz
+yiyouji-deploy.*
+
 # deploy keys and temp scripts
 .github/deploy_key
 .github/deploy_key.pub
