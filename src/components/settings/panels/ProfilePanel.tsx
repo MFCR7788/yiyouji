@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
-import { useRouter } from 'next/navigation';
 import { Camera, User as UserIcon } from 'lucide-react';
 import { ensureUserRecord, updateNickname } from '@/lib/auth';
 import { uploadAvatarForCurrentUser } from '@/lib/user/profile';
@@ -38,113 +37,9 @@ function Avatar({ src, alt }: { src: string | null; alt: string }) {
   );
 }
 
-/**
- * 昵称编辑器组件 - 失焦自动保存模式
- */
-function NicknameEditor({
-  initialValue,
-  saving,
-  hasChanges,
-  onSave,
-  onChange,
-}: {
-  initialValue: string;
-  saving: boolean;
-  hasChanges: boolean;
-  onSave: () => void;
-  onChange: (value: string) => void;
-}) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const isInitialized = useRef(false);
-
-  // 只在首次挂载时设置初始值
-  useEffect(() => {
-    if (inputRef.current && !isInitialized.current) {
-      inputRef.current.value = initialValue || '';
-      isInitialized.current = true;
-    }
-  }, [initialValue]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const newValue = e.target.value;
-    onChange(newValue);
-  };
-
-  // 失焦时自动保存（如果有变化）
-  const handleBlur = () => {
-    if (hasChanges && !saving) {
-      console.log('[NicknameEditor] 输入框失触，触发自动保存');
-      onSave();
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && hasChanges && !saving) {
-      e.preventDefault();
-      inputRef.current?.blur(); // 触发 blur → 自动保存
-    }
-  };
-
-  return (
-    <div className="flex items-center gap-2">
-      <input
-        ref={inputRef}
-        type="text"
-        defaultValue={initialValue}
-        onChange={handleChange}
-        onBlur={handleBlur}
-        onKeyDown={handleKeyDown}
-        disabled={saving}
-        maxLength={20}
-        placeholder="点击修改昵称..."
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck={false}
-        style={{
-          width: '220px',
-          padding: '8px 14px',
-          borderRadius: '8px',
-          border: `2px solid ${hasChanges ? '#3b82f6' : '#e5e7eb'}`,
-          background: '#ffffff',
-          color: '#1f2937',
-          fontSize: '14px',
-          fontWeight: '500',
-          outline: 'none',
-          cursor: saving ? 'not-allowed' : 'text',
-          opacity: saving ? 0.6 : 1,
-          transition: 'all 0.2s ease',
-          WebkitUserSelect: 'text',
-          userSelect: 'text',
-        }}
-        onFocus={(e) => {
-          e.currentTarget.style.borderColor = '#3b82f6';
-          e.currentTarget.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.12)';
-        }}
-      />
-      {saving && (
-        <span style={{ fontSize: '13px', color: '#6b7280', whiteSpace: 'nowrap' }}>
-          ⏳ 保存中...
-        </span>
-      )}
-      {!saving && hasChanges && (
-        <span style={{ fontSize: '13px', color: '#3b82f6', whiteSpace: 'nowrap' }}>
-          ✓ 已修改
-        </span>
-      )}
-      {!saving && !hasChanges && (
-        <span style={{ fontSize: '13px', color: '#9ca3af', whiteSpace: 'nowrap' }}>
-          自动保存
-        </span>
-      )}
-    </div>
-  );
-}
-
 export default function ProfilePanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ensuredUserIdRef = useRef<string | null>(null);
-  const router = useRouter();
   const { user, loading: sessionLoading } = useSessionSafe();
   const { profile, loading: profileLoading, resolved: profileResolved, error: profileError, refresh: refreshProfile } = useCurrentUserProfile({ enabled: !!user });
   const [nickname, setNickname] = useState('');
@@ -155,6 +50,7 @@ export default function ProfilePanel() {
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const isInitialized = useRef(false);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -168,8 +64,13 @@ export default function ProfilePanel() {
 
     if (profile) {
       ensuredUserIdRef.current = null;
-      setNickname(profile.nickname || '');
-      setOriginalNickname(profile.nickname || '');
+      if (!isInitialized.current) {
+        setNickname(profile.nickname || '');
+        setOriginalNickname(profile.nickname || '');
+        isInitialized.current = true;
+      } else {
+        setOriginalNickname(profile.nickname || '');
+      }
       setAvatarUrl(profile.avatar_url || null);
       setError('');
       setLoading(false);
@@ -208,8 +109,6 @@ export default function ProfilePanel() {
         setOriginalNickname(nickname.trim());
         setSuccess('昵称已更新');
         await refreshProfile();
-        // 强制刷新页面数据，确保侧边栏同步更新
-        router.refresh();
         window.setTimeout(() => setSuccess(''), 3000);
       } else {
         setError(result.error?.message || '保存失败');
@@ -324,24 +223,73 @@ export default function ProfilePanel() {
             </div>
 
             <div className="min-w-0 flex-1 overflow-hidden rounded-md border border-border bg-background divide-y divide-border/60">
-              {/* 昵称编辑行 */}
-              <div className="flex items-center justify-between gap-4 p-4">
-                <p className="text-sm font-medium text-foreground shrink-0">显示昵称</p>
-                <NicknameEditor
-                  initialValue={nickname}
-                  saving={saving}
-                  hasChanges={hasNicknameChanges}
-                  onSave={handleSave}
-                  onChange={setNickname}
-                />
+              <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">显示昵称</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={nickname}
+                    onChange={(event) => {
+                      const newValue = event.target.value;
+                      console.log('[NicknameInput] onChange 触发:', { 
+                        newValue, 
+                        oldValue: nickname,
+                        originalNickname 
+                      });
+                      setNickname(newValue);
+                    }}
+                    onFocus={() => {
+                      console.log('[NicknameInput] 输入框获得焦点');
+                    }}
+                    onBlur={() => {
+                      console.log('[NicknameInput] 输入框失去焦点', { 
+                        nickname, 
+                        originalNickname,
+                        hasChanges: nickname !== originalNickname 
+                      });
+                    }}
+                    disabled={saving}
+                    className="w-48 rounded-md border border-border bg-background-secondary px-3 py-2 text-sm outline-none transition-all duration-150 focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 disabled:opacity-50"
+                    placeholder={!originalNickname ? '请输入您的昵称' : ''}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      console.log('[SaveButton] 点击保存按钮', { 
+                        nickname, 
+                        originalNickname,
+                        hasChanges: nickname !== originalNickname,
+                        isEmpty: nickname.trim() === ''
+                      });
+                      handleSave();
+                    }}
+                    disabled={saving || !hasNicknameChanges || nickname.trim() === ''}
+                    className={`rounded-md px-3 py-2 text-xs font-medium transition-all duration-150 ${
+                      saving || !hasNicknameChanges || nickname.trim() === ''
+                        ? 'cursor-not-allowed border border-border bg-background-secondary text-foreground/40'
+                        : 'border border-primary bg-primary/10 text-primary hover:bg-primary/20 active:bg-primary/30'
+                    }`}
+                    title={!hasNicknameChanges ? '未修改，无需保存' : nickname.trim() === '' ? '昵称不能为空' : '点击保存修改'}
+                  >
+                    {saving ? (
+                      <span className="flex items-center gap-1">
+                        <svg className="h-3 w-3 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>
+                        保存中
+                      </span>
+                    ) : hasNicknameChanges && nickname.trim() !== '' ? '保存' : '已保存'}
+                  </button>
+                </div>
               </div>
 
-              {/* 手机号行 */}
-              <div className="flex items-center justify-between gap-4 p-4">
-                <p className="text-sm font-medium text-foreground shrink-0">手机号码</p>
-                <span className="rounded-md bg-background-secondary/50 px-3 py-2 font-mono text-sm text-foreground/50 truncate max-w-[200px]">
+              <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">手机号码</p>
+                </div>
+                <div className="rounded-md bg-background-secondary/50 px-3 py-2 font-mono text-sm text-foreground/50">
                   {displayPhone || '未绑定'}
-                </span>
+                </div>
               </div>
             </div>
           </div>

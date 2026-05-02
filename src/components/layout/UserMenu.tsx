@@ -5,7 +5,6 @@ import { Bug, ChevronRight, Github, LogOut } from 'lucide-react';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { signOut } from '@/lib/auth';
 import { buildMembershipInfo } from '@/lib/user/membership';
-import { getUserEmailDisplay } from '@/lib/user-email';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
 import type { User as SupabaseUser } from '@/lib/auth';
 import { SettingsCenterLink } from '@/components/settings/SettingsCenterLink';
@@ -107,7 +106,6 @@ export function SidebarUserCard({ user, collapsed = false }: SidebarUserCardProp
   const membership = profileResolved && !profileError ? buildMembershipInfo(profile ?? null) : null;
   const avatarUrl = profile?.avatar_url ?? null;
   const displayName = profile?.nickname || user.email?.split('@')[0] || '用户';
-  const displayEmail = getUserEmailDisplay(user);
   const membershipLabel = profileLoading || !profileResolved
     ? '...'
     : profileError
@@ -184,7 +182,6 @@ export function SidebarUserCard({ user, collapsed = false }: SidebarUserCardProp
               <Avatar src={avatarUrl} alt={displayName} size={38} />
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-bold text-[#37352f]">{displayName}</div>
-                <div className="truncate text-[11px] font-medium text-[#37352f]/40">{displayEmail}</div>
               </div>
             </div>
 
