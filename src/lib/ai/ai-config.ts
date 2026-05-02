@@ -219,6 +219,19 @@ export function buildModels(): AIModelConfig[] {
     });
     if (qwenVl) devModels.push(qwenVl);
 
+    // 豆包（火山引擎）视觉模型 - 用于面相、手相分析
+    const doubaoVision = normalizeEnvFallbackModel({
+      id: 'doubao-vision',
+      name: '豆包 Vision Pro',
+      vendor: 'volc',
+      usageType: 'chat',
+      supportsVision: true,
+      apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+      apiKeyEnvVar: 'VOLC_API_KEY',
+      supportsReasoning: false,
+    });
+    if (doubaoVision) devModels.push(doubaoVision);
+
     return devModels;
   }
 
@@ -249,7 +262,7 @@ export function getModelConfig(modelId: string): AIModelConfig | undefined {
 }
 
 export const DEFAULT_MODEL_ID = 'deepseek-chat';
-export const DEFAULT_VISION_MODEL_ID = 'gemini-2.0-flash-vl';
+export const DEFAULT_VISION_MODEL_ID = 'doubao-vision';
 export const DEFAULT_EMBEDDING_MODEL_ID = process.env.KNOWLEDGE_BASE_EMBEDDING_MODEL_ID || 'text-embedding-v4';
 export const DEFAULT_RERANK_MODEL_ID = process.env.KNOWLEDGE_BASE_RERANK_MODEL_ID || 'qwen3-rerank';
 
@@ -271,6 +284,7 @@ export const VENDOR_NAMES: Record<string, string> = {
   moonshot: 'Moonshot',
   xai: 'xAI',
   minimax: 'MiniMax',
+  volc: '火山引擎（豆包）',
 };
 
 export function getVendorName(vendor: string): string {
