@@ -339,15 +339,18 @@ export async function POST(request: NextRequest) {
         // 新注册用户自动赠送 100 积分
         if (type === 'register' && signInData?.session?.user?.id) {
             try {
-                const { error: creditError } = await supabase.rpc('increment_ai_chat_count', { 
-                    user_id: signInData.session.user.id, 
-                    amount: 100 
+                const { error: creditError } = await supabase.rpc('increment_ai_chat_count', {
+                    user_id: signInData.session.user.id,
+                    amount: 100
                 });
                 if (creditError) {
                     console.error('[SMS Verify API] 注册赠送积分失败:', creditError);
                 } else {
                     console.info('[SMS Verify API] 新用户注册赠送 100 积分成功');
                 }
+
+                const { logRegistrationBonus } = await import('@/lib/user/credit-transactions');
+                await logRegistrationBonus(signInData.session.user.id, 100);
             } catch (e) {
                 console.error('[SMS Verify API] 赠送积分异常:', e);
             }

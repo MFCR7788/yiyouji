@@ -84,6 +84,16 @@ export async function POST(request: NextRequest) {
             }
 
             const result = await activateKey(auth.user.id, keyCode);
+
+            if (result.success && result.creditsAmount && result.creditsAmount > 0) {
+                try {
+                    const { logActivationKey } = await import('@/lib/user/credit-transactions');
+                    await logActivationKey(auth.user.id, result.creditsAmount, keyCode.substring(0, 8));
+                } catch (logError) {
+                    console.error('[activation-keys] 记录激活码日志失败:', logError);
+                }
+            }
+
             return jsonOk(result);
         } else {
             return jsonError("无效的操作", 400);

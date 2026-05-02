@@ -121,6 +121,13 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        try {
+            const { logCheckinReward } = await import('@/lib/user/credit-transactions');
+            await logCheckinReward(user.id, result.rewardCredits);
+        } catch (logError) {
+            console.error('[checkin API] 记录签到奖励日志失败:', logError);
+        }
+
         return jsonOk({
             success: true,
             data: {

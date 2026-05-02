@@ -16,6 +16,7 @@ type CreditTransaction = {
 };
 
 const SOURCE_LABELS: Record<string, string> = {
+  registration: '注册赠送',
   activation_key: '激活码',
   checkin: '每日签到',
   ai_usage: 'AI 消费',

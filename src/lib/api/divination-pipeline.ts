@@ -736,6 +736,13 @@ export function createInterpretHandler<
       return jsonError('积分扣减失败，请稍后重试', 500, { success: false });
     }
 
+    try {
+      const { logAiUsage } = await import('@/lib/user/credit-transactions');
+      await logAiUsage(user.id, 1, resolvedModelId, input.type);
+    } catch (logError) {
+      console.error('[divination-pipeline] 记录 AI 使用日志失败:', logError);
+    }
+
     // 5 + 6 + 7: AI call, persist, refund on failure
     try {
       if (isVision && buildVisionOptions) {
