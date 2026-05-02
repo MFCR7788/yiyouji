@@ -13,6 +13,7 @@ const VENDOR_DEFAULT_TIER: Record<string, ModelTier> = {
     moonshot: "free",
     "qwen-vl": "plus",
     "gemini-vl": "plus",
+    volc: "free",
 };
 
 /** DeepSeek 模型 ID -> tier 映射 */
