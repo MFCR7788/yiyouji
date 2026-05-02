@@ -782,14 +782,12 @@ export const authSessionCacheConstants = {
 
 function getErrorMessage(code: string): string {
     const errorMessages: Record<string, string> = {
-        'Invalid login credentials': '邮箱或密码错误',
-        'Email not confirmed': '请先验证邮箱',
-        'User already registered': '该邮箱已注册',
+        'Invalid login credentials': '手机号或验证码错误',
+        'User already registered': '该手机号已注册',
         'Password should be at least 6 characters': '密码至少6个字符',
-        'Unable to validate email address: invalid format': '邮箱格式不正确',
         'Email rate limit exceeded': '请求过于频繁，请稍后再试',
         'Token has expired or is invalid': '验证码已过期或无效',
-        'Signups not allowed for otp': '该邮箱尚未注册，请先注册',
+        'Signups not allowed for otp': '该手机号尚未注册，请先注册',
     };
 
     return errorMessages[code] || code;

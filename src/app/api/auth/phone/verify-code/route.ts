@@ -135,10 +135,63 @@ export async function POST(request: NextRequest) {
             });
             
             if (authResult.error) {
-                // 如果是 register 类型且错误是 invalid_credentials，不抛出错误，继续执行创建用户
-                if (type === 'register' && authResult.error.code === 'invalid_credentials') {
+                const errorCode = authResult.error.code;
+
+                if (type === 'register' && errorCode === 'invalid_credentials') {
                     console.info('[SMS Verify API] 用户不存在，开始创建用户');
                     signInData = { session: null, user: null };
+                } else if (errorCode === 'email_not_confirmed') {
+                    console.info('[SMS Verify API] 用户已注册但邮箱未确认，尝试自动确认并重新登录:', phone);
+
+                    const secretKey = getSupabaseSecretKey();
+                    if (!secretKey) {
+                        console.error('[SMS Verify API] 缺少 SUPABASE_SECRET_KEY 环境变量');
+                        throw authResult.error;
+                    }
+
+                    const adminClient = createClient(getSupabaseUrl(), secretKey, {
+                        auth: { persistSession: false, autoRefreshToken: false }
+                    });
+
+                    const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
+                    if (listError) {
+                        console.error('[SMS Verify API] 查询用户列表失败:', listError);
+                        throw authResult.error;
+                    }
+
+                    const existingUser = usersData.users.find(u =>
+                        u.email === email || u.user_metadata?.phone === phone
+                    );
+
+                    if (!existingUser) {
+                        console.error('[SMS Verify API] 未找到对应用户');
+                        throw authResult.error;
+                    }
+
+                    console.log('[SMS Verify API] 找到用户，自动确认邮箱:', existingUser.id);
+                    const { error: updateError } = await adminClient.auth.admin.updateUserById(existingUser.id, {
+                        email_confirm: true,
+                        user_metadata: { ...(existingUser.user_metadata || {}), phone }
+                    });
+
+                    if (updateError) {
+                        console.error('[SMS Verify API] 自动确认邮箱失败:', updateError);
+                        throw authResult.error;
+                    }
+
+                    console.log('[SMS Verify API] 邮箱已确认，重新登录...');
+                    const retryAuth = await supabase.auth.signInWithPassword({
+                        email,
+                        password: defaultPassword
+                    });
+
+                    if (retryAuth.error) {
+                        console.error('[SMS Verify API] 重新登录失败:', retryAuth.error);
+                        throw retryAuth.error;
+                    }
+
+                    signInData = retryAuth.data;
+                    console.log('[SMS Verify API] 自动确认邮箱后登录成功');
                 } else {
                     throw authResult.error;
                 }

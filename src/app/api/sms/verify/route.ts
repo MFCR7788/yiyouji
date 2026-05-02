@@ -91,14 +91,81 @@ export async function POST(request: NextRequest) {
         if (signInError) {
             const isEmailNotConfirmed = signInError.code === 'email_not_confirmed';
             if (isEmailNotConfirmed) {
-                console.info(`[SMS API] 用户已注册但 email 未确认: ${phone}`);
-                const response = NextResponse.json({
-                    success: true,
-                    message: '登录成功',
-                    session: null,
-                    user: { email },
-                });
-                return response;
+                console.info(`[SMS API] 用户已注册但 email 未确认，尝试自动确认: ${phone}`);
+
+                try {
+                    const { createClient } = await import('@supabase/supabase-js');
+                    const adminClient = createClient(
+                        process.env.SUPABASE_URL || '',
+                        process.env.SUPABASE_SECRET_KEY || '',
+                        { auth: { persistSession: false, autoRefreshToken: false } }
+                    );
+
+                    const { data: usersData, error: listError } = await adminClient.auth.admin.listUsers();
+                    if (listError) {
+                        console.error('[SMS API] 查询用户列表失败:', listError);
+                        return NextResponse.json(
+                            { success: false, message: '登录失败，请重试' },
+                            { status: 500 }
+                        );
+                    }
+
+                    const existingUser = usersData.users.find(u =>
+                        u.email === email || u.user_metadata?.phone === phone
+                    );
+
+                    if (!existingUser) {
+                        console.error('[SMS API] 未找到对应用户');
+                        return NextResponse.json(
+                            { success: false, message: '登录失败，请重试' },
+                            { status: 500 }
+                        );
+                    }
+
+                    console.log('[SMS API] 找到用户，自动确认邮箱:', existingUser.id);
+                    const { error: updateError } = await adminClient.auth.admin.updateUserById(existingUser.id, {
+                        email_confirm: true,
+                        user_metadata: { ...(existingUser.user_metadata || {}), phone }
+                    });
+
+                    if (updateError) {
+                        console.error('[SMS API] 自动确认邮箱失败:', updateError);
+                        return NextResponse.json(
+                            { success: false, message: '登录失败，请重试' },
+                            { status: 500 }
+                        );
+                    }
+
+                    console.log('[SMS API] 邮箱已确认，重新登录...');
+                    const retryAuth = await anonClient.auth.signInWithPassword({
+                        email,
+                        password: `phone_${phone}_default_password`,
+                    });
+
+                    if (retryAuth.error || !retryAuth.data?.session) {
+                        console.error('[SMS API] 重新登录失败:', retryAuth.error?.message);
+                        return NextResponse.json(
+                            { success: false, message: '登录失败，请重试' },
+                            { status: 500 }
+                        );
+                    }
+
+                    console.info(`[SMS API] 自动确认邮箱后登录成功: ${phone}`);
+                    const response = NextResponse.json({
+                        success: true,
+                        message: '登录成功',
+                        session: retryAuth.data.session,
+                        user: retryAuth.data.user,
+                    });
+                    setSessionCookies(response, retryAuth.data.session);
+                    return response;
+                } catch (adminError) {
+                    console.error('[SMS API] 自动确认邮箱异常:', adminError);
+                    return NextResponse.json(
+                        { success: false, message: '登录失败，请重试' },
+                        { status: 500 }
+                    );
+                }
             }
 
             const { error: signUpError } = await anonClient.auth.signUp({
