@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Lock } from 'lucide-react';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 
 interface SettingsLoginRequiredProps {
   title?: string;

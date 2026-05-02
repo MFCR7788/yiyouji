@@ -25,7 +25,7 @@ import { ResultTabs, type ResultTab } from '@/components/bazi/result/ResultTabs'
 import { BasicInfoSection } from '@/components/bazi/result/BasicInfoSection';
 import { ProfessionalSection } from '@/components/bazi/result/ProfessionalSection';
 import { ResultFooterLinks } from '@/components/bazi/result/ResultFooterLinks';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useToast } from '@/components/ui/Toast';
 import { useHeaderMenu } from '@/components/layout/HeaderMenuContext';
 import { CaseNotesSection } from '@/components/bazi/result/CaseNotesSection';

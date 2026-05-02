@@ -32,7 +32,7 @@ import { generateFortuneInterpretation } from '@/lib/divination/fortune-interpre
 import { getCalendarAlmanac } from '@/lib/divination/calendar';
 
 import type { FortuneLevel } from '@/types';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useToast } from '@/components/ui/Toast';
 import { loadPrimarySavedBaziChart, loadSavedBaziChart, type SavedBaziChart } from '@/lib/user/charts-client';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';

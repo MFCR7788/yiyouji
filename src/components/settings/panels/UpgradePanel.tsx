@@ -20,7 +20,7 @@ import {
   fetchCheckinStatus,
   performCheckinAction,
 } from '@/components/checkin/checkin-client';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { CheckinModal } from '@/components/checkin/CheckinModal';
 import { CreditProgressBar } from '@/components/membership/CreditProgressBar';
 import { CreditTransactionsPanel } from '@/components/membership/CreditTransactionsPanel';

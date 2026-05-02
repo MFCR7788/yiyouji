@@ -14,7 +14,7 @@ import { MarkdownContent } from '@/components/ui/MarkdownContent';
 import { ModelSelector } from '@/components/ui/ModelSelector';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { ThinkingBlock } from '@/components/chat/ThinkingBlock';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { CreditsModal } from '@/components/ui/CreditsModal';
 import { AddToKnowledgeBaseModal } from '@/components/knowledge-base/AddToKnowledgeBaseModal';
 import { useKnowledgeBaseFeatureEnabled } from '@/components/knowledge-base/useKnowledgeBaseFeatureEnabled';

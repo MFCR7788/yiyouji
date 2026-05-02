@@ -8,7 +8,7 @@
 
 import { createElement, useEffect, useState } from 'react';
 import { BookOpenText, RefreshCw } from 'lucide-react';
-import { AuthModal } from '@/components/auth/AuthModal';
+import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
