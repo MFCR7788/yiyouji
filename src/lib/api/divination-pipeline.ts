@@ -821,17 +821,21 @@ export function createInterpretHandler<
             await refundCreditsOrLog(userId, 1, `${tag} stream-empty`);
             return { error: emptyResultMessage };
           }
+          console.log(`[${tag}] 开始保存分析结果...`);
           const conversationId = await persistConversation(
             input, userId, resolvedModelId, reasoningEnabled, content, reasoning, promptContext, client,
           );
+          console.log(`[${tag}] 对话保存成功, conversationId:`, conversationId);
           if (persistRecord) {
             await persistRecord(input, userId, conversationId, promptContext);
+            console.log(`[${tag}] 记录保存成功`);
           }
           return {};
         } catch (err) {
           await refundCreditsOrLog(userId, 1, `${tag} stream-persist`);
+          const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(`[${tag}] 流式结果保存失败:`, err);
-          return { error: '保存结果失败，请稍后重试' };
+          return { error: `保存结果失败: ${errorMessage}` };
         }
       },
     });
