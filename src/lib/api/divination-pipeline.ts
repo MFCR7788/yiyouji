@@ -738,7 +738,7 @@ export function createInterpretHandler<
 
     try {
       const { logAiUsage } = await import('@/lib/user/credit-transactions');
-      await logAiUsage(user.id, 1, resolvedModelId, input.type);
+      await logAiUsage(user.id, 1, resolvedModelId, String(input.type));
     } catch (logError) {
       console.error('[divination-pipeline] 记录 AI 使用日志失败:', logError);
     }
