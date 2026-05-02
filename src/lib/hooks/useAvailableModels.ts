@@ -49,7 +49,7 @@ export function useAvailableModels(userId?: string | null, options?: { vision?: 
     staleTime: 10 * 60_000,
     select: (models) => (
       vision
-        ? models.filter((model) => model.vendor === 'qwen-vl' || model.vendor === 'gemini-vl')
+        ? models.filter((model) => model.vendor === 'qwen-vl' || model.vendor === 'gemini-vl' || model.vendor === 'volc')
         : models
     ),
   });
