@@ -301,6 +301,7 @@ export interface AIModelConfig {
     modelId: string;             // API 模型 ID
     apiUrl: string;              // API 端点
     apiKeyEnvVar: string;        // API Key 环境变量名
+    apiFormat?: 'openai' | 'volc-responses'; // API 格式类型
     // 推理模式支持
     supportsReasoning: boolean;  // 是否支持推理模式
     reasoningModelId?: string;   // 推理模式的模型 ID（如果不同）

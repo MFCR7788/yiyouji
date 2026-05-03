@@ -194,6 +194,7 @@ function createDefaultModels(): AIModelConfig[] {
     apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/responses',
     apiKeyEnvVar: 'VOLC_API_KEY',
     modelId: 'doubao-seed-2-0-lite-260215',
+    apiFormat: 'volc-responses',
     supportsReasoning: false,
     isReasoningDefault: false,
   });

@@ -16,6 +16,7 @@ import {
     callWithAISDK,
     streamWithAISDK,
 } from './providers';
+import { callVolcResponsesAPI } from './providers/volc-responses-provider';
 import { DEFAULT_MODEL_ID } from './ai-config';
 import { getDefaultModelConfigAsync, getModelConfigAsync } from '@/lib/server/ai-config';
 import { applySourceToModel, getOrderedModelSources } from './source-runtime';
@@ -515,6 +516,15 @@ export async function callAIVision(
     const systemPrompt = buildSystemPrompt(personality, chartContext, options);
 
     return await runWithSourceFallback(config, async (runtimeConfig) => {
+        if (runtimeConfig.apiFormat === 'volc-responses') {
+            return await callVolcResponsesAPI(
+                runtimeConfig,
+                messages,
+                options?.imageBase64,
+                options?.imageMimeType
+            );
+        }
+
         const reasoning = runtimeConfig.isReasoningDefault || options?.reasoning;
         const model = createModelFromConfig(runtimeConfig, { reasoning });
         const coreMessages = toCoreMessages(messages, {
