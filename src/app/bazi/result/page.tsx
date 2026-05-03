@@ -585,7 +585,7 @@ function BaziResultContent() {
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
-            <div className="max-w-5xl mx-auto px-4 py-8 animate-fade-in">
+            <div className="w-full max-w-5xl mx-auto px-3 sm:px-4 md:px-6 py-6 sm:py-8 animate-fade-in">
                 <ResultHeader
                     chartId={chartId}
                     saving={saving}
