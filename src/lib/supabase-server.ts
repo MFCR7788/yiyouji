@@ -7,6 +7,10 @@
 
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseAnonKey, getSupabaseAuthAdminKey, getSupabaseUrl } from '@/lib/supabase-env';
+import { configureGlobalProxy } from '@/lib/proxy-config';
+
+// 在创建任何客户端之前配置代理
+configureGlobalProxy();
 
 let serviceClient: SupabaseClient | null = null;
 let authClient: SupabaseClient | null = null;
@@ -111,6 +115,18 @@ export function getSystemAdminClient(): SupabaseClient {
     const url = getSupabaseUrl();
     const anonKey = getSupabaseAnonKey();
 
+    // 尝试创建带代理的 fetch 选项
+    let fetchOptions: Record<string, unknown> | undefined;
+    try {
+        const { createProxyFetchOptions } = require('@/lib/proxy-fetch');
+        fetchOptions = createProxyFetchOptions();
+        if (fetchOptions) {
+            console.log('[supabase-server] ✅ 使用代理配置的 fetch');
+        }
+    } catch {
+        // 代理模块不可用，使用默认配置
+    }
+
     serviceClient = createClient(url, anonKey, {
         auth: { persistSession: false, autoRefreshToken: false },
         accessToken: async () => {
@@ -124,6 +140,7 @@ export function getSystemAdminClient(): SupabaseClient {
             }
             return token;
         },
+        ...fetchOptions,
     });
 
     return serviceClient;

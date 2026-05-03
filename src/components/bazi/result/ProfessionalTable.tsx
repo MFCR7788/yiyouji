@@ -171,7 +171,7 @@ export function ProfessionalTable({
 
     return (
         <div className="overflow-x-auto w-full">
-            <table className="min-w-max table-fixed border-collapse text-xs">
+            <table className="min-w-max table-fixed border-collapse text-sm">
                 <colgroup>
                     <col className="w-12 sm:w-14 lg:w-20" />
                     {Array.from({ length: columnCount }).map((_, idx) => (
