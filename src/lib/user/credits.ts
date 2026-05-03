@@ -14,6 +14,14 @@ import { type MembershipType, getPlanConfig, isMembershipExpired } from './membe
 import { getSystemAdminClient } from '@/lib/api-utils';
 import { ensureUserRecordRow } from '@/lib/user/profile-record';
 
+/**
+ * 验证 UUID 格式（PostgreSQL RPC 函数要求）
+ */
+function isValidUUID(uuid: string): boolean {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+}
+
 type CreditReaderClient = Pick<ReturnType<typeof getSystemAdminClient>, 'from'>;
 type CreditQueryOptions = {
     client?: CreditReaderClient;
@@ -254,6 +262,30 @@ export async function attemptCreditUse(
     userId: string,
     options?: CreditQueryOptions,
 ): Promise<CreditUseAttemptResult & { detail?: string }> {
+    
+    // 开发模式：检测 dev-user ID，跳过真实积分扣减
+    const isDevUser = userId.startsWith('dev-user-') || userId === 'dev-user-id';
+    const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
+    
+    if (isDevUser && isDevMode) {
+        console.log(`[credits] 开发模式: 跳过 dev-user 积分扣减 [userId=${userId}]`);
+        return { 
+            ok: true, 
+            remaining: 999, 
+            detail: '开发模式: 模拟积分扣减成功'
+        };
+    }
+    
+    // 验证 UUID 格式（PostgreSQL RPC 函数要求）
+    if (!isDevUser && !isValidUUID(userId)) {
+        console.error(`[credits] 无效的 UUID 格式 [userId=${userId}]`);
+        return { 
+            ok: false, 
+            reason: 'deduction_failed',
+            detail: `无效的用户ID格式: ${userId.substring(0, 20)}...`
+        };
+    }
+    
     const decrementResult = await runCreditDecrement(userId);
     
     if (decrementResult.status === 'ok') {
