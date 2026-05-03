@@ -7,6 +7,7 @@ PM2_NAME="yiyouji"
 
 echo "[DEPLOY] 停止旧服务..."
 pm2 stop $PM2_NAME 2>/dev/null || true
+pm2 delete $PM2_NAME 2>/dev/null || true
 
 echo "[DEPLOY] 备份旧版本..."
 TIMESTAMP=$(date +%Y%m%d%H%M%S)
@@ -20,6 +21,9 @@ mkdir -p "$APP_DIR"
 cd "$APP_DIR"
 tar -xzf "$DEPLOY_FILE"
 rm -f "$DEPLOY_FILE"
+
+echo "[DEPLOY] 安装生产依赖（重要！）..."
+npm install --production 2>&1 | tail -10
 
 echo "[DEPLOY] 验证 .env 文件中的 JSON 格式..."
 if grep -q "MINGAI_FALLBACK_MODELS_JSON=" .env; then
@@ -46,11 +50,10 @@ else
 fi
 
 echo "[DEPLOY] 启动新服务..."
-pm2 delete $PM2_NAME 2>/dev/null || true
 pm2 start server.js --name $PM2_NAME
 
 echo "[DEPLOY] 等待服务启动..."
-sleep 8
+sleep 10
 
 echo "[DEPLOY] 验证服务状态..."
 pm2 status $PM2_NAME
@@ -61,10 +64,13 @@ echo "[DEPLOY] HTTP 状态码: $HTTP_CODE"
 if [ "$HTTP_CODE" = "200" ]; then
     echo "✅ 部署成功！"
 else
-    echo "⚠️ HTTP 状态码异常: $HTTP_CODE，可能需要手动检查"
+    echo "⚠️ HTTP 状态码异常: $HTTP_CODE，查看错误日志："
+    pm2 logs yiyouji --lines 20 --nostream | grep -i "error\|Error\|ERR\|Cannot find"
 fi
 
 ls -dt /opt/apps/yiyouji-backup-* 2>/dev/null | tail -n +4 | xargs rm -rf 2>/dev/null || true
+
+pm2 save
 
 echo ""
 echo "=========================================="
