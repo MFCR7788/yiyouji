@@ -173,8 +173,20 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
                 return jsonError('积分调整值必须是数字', 400);
             }
 
-            const currentCredits = currentUser.credits || 0;
-            const newCredits = Math.max(0, currentCredits + adjustment);
+            const currentCredits = currentUser.ai_chat_count || 0;
+            
+            // 使用 RPC 函数更新积分
+            const { data: newCredits, error: rpcError } = await supabase.rpc('increment_ai_chat_count', {
+                user_id: userId,
+                amount: adjustment
+            });
+
+            if (rpcError) {
+                console.error('[admin-users][PATCH] Credit increment RPC failed:', rpcError);
+                return jsonError('积分调整失败', 500);
+            }
+
+            const finalCredits = typeof newCredits === 'number' ? newCredits : Math.max(0, currentCredits + adjustment);
 
             // 创建积分变动记录
             const { error: txError } = await supabase.from('credit_transactions').insert({
@@ -183,7 +195,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
                 type: adjustment > 0 ? 'earn' : 'spend',
                 source: 'admin_adjustment',
                 description: `管理员手动${adjustment > 0 ? '增加' : '减少'} ${Math.abs(adjustment)} 积分`,
-                balance_after: newCredits,
+                balance_after: finalCredits,
                 metadata: {
                     admin_id: auth.user.id,
                     admin_nickname: auth.user.user_metadata?.nickname,
@@ -197,7 +209,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
             }
 
             operationType = 'adjust_credits';
-            description = `${adjustment > 0 ? '增加' : '减少'}用户 ${Math.abs(adjustment)} 积分（${currentCredits} → ${newCredits}）`;
+            description = `${adjustment > 0 ? '增加' : '减少'}用户 ${Math.abs(adjustment)} 积分（${currentCredits} → ${finalCredits}）`;
         }
 
         // 处理基本资料修改
