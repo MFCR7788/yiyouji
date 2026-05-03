@@ -182,12 +182,12 @@ export function AIAnalysisSection({
     };
 
     const placeholder = (
-        <div className="p-6 space-y-4 min-h-[280px]">
-            <div className="flex items-center gap-3">
+        <div className="p-4 md:p-6 space-y-4 min-h-[280px]">
+            <div className="flex items-center gap-3 flex-wrap">
                 <div className={`p-2 rounded-xl ${iconContainerClass}`}>{icon}</div>
-                <div>
+                <div className="flex-1 min-w-0">
                     <h4 className="font-bold">{title}</h4>
-                    <p className="text-sm text-foreground-secondary">{subtitle}</p>
+                    <p className="text-sm text-foreground-secondary truncate">{subtitle}</p>
                 </div>
             </div>
             <div className="space-y-2">
@@ -202,7 +202,7 @@ export function AIAnalysisSection({
     );
 
     const modelControls = (
-        <div className="flex justify-end">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <ModelSelector
                 compact
                 selectedModel={selectedModel}
@@ -228,28 +228,28 @@ export function AIAnalysisSection({
 
     const content = (
         <div className="rounded-xl border border-border bg-background overflow-hidden">
-            <div className={`px-4 py-3 md:px-6 md:py-4 border-b border-border flex items-center justify-between ${headerGradientClass}`}>
-                <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-xl ${iconContainerClass}`}>{icon}</div>
-                    <div>
+            <div className={`px-4 py-3 md:px-6 md:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${headerGradientClass}`}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div className={`p-2 rounded-xl ${iconContainerClass} flex-shrink-0`}>{icon}</div>
+                    <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-base">{title}</h4>
-                        <p className="text-sm text-foreground/50">{subtitle}</p>
+                        <p className="text-sm text-foreground/50 truncate">{subtitle}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                     {analysis && !loading && (
-                        <button onClick={handleCopy} className="p-2 rounded-lg hover:bg-foreground/5 transition-colors" title="复制">
+                        <button onClick={handleCopy} className="p-2 rounded-lg hover:bg-foreground/5 transition-colors flex-shrink-0" title="复制">
                             {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-foreground/50" />}
                         </button>
                     )}
                     <button onClick={startAnalysis} disabled={loading}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm disabled:opacity-50">
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm disabled:opacity-50 whitespace-nowrap">
                         {loading ? <SoundWaveLoader variant="inline" /> : <RefreshCw className="w-4 h-4" />}
                         {loading ? '分析中...' : '重新分析'}
                     </button>
                 </div>
             </div>
-            <div className="p-4 md:p-6 prose prose-base dark:prose-invert max-w-none min-h-[200px] overflow-hidden">
+            <div className="p-4 md:p-6 prose prose-base dark:prose-invert max-w-none min-h-[200px] overflow-x-hidden">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-8 gap-3">
                         {streaming.isStreaming && (streaming.content || streaming.reasoning) ? (
@@ -265,7 +265,7 @@ export function AIAnalysisSection({
                         ) : (
                             <>
                                 <SoundWaveLoader variant="inline" />
-                                <p className="text-sm text-foreground/50">{loadingText}</p>
+                                <p className="text-sm text-foreground/50 text-center">{loadingText}</p>
                             </>
                         )}
                     </div>
@@ -280,7 +280,7 @@ export function AIAnalysisSection({
     );
 
     return (
-        <div className="space-y-2">
+        <div className="space-y-3">
             {modelControls}
             <AIAnalysisLock type={type} title={title} description={lockDescription}
                 isUnlocked={isUnlocked || canBypassLockWithCustomProvider} placeholder={placeholder} userId={userId}
