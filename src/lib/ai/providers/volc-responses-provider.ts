@@ -15,6 +15,18 @@
  *     }
  *   ]
  * }
+ * 
+ * 响应格式：
+ * {
+ *   "output": [
+ *     {
+ *       "type": "reasoning",
+ *       "summary": [
+ *         { "type": "summary_text", "text": "..." }
+ *       ]
+ *     }
+ *   ]
+ * }
  */
 
 import type { AIModelConfig } from '@/types';
@@ -22,14 +34,17 @@ import type { ChatMessage } from '@/types';
 
 export type AIRequestMessage = Pick<ChatMessage, 'role' | 'content'>;
 
+export interface VolcResponseOutputItem {
+    type: string;
+    summary?: Array<{
+        type: string;
+        text: string;
+    }>;
+    status?: string;
+}
+
 export interface VolcResponseResult {
-    output: {
-        choices: Array<{
-            message: {
-                content: string;
-            };
-        }>;
-    };
+    output: VolcResponseOutputItem[];
 }
 
 export async function callVolcResponsesAPI(
@@ -88,9 +103,15 @@ export async function callVolcResponsesAPI(
 
     const result: VolcResponseResult = await response.json();
     
-    if (!result.output?.choices?.[0]?.message?.content) {
-        throw new Error('Empty response from Volc API');
+    // 解析响应：从 output 中找到 reasoning 类型，然后提取 summary 中的文本
+    for (const item of result.output || []) {
+        if (item.summary && item.summary.length > 0) {
+            const textItem = item.summary.find(s => s.type === 'summary_text' || s.text);
+            if (textItem?.text) {
+                return textItem.text;
+            }
+        }
     }
 
-    return result.output.choices[0].message.content;
+    throw new Error('Empty response from Volc API');
 }

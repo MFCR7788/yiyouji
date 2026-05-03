@@ -74,29 +74,29 @@ export function BasicInfoSection({
             {/* 1. 日主特征 - 极简卡片 */}
             <section className="bg-background border border-border rounded-lg p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <div className="p-1.5 rounded-md bg-foreground/5">
-                        <User className="w-4 h-4 text-foreground/40" />
-                    </div>
-                    <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-foreground/50">
-                        日主特征
-                    </h2>
-                </div>
-                <div className="flex flex-col md:flex-row items-start gap-4 sm:gap-6">
-                    <div
-                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-xl sm:text-3xl font-bold text-white shrink-0 shadow-md transition-transform hover:scale-105"
-                        style={{ backgroundColor: getElementColor(dayMasterElement as FiveElement) }}
-                    >
-                        {canonicalChart.基本信息.日主}
-                    </div>
-                    <div className="space-y-2 sm:space-y-3 flex-1">
-                        <div className="font-semibold text-base sm:text-lg text-foreground">
-                            日主「{canonicalChart.基本信息.日主}」，五行属{dayMasterElement}
+                        <div className="p-1.5 rounded-md bg-foreground/5">
+                            <User className="w-6 h-6 text-foreground/40" />
                         </div>
-                        <p className="text-sm sm:text-base text-foreground/70 leading-relaxed max-w-2xl">
-                            {dayMasterDescription}
-                        </p>
+                        <h2 className="text-base sm:text-lg font-semibold uppercase tracking-widest text-foreground/50">
+                            日主特征
+                        </h2>
                     </div>
-                </div>
+                    <div className="flex flex-col md:flex-row items-start gap-4 sm:gap-6">
+                        <div
+                            className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg flex items-center justify-center text-3xl sm:text-5xl font-bold text-white shrink-0 shadow-md transition-transform hover:scale-105"
+                            style={{ backgroundColor: getElementColor(dayMasterElement as FiveElement) }}
+                        >
+                            {canonicalChart.基本信息.日主}
+                        </div>
+                        <div className="space-y-2 sm:space-y-3 flex-1">
+                            <div className="font-semibold text-xl sm:text-2xl text-foreground">
+                                日主「{canonicalChart.基本信息.日主}」，五行属{dayMasterElement}
+                            </div>
+                            <p className="text-lg sm:text-xl text-foreground/70 leading-relaxed max-w-2xl">
+                                {dayMasterDescription}
+                            </p>
+                        </div>
+                    </div>
             </section>
 
             {/* 2. AI 专业分析区域 */}
@@ -106,15 +106,15 @@ export function BasicInfoSection({
                     <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
                         <div className="flex items-start gap-3 sm:gap-4">
                             <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#dfab01]" />
+                                <Info className="w-5 h-5 sm:w-6 sm:h-6 text-[#dfab01]" />
                             </div>
                             <div className="space-y-3 sm:space-y-4 flex-1">
                                 <div>
-                                    <h4 className="text-xs sm:text-sm font-bold text-foreground/80">AI 专业五行分析</h4>
-                                    <p className="text-[11px] sm:text-xs text-foreground/40 mt-0.5 sm:mt-1">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
+                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 专业五行分析</h4>
+                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-[11px] sm:text-xs text-[#dfab01] font-medium">
-                                    <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
+                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     请先补全出生时辰并保存命盘，再使用 AI 深度解读
                                 </div>
                             </div>
@@ -124,15 +124,15 @@ export function BasicInfoSection({
                     <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
                         <div className="flex items-start gap-3 sm:gap-4">
                             <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <Save className="w-4 h-4 sm:w-5 sm:h-5 text-[#2eaadc]" />
+                                <Save className="w-5 h-5 sm:w-6 sm:h-6 text-[#2eaadc]" />
                             </div>
                             <div className="space-y-3 sm:space-y-4 flex-1">
                                 <div>
-                                    <h4 className="text-xs sm:text-sm font-bold text-foreground/80">AI 专业五行分析</h4>
-                                    <p className="text-[11px] sm:text-xs text-foreground/40 mt-0.5 sm:mt-1">深度洞察五行旺衰与调候建议</p>
+                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 专业五行分析</h4>
+                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">深度洞察五行旺衰与调候建议</p>
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-[11px] sm:text-xs text-[#dfab01] font-medium">
-                                    <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
+                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     请先点击页面右上角「保存」命盘，即可解锁 AI 深度解读功能
                                 </div>
                             </div>
@@ -140,18 +140,18 @@ export function BasicInfoSection({
                     </section>
                 ) : !userId ? (
                     <section className="bg-blue-50/30 border border-blue-100 rounded-md p-6 sm:p-8 text-center space-y-3 sm:space-y-4">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-                            <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-[#2eaadc]" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+                            <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-[#2eaadc]" />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="text-sm sm:text-base font-bold">AI 五行分析</h3>
-                            <p className="text-xs sm:text-sm text-foreground/40 max-w-xs mx-auto leading-relaxed">
+                            <h3 className="text-base sm:text-lg font-bold">AI 五行分析</h3>
+                            <p className="text-sm sm:text-base text-foreground/40 max-w-xs mx-auto leading-relaxed">
                                 登录后解锁完整 AI 深度解读，获取更精准的个性化建议
                             </p>
                         </div>
                         <button
                             onClick={onLoginRequired}
-                            className="px-5 sm:px-6 py-1.5 sm:py-2 bg-[#2383e2] text-white text-xs sm:text-sm font-bold rounded-md hover:bg-[#2383e2]/90 transition-all active:bg-[#1a65b0]"
+                            className="px-5 sm:px-6 py-1.5 sm:py-2 bg-[#2383e2] text-white text-sm sm:text-base font-bold rounded-md hover:bg-[#2383e2]/90 transition-all active:bg-[#1a65b0]"
                         >
                             立即登录体验
                         </button>
@@ -174,15 +174,15 @@ export function BasicInfoSection({
                     <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
                         <div className="flex items-start gap-3 sm:gap-4">
                             <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <Info className="w-4 h-4 sm:w-5 sm:h-5 text-[#dfab01]" />
+                                <Info className="w-5 h-5 sm:w-6 sm:h-6 text-[#dfab01]" />
                             </div>
                             <div className="space-y-3 sm:space-y-4 flex-1">
                                 <div>
-                                    <h4 className="text-xs sm:text-sm font-bold text-foreground/80">AI 性格特征分析</h4>
-                                    <p className="text-[11px] sm:text-xs text-foreground/40 mt-0.5 sm:mt-1">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
+                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 性格特征分析</h4>
+                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-[11px] sm:text-xs text-[#dfab01] font-medium">
-                                    <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
+                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     请先补全出生时辰并保存命盘，再使用 AI 性格分析
                                 </div>
                             </div>
@@ -192,15 +192,15 @@ export function BasicInfoSection({
                     <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
                         <div className="flex items-start gap-3 sm:gap-4">
                             <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <User className="w-4 h-4 sm:w-5 sm:h-5 text-[#a083ff]" />
+                                <User className="w-5 h-5 sm:w-6 sm:h-6 text-[#a083ff]" />
                             </div>
                             <div className="space-y-3 sm:space-y-4 flex-1">
                                 <div>
-                                    <h4 className="text-xs sm:text-sm font-bold text-foreground/80">AI 性格特征分析</h4>
-                                    <p className="text-[11px] sm:text-xs text-foreground/40 mt-0.5 sm:mt-1">基于十神命局的深度性格画像</p>
+                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 性格特征分析</h4>
+                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">基于十神命局的深度性格画像</p>
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-[11px] sm:text-xs text-[#dfab01] font-medium">
-                                    <Info className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
+                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                                     保存命盘后即可开启 AI 性格特征分析
                                 </div>
                             </div>
@@ -208,18 +208,18 @@ export function BasicInfoSection({
                     </section>
                 ) : !userId ? (
                     <section className="bg-[#a083ff]/5 border border-[#a083ff]/10 rounded-md p-6 sm:p-8 text-center space-y-3 sm:space-y-4">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#a083ff]/10 flex items-center justify-center mx-auto">
-                            <User className="w-5 h-5 sm:w-6 sm:h-6 text-[#a083ff]" />
+                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#a083ff]/10 flex items-center justify-center mx-auto">
+                            <User className="w-6 h-6 sm:w-7 sm:h-7 text-[#a083ff]" />
                         </div>
                         <div className="space-y-1">
-                            <h3 className="text-sm sm:text-base font-bold">AI 性格分析</h3>
-                            <p className="text-xs sm:text-sm text-foreground/40 max-w-xs mx-auto leading-relaxed">
+                            <h3 className="text-base sm:text-lg font-bold">AI 性格分析</h3>
+                            <p className="text-sm sm:text-base text-foreground/40 max-w-xs mx-auto leading-relaxed">
                                 登录后解锁基于您命盘的深度性格倾向与职场建议
                             </p>
                         </div>
                         <button
                             onClick={onLoginRequired}
-                            className="px-5 sm:px-6 py-1.5 sm:py-2 bg-[#a083ff] text-white text-xs sm:text-sm font-bold rounded-md hover:bg-[#a083ff]/90 transition-all"
+                            className="px-5 sm:px-6 py-1.5 sm:py-2 bg-[#a083ff] text-white text-sm sm:text-base font-bold rounded-md hover:bg-[#a083ff]/90 transition-all"
                         >
                             立即登录体验
                         </button>
