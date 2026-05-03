@@ -312,7 +312,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
         } else {
             // 启用用户：解除 ban
             const { error: unbanError } = await supabase.auth.admin.updateUserById(userId, {
-                ban_duration: null,
+                ban_duration: undefined,
             });
 
             if (unbanError) {
