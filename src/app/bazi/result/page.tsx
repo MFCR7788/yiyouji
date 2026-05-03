@@ -585,7 +585,7 @@ function BaziResultContent() {
 
     return (
         <div className="min-h-screen bg-background">
-            <div className="max-w-4xl mx-auto px-4 py-8 animate-fade-in">
+            <div className="w-full mx-auto px-2 sm:px-4 py-6 sm:py-8 animate-fade-in max-w-4xl">
                 <ResultHeader
                     chartId={chartId}
                     saving={saving}
@@ -656,12 +656,12 @@ function BaziResultContent() {
                 )}
 
                 {(hasMountedNotes || activeTab === 'notes') && (
-                    <div className={activeTab === 'notes' ? 'animate-fade-in bg-background border border-border rounded-md p-6 pt-2' : 'hidden'}>
+                    <div className={activeTab === 'notes' ? 'animate-fade-in bg-background border border-border rounded-md p-4 sm:p-6 pt-2' : 'hidden'}>
                         <CaseNotesSection chartId={chartId} />
                     </div>
                 )}
 
-                <div className="mt-12 pt-12 border-t border-border/60">
+                <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-border/60">
                     <ResultFooterLinks />
                 </div>
             </div>
