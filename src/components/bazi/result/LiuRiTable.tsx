@@ -11,8 +11,7 @@ export function LiuRiTable({
     onSelect: (date: string) => void;
 }) {
     return (
-        <div className="overflow-x-auto w-full scrollbar-thin">
-            <div className="flex gap-1.5 sm:gap-2 min-w-max">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full">
                 {liuRi.map((ri) => {
                     const isSelected = ri.date === selectedDate;
                     const ganElement = getStemElement(ri.gan);
@@ -51,7 +50,6 @@ export function LiuRiTable({
                         </button>
                     );
                 })}
-            </div>
         </div>
     );
 }

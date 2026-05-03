@@ -11,8 +11,7 @@ export function LiuNianTable({
     onSelect: (year: number) => void;
 }) {
     return (
-        <div className="overflow-x-auto w-full scrollbar-thin">
-            <div className="flex gap-1.5 sm:gap-2 min-w-max">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full">
                 {liuNian.map((ln, index) => {
                     const isSelected = selectedYear === ln.year;
                     const ganElement = getStemElement(ln.gan);
@@ -49,7 +48,6 @@ export function LiuNianTable({
                         </button>
                     );
                 })}
-            </div>
         </div>
     );
 }

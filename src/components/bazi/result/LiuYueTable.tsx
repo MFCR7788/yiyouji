@@ -11,8 +11,7 @@ export function LiuYueTable({
     onSelect: (month: number) => void;
 }) {
     return (
-        <div className="overflow-x-auto w-full scrollbar-thin">
-            <div className="flex gap-1.5 sm:gap-2 min-w-max">
+        <div className="flex flex-wrap gap-1.5 sm:gap-2 w-full">
                 {liuYue.map((ly, index) => {
                     const isSelected = ly.month === selectedMonth;
                     const gan = ly.gan;
@@ -54,7 +53,6 @@ export function LiuYueTable({
                         </button>
                     );
                 })}
-            </div>
         </div>
     );
 }
