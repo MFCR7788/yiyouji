@@ -451,23 +451,22 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
             }
         }
 
-        // 先删除 public.users 表中的数据
-        const { error: deleteUserError } = await supabase
-            .from('users')
-            .delete()
-            .eq('id', userId);
-
-        if (deleteUserError) {
-            console.error('[admin-users][DELETE] Delete from users failed:', deleteUserError);
-            return jsonError('删除用户数据失败', 500);
-        }
-
         // 删除 Supabase Auth 中的用户（使用 Auth Admin 客户端）
         const { error: deleteAuthError } = await authAdminClient.auth.admin.deleteUser(userId);
 
         if (deleteAuthError) {
             console.error('[admin-users][DELETE] Delete from auth failed:', deleteAuthError);
             return jsonError('删除用户认证信息失败: ' + deleteAuthError.message, 500);
+        }
+
+        // 删除 public.users 表中的数据（允许失败，因为可能用户记录还未创建）
+        const { error: deleteUserError } = await supabase
+            .from('users')
+            .delete()
+            .eq('id', userId);
+
+        if (deleteUserError) {
+            console.warn('[admin-users][DELETE] Delete from users failed (may not exist):', deleteUserError);
         }
 
         // 记录删除操作（非阻塞）
