@@ -55,28 +55,28 @@ export function BasicInfoSection({
 
     const isSaved = Boolean(chartId);
     return (
-        <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fade-in w-full max-w-full overflow-x-hidden">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fade-in w-full">
             {/* 日主特征卡片 */}
-            <section className="bg-background rounded-xl border border-border overflow-hidden overflow-x-hidden w-full">
-                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+            <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 w-full">
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <div className="p-2 rounded-lg bg-foreground/5 flex-shrink-0">
                             <User className="w-5 h-5 text-foreground/40" />
                         </div>
-                        <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground/50 break-words">
+                        <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground/50 break-words flex-1 min-w-0">
                             日主特征
                         </h2>
                     </div>
                 </div>
-                <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6">
-                    <div className="flex flex-col md:flex-row items-start gap-3 sm:gap-4 md:gap-6">
+                <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6 w-full">
+                    <div className="flex flex-col md:flex-row items-start gap-3 sm:gap-4 md:gap-6 w-full">
                         <div
                             className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 rounded-lg flex items-center justify-center text-2xl sm:text-3xl md:text-4xl font-bold text-white flex-shrink-0 shadow-md transition-transform hover:scale-105"
                             style={{ backgroundColor: getElementColor(dayMasterElement as FiveElement) }}
                         >
                             {canonicalChart.基本信息.日主}
                         </div>
-                        <div className="space-y-2 md:space-y-3 flex-1 min-w-0 w-full overflow-x-hidden">
+                        <div className="space-y-2 md:space-y-3 flex-1 min-w-0 w-full">
                             <div className="font-semibold text-base sm:text-lg md:text-xl text-foreground break-words w-full">
                                 日主「{canonicalChart.基本信息.日主}」，五行属{dayMasterElement}
                             </div>
@@ -89,16 +89,16 @@ export function BasicInfoSection({
             </section>
 
             {/* AI 专业分析区域 */}
-            <div className="space-y-4 sm:space-y-5 md:space-y-6 w-full overflow-x-hidden">
+            <div className="space-y-4 sm:space-y-5 md:space-y-6 w-full">
                 {/* 五行分析 */}
                 {!hasKnownBirthTime ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden overflow-x-hidden w-full">
-                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
                                     <Info className="w-4 h-4 text-[#dfab01]" />
                                 </div>
-                                <div className="space-y-3 flex-1 min-w-0 w-full overflow-x-hidden">
+                                <div className="space-y-3 flex-1 min-w-0 w-full">
                                     <div>
                                         <h4 className="text-sm font-bold text-foreground/80 break-words">AI 专业五行分析</h4>
                                         <p className="text-xs text-foreground/40 mt-0.5 break-words">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
@@ -114,13 +114,13 @@ export function BasicInfoSection({
                         </div>
                     </section>
                 ) : !isSaved ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden overflow-x-hidden w-full">
-                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
                                     <Save className="w-4 h-4 text-[#2eaadc]" />
                                 </div>
-                                <div className="space-y-3 flex-1 min-w-0 w-full overflow-x-hidden">
+                                <div className="space-y-3 flex-1 min-w-0 w-full">
                                     <div>
                                         <h4 className="text-sm font-bold text-foreground/80 break-words">AI 专业五行分析</h4>
                                         <p className="text-xs text-foreground/40 mt-0.5 break-words">深度洞察五行旺衰与调候建议</p>
@@ -136,16 +136,13 @@ export function BasicInfoSection({
                         </div>
                     </section>
                 ) : !userId ? (
-                    <section className="bg-blue-50/30 border border-blue-100 rounded-xl p-4 sm:p-6 md:p-8 text-center w-full overflow-x-hidden">
+                    <section className="bg-blue-50/30 border border-blue-100 rounded-xl p-4 sm:p-6 md:p-8 text-center w-full">
                         <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
                             <Sparkles className="w-6 h-6 text-[#2eaadc]" />
                         </div>
                         <div className="space-y-2 w-full">
                             <h3 className="text-base font-bold break-words">AI 五行分析</h3>
                             <p className="text-sm text-foreground/50 break-words w-full">
-                                登录后解锁完整 AI 深度解读，获取更精准的个性化建议
-                            </p>
-                        </div>
                         <button
                             onClick={onLoginRequired}
                             className="mt-4 px-5 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-lg hover:bg-[#2383e2]/90 transition-colors"
@@ -168,13 +165,13 @@ export function BasicInfoSection({
 
                 {/* 性格分析 */}
                 {!hasKnownBirthTime ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden overflow-x-hidden w-full">
-                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
                                     <Info className="w-4 h-4 text-[#dfab01]" />
                                 </div>
-                                <div className="space-y-3 flex-1 min-w-0 w-full overflow-x-hidden">
+                                <div className="space-y-3 flex-1 min-w-0 w-full">
                                     <div>
                                         <h4 className="text-sm font-bold text-foreground/80 break-words">AI 性格特征分析</h4>
                                         <p className="text-xs text-foreground/40 mt-0.5 break-words">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
@@ -190,13 +187,13 @@ export function BasicInfoSection({
                         </div>
                     </section>
                 ) : !isSaved ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden overflow-x-hidden w-full">
-                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                        <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
                                     <User className="w-4 h-4 text-[#a083ff]" />
                                 </div>
-                                <div className="space-y-3 flex-1 min-w-0 w-full overflow-x-hidden">
+                                <div className="space-y-3 flex-1 min-w-0 w-full">
                                     <div>
                                         <h4 className="text-sm font-bold text-foreground/80 break-words">AI 性格特征分析</h4>
                                         <p className="text-xs text-foreground/40 mt-0.5 break-words">基于十神命局的深度性格画像</p>
@@ -212,7 +209,7 @@ export function BasicInfoSection({
                         </div>
                     </section>
                 ) : !userId ? (
-                    <section className="bg-[#a083ff]/5 border border-[#a083ff]/10 rounded-xl p-4 sm:p-6 md:p-8 text-center w-full overflow-x-hidden">
+                    <section className="bg-[#a083ff]/5 border border-[#a083ff]/10 rounded-xl p-4 sm:p-6 md:p-8 text-center w-full">
                         <div className="w-12 h-12 rounded-full bg-[#a083ff]/10 flex items-center justify-center mx-auto mb-4">
                             <User className="w-6 h-6 text-[#a083ff]" />
                         </div>
