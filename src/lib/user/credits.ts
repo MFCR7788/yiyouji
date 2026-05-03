@@ -167,7 +167,7 @@ async function getCreditsModuleExports() {
 async function runCreditDecrement(userId: string): Promise<
     | { status: 'ok'; remaining: number }
     | { status: 'no_change' }
-    | { status: 'rpc_error' }
+    | { status: 'rpc_error'; errorDetail?: string }
 > {
     const supabase = getSystemAdminClient();
     
@@ -176,8 +176,8 @@ async function runCreditDecrement(userId: string): Promise<
             .rpc('decrement_ai_chat_count', { user_id: userId });
 
         if (error) {
-            console.error('[credits] RPC decrement failed, falling back to direct update:', error.message);
-            return await runCreditDecrementDirect(userId);
+            console.error('[credits] RPC decrement failed:', error.message, error.code, error.hint);
+            return await runCreditDecrementDirect(userId, `RPC: ${error.message}`);
         }
 
         if (typeof data === 'number') {
@@ -189,50 +189,84 @@ async function runCreditDecrement(userId: string): Promise<
 
         return { status: 'no_change' };
     } catch (error) {
-        console.error('[credits] RPC call error, falling back to direct update:', error);
-        return await runCreditDecrementDirect(userId);
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error('[credits] RPC call exception:', errMsg);
+        return await runCreditDecrementDirect(userId, `Exception: ${errMsg}`);
     }
 }
 
-async function runCreditDecrementDirect(userId: string): Promise<
+async function runCreditDecrementDirect(
+    userId: string,
+    fallbackReason?: string
+): Promise<
     | { status: 'ok'; remaining: number }
     | { status: 'no_change' }
-    | { status: 'rpc_error' }
+    | { status: 'rpc_error'; errorDetail?: string }
 > {
     const supabase = getSystemAdminClient();
-    const { data, error } = await supabase
-        .from('users')
-        .update({ ai_chat_count: { '-': 1 } })
-        .eq('id', userId)
-        .gt('ai_chat_count', 0)
-        .select('ai_chat_count')
-        .maybeSingle();
+    
+    try {
+        const { data, error } = await supabase
+            .from('users')
+            .update({ ai_chat_count: { '-': 1 } })
+            .eq('id', userId)
+            .gt('ai_chat_count', 0)
+            .select('ai_chat_count')
+            .maybeSingle();
 
-    if (error) {
-        console.error('[credits] Direct decrement failed:', error.message);
-        return { status: 'rpc_error' };
+        if (error) {
+            console.error('[credits] Direct decrement failed:', error.message, error.code);
+            
+            if (error.message?.includes('fetch failed') || error.message?.includes('network') || error.message?.includes('ECONNREFUSED')) {
+                return { 
+                    status: 'rpc_error', 
+                    errorDetail: `网络错误: ${error.message}。请检查 Supabase 连接或代理设置。`
+                };
+            }
+            
+            return { status: 'rpc_error', errorDetail: fallbackReason || error.message };
+        }
+
+        if (data && typeof data.ai_chat_count === 'number') {
+            return {
+                status: 'ok',
+                remaining: data.ai_chat_count,
+            };
+        }
+
+        return { status: 'no_change' };
+    } catch (error) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        console.error('[credits] Direct decrement exception:', errMsg);
+        
+        if (errMsg.includes('fetch failed') || errMsg.includes('network') || errMsg.includes('ECONNREFUSED')) {
+            return { 
+                status: 'rpc_error', 
+                errorDetail: `网络连接失败: ${errMsg}。请检查 Supabase 连接配置。`
+            };
+        }
+        
+        return { status: 'rpc_error', errorDetail: fallbackReason || errMsg };
     }
-
-    if (data && typeof data.ai_chat_count === 'number') {
-        return {
-            status: 'ok',
-            remaining: data.ai_chat_count,
-        };
-    }
-
-    return { status: 'no_change' };
 }
 
 export async function attemptCreditUse(
     userId: string,
     options?: CreditQueryOptions,
-): Promise<CreditUseAttemptResult> {
+): Promise<CreditUseAttemptResult & { detail?: string }> {
     const decrementResult = await runCreditDecrement(userId);
+    
     if (decrementResult.status === 'ok') {
         return { ok: true, remaining: decrementResult.remaining };
     }
+    
     if (decrementResult.status === 'rpc_error') {
-        return { ok: false, reason: 'deduction_failed' };
+        console.error(`[credits] 积分扣减失败 [userId=${userId.substring(0, 8)}...]:`, decrementResult.errorDetail);
+        return { 
+            ok: false, 
+            reason: 'deduction_failed',
+            detail: decrementResult.errorDetail || '未知错误'
+        };
     }
 
     const info = await getUserCreditInfo(userId, options);

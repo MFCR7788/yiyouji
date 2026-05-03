@@ -733,7 +733,23 @@ export function createInterpretHandler<
       if (creditUse.reason === 'insufficient_credits') {
         return jsonError('积分不足，请通过签到、激活码或会员权益获取积分后再使用', 402, { success: false });
       }
-      return jsonError('积分扣减失败，请稍后重试', 500, { success: false });
+      
+      const detailMsg = (creditUse as { detail?: string }).detail || '';
+      console.error(`[divination-pipeline] 积分扣减失败 [${tag}]:`, detailMsg);
+      
+      if (detailMsg.includes('网络') || detailMsg.includes('fetch failed')) {
+        return jsonError('数据库连接异常，请检查网络或稍后重试', 503, { 
+          success: false, 
+          code: 'DB_CONNECTION_ERROR',
+          detail: detailMsg 
+        });
+      }
+      
+      return jsonError(`积分扣减失败: ${detailMsg || '请稍后重试'}`, 500, { 
+        success: false, 
+        code: 'CREDIT_DEDUCTION_FAILED',
+        detail: detailMsg
+      });
     }
 
     try {
