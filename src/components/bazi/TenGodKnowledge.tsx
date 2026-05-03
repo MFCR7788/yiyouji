@@ -146,9 +146,9 @@ export function TenGodKnowledge({ highlightedTenGods = [] }: TenGodKnowledgeProp
     ];
 
     return (
-        <div className="bg-background-secondary rounded-xl border border-border overflow-hidden">
+        <div className="bg-background-secondary rounded-xl border border-border overflow-hidden w-full max-w-full box-border">
             {/* 标题 */}
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-border bg-background">
+            <div className="flex items-center gap-2 px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3 border-b border-border bg-background w-full max-w-full">
                 <BookOpen className="w-4 h-4 text-accent" />
                 <h3 className="font-medium text-sm">十神知识库</h3>
             </div>
@@ -165,7 +165,7 @@ export function TenGodKnowledge({ highlightedTenGods = [] }: TenGodKnowledgeProp
                             {/* 标题行 */}
                             <button
                                 onClick={() => setExpandedGod(isExpanded ? null : god)}
-                                className={`w-full flex items-center justify-between px-4 py-3 text-left transition-colors hover:bg-background ${isHighlighted ? 'bg-accent/5' : ''
+                                className={`w-full flex items-center justify-between px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3 text-left transition-colors hover:bg-background ${isHighlighted ? 'bg-accent/5' : ''
                                     }`}
                             >
                                 <div className="flex items-center gap-2">
@@ -193,35 +193,35 @@ export function TenGodKnowledge({ highlightedTenGods = [] }: TenGodKnowledgeProp
 
                             {/* 展开详情 */}
                             {isExpanded && (
-                                <div className="px-4 pb-4 space-y-3 bg-background text-sm">
+                                <div className="px-2.5 sm:px-4 md:px-6 pb-4 space-y-3 bg-background text-sm w-full max-w-full box-border">
                                     {/* 五行关系 */}
-                                    <div className="flex items-start gap-2">
+                                    <div className="flex items-start gap-2 min-w-0">
                                         <Info className="w-4 h-4 text-accent mt-0.5 flex-shrink-0" />
-                                        <div>
+                                        <div className="min-w-0 break-words">
                                             <span className="text-foreground-secondary">五行关系：</span>
-                                            <span>{info.element}</span>
+                                            <span className="break-words">{info.element}</span>
                                         </div>
                                     </div>
 
                                     {/* 含义 */}
-                                    <div className="text-foreground-secondary">
+                                    <div className="text-foreground-secondary break-words leading-relaxed">
                                         {info.meaning}
                                     </div>
 
                                     {/* 代表 */}
-                                    <div>
+                                    <div className="min-w-0 break-words">
                                         <span className="text-foreground-secondary">代表：</span>
-                                        <span>{info.represent.join('、')}</span>
+                                        <span className="break-words">{info.represent.join('、')}</span>
                                     </div>
 
                                     {/* 性格特点 */}
-                                    <div>
+                                    <div className="w-full max-w-full">
                                         <span className="text-foreground-secondary">性格：</span>
-                                        <div className="flex flex-wrap gap-1 mt-1">
+                                        <div className="flex flex-wrap gap-1 mt-1.5 w-full max-w-full">
                                             {info.character.map((trait, i) => (
                                                 <span
                                                     key={i}
-                                                    className="px-2 py-0.5 text-xs rounded-full bg-background-secondary border border-border"
+                                                    className="px-2 py-0.5 text-xs rounded-full bg-background-secondary border border-border break-words"
                                                 >
                                                     {trait}
                                                 </span>
@@ -230,13 +230,13 @@ export function TenGodKnowledge({ highlightedTenGods = [] }: TenGodKnowledgeProp
                                     </div>
 
                                     {/* 事业 */}
-                                    <div>
+                                    <div className="break-words leading-relaxed">
                                         <span className="text-foreground-secondary">事业：</span>
                                         <span>{info.career}</span>
                                     </div>
 
                                     {/* 感情 */}
-                                    <div>
+                                    <div className="break-words leading-relaxed">
                                         <span className="text-foreground-secondary">感情：</span>
                                         <span>{info.relationship}</span>
                                     </div>

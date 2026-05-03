@@ -63,7 +63,7 @@ export function BasicInfoSection({
             {/* 日主特征卡片 - 核心信息展示 */}
             <section className="bg-background rounded-xl border border-border overflow-hidden w-full max-w-full box-border shadow-sm">
                 {/* 卡片头部 - 参照专业排盘风格 */}
-                <div className="px-4 sm:px-5 md:px-6 py-3.5 sm:py-4 md:py-5 bg-gradient-to-r from-gray-50/80 to-transparent dark:from-gray-900/20 dark:to-transparent border-b border-border/50">
+                <div className="px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3.5 md:py-4 bg-gradient-to-r from-gray-50/80 to-transparent dark:from-gray-900/20 dark:to-transparent border-b border-border/50">
                     <h2 className="text-sm font-semibold flex items-center gap-2 text-foreground/90 break-words">
                         <User className="w-4 h-4 text-[#2eaadc] flex-shrink-0" />
                         日主特征
@@ -71,7 +71,7 @@ export function BasicInfoSection({
                 </div>
 
                 {/* 卡片内容 - 优化布局 */}
-                <div className="px-4 sm:px-5 md:px-6 py-4 sm:py-5 md:py-6 w-full max-w-full">
+                <div className="px-2.5 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 w-full max-w-full">
                     <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5 md:gap-6 w-full max-w-full">
                         {/* 天干图标 - 增强视觉效果 */}
                         <div
@@ -105,7 +105,7 @@ export function BasicInfoSection({
                 {/* 五行分析 */}
                 {!hasKnownBirthTime ? (
                     <section className="bg-background rounded-xl border border-border overflow-hidden w-full max-w-full box-border shadow-sm">
-                        <div className="px-4 sm:px-5 md:px-6 py-3.5 sm:py-4 md:py-5 w-full max-w-full">
+                        <div className="px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3.5 md:py-4 w-full max-w-full">
                             <div className="flex items-start gap-3">
                                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/10 border border-yellow-200/60 dark:border-yellow-700/30 flex-shrink-0 shadow-sm">
                                     <Info className="w-4 h-4 text-[#f59e0b]" />
@@ -125,7 +125,7 @@ export function BasicInfoSection({
                     </section>
                 ) : !isSaved ? (
                     <section className="bg-background rounded-xl border border-border overflow-hidden w-full max-w-full box-border shadow-sm">
-                        <div className="px-4 sm:px-5 md:px-6 py-3.5 sm:py-4 md:py-5 w-full max-w-full">
+                        <div className="px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3.5 md:py-4 w-full max-w-full">
                             <div className="flex items-start gap-3">
                                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/10 border border-blue-200/60 dark:border-blue-700/30 flex-shrink-0 shadow-sm">
                                     <Save className="w-4 h-4 text-[#2eaadc]" />
@@ -177,7 +177,7 @@ export function BasicInfoSection({
                 {/* 性格分析 */}
                 {!hasKnownBirthTime ? (
                     <section className="bg-background rounded-xl border border-border overflow-hidden w-full max-w-full box-border shadow-sm">
-                        <div className="px-4 sm:px-5 md:px-6 py-3.5 sm:py-4 md:py-5 w-full max-w-full">
+                        <div className="px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3.5 md:py-4 w-full max-w-full">
                             <div className="flex items-start gap-3">
                                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/10 border border-purple-200/60 dark:border-purple-700/30 flex-shrink-0 shadow-sm">
                                     <User className="w-4 h-4 text-[#a083ff]" />
@@ -197,7 +197,7 @@ export function BasicInfoSection({
                     </section>
                 ) : !isSaved ? (
                     <section className="bg-background rounded-xl border border-border overflow-hidden w-full max-w-full box-border shadow-sm">
-                        <div className="px-4 sm:px-5 md:px-6 py-3.5 sm:py-4 md:py-5 w-full max-w-full">
+                        <div className="px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-3.5 md:py-4 w-full max-w-full">
                             <div className="flex items-start gap-3">
                                 <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-50 to-fuchsia-50 dark:from-violet-900/20 dark:to-fuchsia-900/10 border border-violet-200/60 dark:border-violet-700/30 flex-shrink-0 shadow-sm">
                                     <User className="w-4 h-4 text-[#a083ff]" />
