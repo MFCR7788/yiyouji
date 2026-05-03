@@ -88,25 +88,16 @@ export async function GET(request: NextRequest) {
             console.warn('[admin-users][GET] SUPABASE_SECRET_KEY not configured, skipping fetch');
         }
 
-        // 获取每个用户的积分余额
-        const creditPromises = userIds.map(async (userId: string) => {
-            const { data: transactions } = await supabase
-                .from('credit_transactions')
-                .select('balance_after')
-                .eq('user_id', userId)
-                .order('created_at', { ascending: false })
-                .limit(1);
+        // 获取每个用户的积分余额（从 users 表的 ai_chat_count 字段读取）
+        const { data: userCreditData } = await supabase
+            .from('users')
+            .select('id, ai_chat_count')
+            .in('id', userIds);
 
-            return {
-                userId,
-                balance: transactions?.[0]?.balance_after || 0,
-            };
+        const creditMap: Record<string, number> = {};
+        (userCreditData || []).forEach((user: Record<string, unknown>) => {
+            creditMap[user.id as string] = (user.ai_chat_count as number) || 0;
         });
-
-        const creditResults = await Promise.all(creditPromises);
-        const creditMap: Record<string, number> = Object.fromEntries(
-            creditResults.map((r) => [r.userId, r.balance])
-        );
 
         // 记录查看操作（非阻塞，失败不影响主流程）
         try {

@@ -95,3 +95,4 @@ remote-exec*.exp
 scp-*.exp
 setup-*.exp
 set-github-secrets.py
+.env.production
