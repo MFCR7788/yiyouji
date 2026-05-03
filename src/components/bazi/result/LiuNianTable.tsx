@@ -11,7 +11,7 @@ export function LiuNianTable({
     onSelect: (year: number) => void;
 }) {
     return (
-        <div className="overflow-x-auto px-0 scrollbar-thin">
+        <div className="overflow-x-auto w-full scrollbar-thin">
             <div className="flex gap-1.5 sm:gap-2 min-w-max">
                 {liuNian.map((ln, index) => {
                     const isSelected = selectedYear === ln.year;

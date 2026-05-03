@@ -11,7 +11,7 @@ export function LiuRiTable({
     onSelect: (date: string) => void;
 }) {
     return (
-        <div className="overflow-x-auto px-0 scrollbar-thin">
+        <div className="overflow-x-auto w-full scrollbar-thin">
             <div className="flex gap-1.5 sm:gap-2 min-w-max">
                 {liuRi.map((ri) => {
                     const isSelected = ri.date === selectedDate;
