@@ -143,6 +143,9 @@ export function BasicInfoSection({
                         <div className="space-y-2 w-full">
                             <h3 className="text-base font-bold break-words">AI 五行分析</h3>
                             <p className="text-sm text-foreground/50 break-words w-full">
+                                登录后解锁完整 AI 深度解读，获取更精准的个性化建议
+                            </p>
+                        </div>
                         <button
                             onClick={onLoginRequired}
                             className="mt-4 px-5 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-lg hover:bg-[#2383e2]/90 transition-colors"
