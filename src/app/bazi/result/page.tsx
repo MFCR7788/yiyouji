@@ -123,7 +123,7 @@ function BaziResultContent() {
             try {
                 // 并行加载命盘数据（对话分析可能因为表结构不存在而失败，但不影响命盘展示）
                 const chartData = await loadSavedChart('bazi', chartId);
-                
+
                 let wuxingAnalysis = null;
                 let personalityAnalysis = null;
 
@@ -552,7 +552,7 @@ function BaziResultContent() {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
                 <p className="text-sm text-foreground/40 mb-6">未找到对应八字命盘</p>
-                <Link href="/bazi" className="px-4 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-md hover:bg-[#2383e2]/90 transition-colors">
+                <Link href="/bazi" className="px-4 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-lg hover:bg-[#2383e2]/90 transition-colors">
                     返回重新输入
                 </Link>
             </div>
@@ -563,7 +563,7 @@ function BaziResultContent() {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
                 <p className="text-sm text-foreground/40 mb-6">{loadError}</p>
-                <Link href="/bazi" className="px-4 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-md hover:bg-[#2383e2]/90 transition-colors">
+                <Link href="/bazi" className="px-4 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-lg hover:bg-[#2383e2]/90 transition-colors">
                     返回重新输入
                 </Link>
             </div>
@@ -574,7 +574,7 @@ function BaziResultContent() {
         return (
             <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 text-center">
                 <p className="text-sm text-foreground/40 mb-6">八字计算出错，请返回重新输入</p>
-                <Link href="/bazi" className="px-4 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-md hover:bg-[#2383e2]/90 transition-colors">
+                <Link href="/bazi" className="px-4 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-lg hover:bg-[#2383e2]/90 transition-colors">
                     返回重新输入
                 </Link>
             </div>
@@ -585,7 +585,7 @@ function BaziResultContent() {
 
     return (
         <div className="min-h-screen bg-background overflow-x-hidden">
-            <div className="w-full mx-auto px-2 sm:px-4 py-6 sm:py-8 animate-fade-in max-w-4xl">
+            <div className="max-w-5xl mx-auto px-4 py-8 animate-fade-in">
                 <ResultHeader
                     chartId={chartId}
                     saving={saving}
@@ -656,12 +656,12 @@ function BaziResultContent() {
                 )}
 
                 {(hasMountedNotes || activeTab === 'notes') && (
-                    <div className={activeTab === 'notes' ? 'animate-fade-in bg-background border border-border rounded-md p-4 sm:p-6 pt-2' : 'hidden'}>
+                    <div className={activeTab === 'notes' ? 'animate-fade-in' : 'hidden'}>
                         <CaseNotesSection chartId={chartId} />
                     </div>
                 )}
 
-                <div className="mt-8 sm:mt-12 pt-8 sm:pt-12 border-t border-border/60">
+                <div className="mt-8 pt-8 border-t border-border/60">
                     <ResultFooterLinks />
                 </div>
             </div>

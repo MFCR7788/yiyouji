@@ -1,6 +1,6 @@
 /**
  * 八字基本信息区块
- * 
+ *
  * 对齐 Notion 风格：极简卡片、移除渐变、标准化边框与按钮
  */
 import { User, Save, Sparkles, Info } from 'lucide-react';
@@ -14,31 +14,18 @@ import type { FiveElement, TenGod } from '@/types';
 interface BasicInfoSectionProps {
     canonicalChart: BaziCanonicalJSON;
     dayMasterDescription: string;
-    /** 命盘ID（用于AI分析持久化） */
     chartId?: string | null;
-    /** 用户ID */
     userId?: string | null;
-    /** 用户当前积分 */
     credits?: number | null;
-    /** 已保存的五行分析 */
     savedWuxingAnalysis?: string | null;
-    /** 已保存的五行推理 */
     savedWuxingReasoning?: string | null;
-    /** 已保存的五行模型 */
     savedWuxingModelId?: string | null;
-    /** 已保存的人格分析 */
     savedPersonalityAnalysis?: string | null;
-    /** 已保存的人格推理 */
     savedPersonalityReasoning?: string | null;
-    /** 已保存的人格模型 */
     savedPersonalityModelId?: string | null;
-    /** 是否具备有效出生时辰 */
     hasKnownBirthTime?: boolean;
-    /** 保存五行分析回调 */
     onSaveWuxingAnalysis?: (analysis: string) => void;
-    /** 保存人格分析回调 */
     onSavePersonalityAnalysis?: (analysis: string) => void;
-    /** 登录回调 */
     onLoginRequired?: () => void;
 }
 
@@ -59,7 +46,6 @@ export function BasicInfoSection({
     onSavePersonalityAnalysis,
     onLoginRequired,
 }: BasicInfoSectionProps) {
-    // 获取命盘中出现的十神
     const highlightedTenGods: TenGod[] = [
         canonicalChart.四柱[0]?.天干十神,
         canonicalChart.四柱[1]?.天干十神,
@@ -67,91 +53,98 @@ export function BasicInfoSection({
     ].filter((g): g is TenGod => !!g);
     const dayMasterElement = canonicalChart.基本信息.命主五行?.slice(-1) || '';
 
-    // 是否已保存命盘
     const isSaved = Boolean(chartId);
     return (
-        <div className="space-y-6 sm:space-y-8 animate-fade-in">
-            {/* 1. 日主特征 - 极简卡片 */}
-            <section className="bg-background border border-border rounded-lg p-4 sm:p-6">
-                <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                        <div className="p-1.5 rounded-md bg-foreground/5">
-                            <User className="w-6 h-6 text-foreground/40" />
+        <div className="space-y-4 md:space-y-6 animate-fade-in">
+            {/* 日主特征卡片 */}
+            <section className="bg-background rounded-xl border border-border overflow-hidden">
+                <div className="px-4 md:px-6 py-4 md:py-5">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2 rounded-lg bg-foreground/5">
+                            <User className="w-5 h-5 text-foreground/40" />
                         </div>
-                        <h2 className="text-base sm:text-lg font-semibold uppercase tracking-widest text-foreground/50">
+                        <h2 className="text-sm font-semibold uppercase tracking-widest text-foreground/50">
                             日主特征
                         </h2>
                     </div>
-                    <div className="flex flex-col md:flex-row items-start gap-4 sm:gap-6">
+                </div>
+                <div className="px-4 md:px-6 pb-4 md:pb-6">
+                    <div className="flex flex-col md:flex-row items-start gap-4 md:gap-6">
                         <div
-                            className="w-16 h-16 sm:w-24 sm:h-24 rounded-lg flex items-center justify-center text-3xl sm:text-5xl font-bold text-white shrink-0 shadow-md transition-transform hover:scale-105"
+                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex items-center justify-center text-3xl sm:text-4xl font-bold text-white shrink-0 shadow-md transition-transform hover:scale-105"
                             style={{ backgroundColor: getElementColor(dayMasterElement as FiveElement) }}
                         >
                             {canonicalChart.基本信息.日主}
                         </div>
-                        <div className="space-y-2 sm:space-y-3 flex-1">
-                            <div className="font-semibold text-xl sm:text-2xl text-foreground">
+                        <div className="space-y-2 md:space-y-3 flex-1">
+                            <div className="font-semibold text-lg sm:text-xl text-foreground">
                                 日主「{canonicalChart.基本信息.日主}」，五行属{dayMasterElement}
                             </div>
-                            <p className="text-lg sm:text-xl text-foreground/70 leading-relaxed max-w-2xl">
+                            <p className="text-sm sm:text-base text-foreground/70 leading-relaxed max-w-2xl">
                                 {dayMasterDescription}
                             </p>
                         </div>
                     </div>
+                </div>
             </section>
 
-            {/* 2. AI 专业分析区域 */}
-            <div className="space-y-6 sm:space-y-8">
+            {/* AI 专业分析区域 */}
+            <div className="space-y-4 md:space-y-6">
                 {/* 五行分析 */}
                 {!hasKnownBirthTime ? (
-                    <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                            <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <Info className="w-5 h-5 sm:w-6 sm:h-6 text-[#dfab01]" />
-                            </div>
-                            <div className="space-y-3 sm:space-y-4 flex-1">
-                                <div>
-                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 专业五行分析</h4>
-                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
+                    <section className="bg-background rounded-xl border border-border overflow-hidden">
+                        <div className="px-4 md:px-6 py-4">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-lg bg-background border border-border/60 shrink-0">
+                                    <Info className="w-4 h-4 text-[#dfab01]" />
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
-                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                    请先补全出生时辰并保存命盘，再使用 AI 深度解读
+                                <div className="space-y-3 flex-1">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground/80">AI 专业五行分析</h4>
+                                        <p className="text-xs text-foreground/40 mt-0.5">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded-lg text-xs text-[#dfab01] font-medium">
+                                        <Info className="w-3.5 h-3.5 shrink-0" />
+                                        请先补全出生时辰并保存命盘，再使用 AI 深度解读
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </section>
                 ) : !isSaved ? (
-                    <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                            <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <Save className="w-5 h-5 sm:w-6 sm:h-6 text-[#2eaadc]" />
-                            </div>
-                            <div className="space-y-3 sm:space-y-4 flex-1">
-                                <div>
-                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 专业五行分析</h4>
-                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">深度洞察五行旺衰与调候建议</p>
+                    <section className="bg-background rounded-xl border border-border overflow-hidden">
+                        <div className="px-4 md:px-6 py-4">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-lg bg-background border border-border/60 shrink-0">
+                                    <Save className="w-4 h-4 text-[#2eaadc]" />
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
-                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                    请先点击页面右上角「保存」命盘，即可解锁 AI 深度解读功能
+                                <div className="space-y-3 flex-1">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground/80">AI 专业五行分析</h4>
+                                        <p className="text-xs text-foreground/40 mt-0.5">深度洞察五行旺衰与调候建议</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded-lg text-xs text-[#dfab01] font-medium">
+                                        <Info className="w-3.5 h-3.5 shrink-0" />
+                                        请先点击页面右上角「保存」命盘，即可解锁 AI 深度解读功能
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </section>
                 ) : !userId ? (
-                    <section className="bg-blue-50/30 border border-blue-100 rounded-md p-6 sm:p-8 text-center space-y-3 sm:space-y-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
-                            <Sparkles className="w-6 h-6 sm:w-7 sm:h-7 text-[#2eaadc]" />
+                    <section className="bg-blue-50/30 border border-blue-100 rounded-xl p-6 md:p-8 text-center">
+                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                            <Sparkles className="w-6 h-6 text-[#2eaadc]" />
                         </div>
-                        <div className="space-y-1">
-                            <h3 className="text-base sm:text-lg font-bold">AI 五行分析</h3>
-                            <p className="text-sm sm:text-base text-foreground/40 max-w-xs mx-auto leading-relaxed">
+                        <div className="space-y-2">
+                            <h3 className="text-base font-bold">AI 五行分析</h3>
+                            <p className="text-sm text-foreground/50 max-w-xs mx-auto">
                                 登录后解锁完整 AI 深度解读，获取更精准的个性化建议
                             </p>
                         </div>
                         <button
                             onClick={onLoginRequired}
-                            className="px-5 sm:px-6 py-1.5 sm:py-2 bg-[#2383e2] text-white text-sm sm:text-base font-bold rounded-md hover:bg-[#2383e2]/90 transition-all active:bg-[#1a65b0]"
+                            className="mt-4 px-5 py-2 bg-[#2383e2] text-white text-sm font-medium rounded-lg hover:bg-[#2383e2]/90 transition-colors"
                         >
                             立即登录体验
                         </button>
@@ -171,55 +164,59 @@ export function BasicInfoSection({
 
                 {/* 性格分析 */}
                 {!hasKnownBirthTime ? (
-                    <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                            <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <Info className="w-5 h-5 sm:w-6 sm:h-6 text-[#dfab01]" />
-                            </div>
-                            <div className="space-y-3 sm:space-y-4 flex-1">
-                                <div>
-                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 性格特征分析</h4>
-                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
+                    <section className="bg-background rounded-xl border border-border overflow-hidden">
+                        <div className="px-4 md:px-6 py-4">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-lg bg-background border border-border/60 shrink-0">
+                                    <Info className="w-4 h-4 text-[#dfab01]" />
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
-                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                    请先补全出生时辰并保存命盘，再使用 AI 性格分析
+                                <div className="space-y-3 flex-1">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground/80">AI 性格特征分析</h4>
+                                        <p className="text-xs text-foreground/40 mt-0.5">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded-lg text-xs text-[#dfab01] font-medium">
+                                        <Info className="w-3.5 h-3.5 shrink-0" />
+                                        请先补全出生时辰并保存命盘，再使用 AI 性格分析
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </section>
                 ) : !isSaved ? (
-                    <section className="bg-background-secondary/30 border border-border rounded-md p-4 sm:p-6">
-                        <div className="flex items-start gap-3 sm:gap-4">
-                            <div className="p-1.5 sm:p-2 rounded bg-background border border-border/60 shrink-0">
-                                <User className="w-5 h-5 sm:w-6 sm:h-6 text-[#a083ff]" />
-                            </div>
-                            <div className="space-y-3 sm:space-y-4 flex-1">
-                                <div>
-                                    <h4 className="text-sm sm:text-base font-bold text-foreground/80">AI 性格特征分析</h4>
-                                    <p className="text-xs sm:text-sm text-foreground/40 mt-0.5 sm:mt-1">基于十神命局的深度性格画像</p>
+                    <section className="bg-background rounded-xl border border-border overflow-hidden">
+                        <div className="px-4 md:px-6 py-4">
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 rounded-lg bg-background border border-border/60 shrink-0">
+                                    <User className="w-4 h-4 text-[#a083ff]" />
                                 </div>
-                                <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded text-sm sm:text-base text-[#dfab01] font-medium">
-                                    <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                                    保存命盘后即可开启 AI 性格特征分析
+                                <div className="space-y-3 flex-1">
+                                    <div>
+                                        <h4 className="text-sm font-bold text-foreground/80">AI 性格特征分析</h4>
+                                        <p className="text-xs text-foreground/40 mt-0.5">基于十神命局的深度性格画像</p>
+                                    </div>
+                                    <div className="flex items-center gap-2 px-3 py-2 bg-[#dfab01]/5 border border-[#dfab01]/10 rounded-lg text-xs text-[#dfab01] font-medium">
+                                        <Info className="w-3.5 h-3.5 shrink-0" />
+                                        保存命盘后即可开启 AI 性格特征分析
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </section>
                 ) : !userId ? (
-                    <section className="bg-[#a083ff]/5 border border-[#a083ff]/10 rounded-md p-6 sm:p-8 text-center space-y-3 sm:space-y-4">
-                        <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-[#a083ff]/10 flex items-center justify-center mx-auto">
-                            <User className="w-6 h-6 sm:w-7 sm:h-7 text-[#a083ff]" />
+                    <section className="bg-[#a083ff]/5 border border-[#a083ff]/10 rounded-xl p-6 md:p-8 text-center">
+                        <div className="w-12 h-12 rounded-full bg-[#a083ff]/10 flex items-center justify-center mx-auto mb-4">
+                            <User className="w-6 h-6 text-[#a083ff]" />
                         </div>
-                        <div className="space-y-1">
-                            <h3 className="text-base sm:text-lg font-bold">AI 性格分析</h3>
-                            <p className="text-sm sm:text-base text-foreground/40 max-w-xs mx-auto leading-relaxed">
+                        <div className="space-y-2">
+                            <h3 className="text-base font-bold">AI 性格分析</h3>
+                            <p className="text-sm text-foreground/50 max-w-xs mx-auto">
                                 登录后解锁基于您命盘的深度性格倾向与职场建议
                             </p>
                         </div>
                         <button
                             onClick={onLoginRequired}
-                            className="px-5 sm:px-6 py-1.5 sm:py-2 bg-[#a083ff] text-white text-sm sm:text-base font-bold rounded-md hover:bg-[#a083ff]/90 transition-all"
+                            className="mt-4 px-5 py-2 bg-[#a083ff] text-white text-sm font-medium rounded-lg hover:bg-[#a083ff]/90 transition-colors"
                         >
                             立即登录体验
                         </button>
@@ -238,8 +235,8 @@ export function BasicInfoSection({
                 )}
             </div>
 
-            {/* 3. 十神知识库 - 独立区域 */}
-            <div className="pt-3 sm:pt-4">
+            {/* 十神知识库 */}
+            <div className="pt-2">
                 <TenGodKnowledge highlightedTenGods={highlightedTenGods} />
             </div>
         </div>

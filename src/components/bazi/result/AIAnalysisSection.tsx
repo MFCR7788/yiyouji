@@ -35,21 +35,13 @@ interface AIAnalysisSectionProps {
     savedModelId?: string | null;
     onSaveAnalysis: (analysis: string) => void;
     onLoginRequired?: () => void;
-    /** API 请求的 type 参数 */
     type: 'wuxing' | 'personality';
-    /** 标题 */
     title: string;
-    /** 副标题 */
     subtitle: string;
-    /** 锁定描述 */
     lockDescription: string;
-    /** 加载中提示文字 */
     loadingText: string;
-    /** 图标渲染 */
     icon: ReactNode;
-    /** 图标容器样式 */
     iconContainerClass: string;
-    /** 头部渐变样式 */
     headerGradientClass: string;
 }
 
@@ -227,7 +219,7 @@ export function AIAnalysisSection({
         return (
             <div className="space-y-2">
                 {modelControls}
-                <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-border bg-background">
+                <div className="flex min-h-[280px] items-center justify-center rounded-xl border border-border bg-background">
                     <SoundWaveLoader variant="inline" />
                 </div>
             </div>
@@ -235,31 +227,31 @@ export function AIAnalysisSection({
     }
 
     const content = (
-        <div className="rounded-lg border border-border bg-background overflow-hidden">
-            <div className={`px-4 py-3 sm:px-5 sm:py-3 border-b border-border flex items-center justify-between ${headerGradientClass}`}>
-                <div className="flex items-center gap-2 sm:gap-3">
-                    <div className={`p-2 sm:p-2.5 rounded-lg ${iconContainerClass}`}>{icon}</div>
+        <div className="rounded-xl border border-border bg-background overflow-hidden">
+            <div className={`px-4 py-3 md:px-6 md:py-4 border-b border-border flex items-center justify-between ${headerGradientClass}`}>
+                <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-xl ${iconContainerClass}`}>{icon}</div>
                     <div>
-                        <h4 className="font-semibold text-base sm:text-lg">{title}</h4>
-                        <p className="text-sm sm:text-base text-foreground/50">{subtitle}</p>
+                        <h4 className="font-semibold text-base">{title}</h4>
+                        <p className="text-sm text-foreground/50">{subtitle}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-1.5 sm:gap-2">
+                <div className="flex items-center gap-2">
                     {analysis && !loading && (
-                        <button onClick={handleCopy} className="p-1.5 sm:p-2 rounded-md hover:bg-foreground/5 transition-colors" title="复制">
-                            {copied ? <Check className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" /> : <Copy className="w-4 h-4 sm:w-5 sm:h-5 text-foreground/50" />}
+                        <button onClick={handleCopy} className="p-2 rounded-lg hover:bg-foreground/5 transition-colors" title="复制">
+                            {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-foreground/50" />}
                         </button>
                     )}
                     <button onClick={startAnalysis} disabled={loading}
-                        className="inline-flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-md bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm sm:text-base disabled:opacity-50">
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm disabled:opacity-50">
                         {loading ? <SoundWaveLoader variant="inline" /> : <RefreshCw className="w-4 h-4" />}
                         {loading ? '分析中...' : '重新分析'}
                     </button>
                 </div>
             </div>
-            <div className="p-4 sm:p-5 prose prose-base dark:prose-invert max-w-none min-h-[200px] sm:min-h-[220px] overflow-hidden">
+            <div className="p-4 md:p-6 prose prose-base dark:prose-invert max-w-none min-h-[200px] overflow-hidden">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-8 sm:py-12 gap-3">
+                    <div className="flex flex-col items-center justify-center py-8 gap-3">
                         {streaming.isStreaming && (streaming.content || streaming.reasoning) ? (
                             <>
                                 {streaming.reasoning && (
@@ -267,20 +259,20 @@ export function AIAnalysisSection({
                                         startTime={streaming.reasoningStartTime} duration={streaming.reasoningDuration} />
                                 )}
                                 {streaming.content && (
-                                    <MarkdownContent content={streaming.content} className="text-base sm:text-lg text-foreground/70" />
+                                    <MarkdownContent content={streaming.content} className="text-base text-foreground/70" />
                                 )}
                             </>
                         ) : (
                             <>
                                 <SoundWaveLoader variant="inline" />
-                                <p className="text-sm sm:text-base text-foreground/50">{loadingText}</p>
+                                <p className="text-sm text-foreground/50">{loadingText}</p>
                             </>
                         )}
                     </div>
                 ) : (
                     <>
                         {analysisReasoning && <ThinkingBlock content={analysisReasoning} duration={streaming.reasoningDuration} />}
-                        <MarkdownContent content={analysis || '点击「重新分析」开始AI分析'} className="text-base sm:text-lg text-foreground/70" />
+                        <MarkdownContent content={analysis || '点击「重新分析」开始AI分析'} className="text-base text-foreground/70" />
                     </>
                 )}
             </div>
