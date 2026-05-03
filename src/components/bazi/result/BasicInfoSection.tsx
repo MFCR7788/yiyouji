@@ -72,25 +72,27 @@ export function BasicInfoSection({
     return (
         <div className="space-y-6 sm:space-y-8 animate-fade-in">
             {/* 1. 日主特征 - 极简卡片 */}
-            <section className="bg-background border border-border rounded-md p-4 sm:p-6">
+            <section className="bg-background border border-border rounded-lg p-4 sm:p-6">
                 <div className="flex items-center gap-2 mb-4 sm:mb-6">
-                    <User className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground/30" />
-                    <h2 className="text-xs sm:text-sm font-bold uppercase tracking-widest text-foreground/60">
+                    <div className="p-1.5 rounded-md bg-foreground/5">
+                        <User className="w-4 h-4 text-foreground/40" />
+                    </div>
+                    <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-widest text-foreground/50">
                         日主特征
                     </h2>
                 </div>
                 <div className="flex flex-col md:flex-row items-start gap-4 sm:gap-6">
                     <div
-                        className="w-11 h-11 sm:w-14 sm:h-14 rounded-md flex items-center justify-center text-xl sm:text-2xl font-bold text-white shrink-0 shadow-sm"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg flex items-center justify-center text-xl sm:text-3xl font-bold text-white shrink-0 shadow-md transition-transform hover:scale-105"
                         style={{ backgroundColor: getElementColor(dayMasterElement as FiveElement) }}
                     >
                         {canonicalChart.基本信息.日主}
                     </div>
-                    <div className="space-y-1.5 sm:space-y-2">
-                        <div className="font-bold text-sm sm:text-base">
+                    <div className="space-y-2 sm:space-y-3 flex-1">
+                        <div className="font-semibold text-base sm:text-lg text-foreground">
                             日主「{canonicalChart.基本信息.日主}」，五行属{dayMasterElement}
                         </div>
-                        <p className="text-xs sm:text-sm text-foreground/60 leading-relaxed max-w-2xl">
+                        <p className="text-sm sm:text-base text-foreground/70 leading-relaxed max-w-2xl">
                             {dayMasterDescription}
                         </p>
                     </div>

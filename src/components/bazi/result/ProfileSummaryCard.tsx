@@ -35,7 +35,7 @@ export function ProfileSummaryCard({
                     <h1 className="text-lg sm:text-xl font-semibold tracking-tight truncate text-foreground">
                         {meta.name}
                     </h1>
-                    <span className={`px-1.5 sm:px-2 py-0.5 text-[9px] sm:text-[10px] font-bold rounded uppercase tracking-[0.15em] sm:tracking-[0.18em] ${meta.gender === 'male' ? 'text-blue-500/70 bg-blue-50' : 'text-pink-500/70 bg-pink-50'}`}>
+                    <span className={`px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[10px] font-bold rounded-md uppercase tracking-[0.15em] sm:tracking-[0.18em] ${meta.gender === 'male' ? 'text-blue-600/80 bg-blue-50' : 'text-pink-600/80 bg-pink-50'}`}>
                         {meta.gender === 'male' ? '男' : '女'}
                     </span>
                 </div>
