@@ -182,15 +182,15 @@ export function AIAnalysisSection({
     };
 
     const placeholder = (
-        <div className="p-3 sm:p-4 md:p-6 space-y-4 min-h-[280px] w-full">
-            <div className="flex flex-col sm:flex-row items-center gap-3">
+        <div className="p-3 sm:p-4 md:p-6 space-y-4 min-h-[280px] w-full max-w-full">
+            <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-full">
                 <div className={`p-2 rounded-xl ${iconContainerClass} flex-shrink-0`}>{icon}</div>
-                <div className="flex-1 min-w-0 w-full">
+                <div className="flex-1 min-w-0 w-full max-w-full">
                     <h4 className="font-bold break-words">{title}</h4>
                     <p className="text-sm text-foreground-secondary break-words">{subtitle}</p>
                 </div>
             </div>
-            <div className="space-y-2 w-full">
+            <div className="space-y-2 w-full max-w-full">
                 <div className="h-4 bg-foreground/10 rounded w-full" />
                 <div className="h-4 bg-foreground/10 rounded w-4/5" />
                 <div className="h-4 bg-foreground/10 rounded w-3/4" />

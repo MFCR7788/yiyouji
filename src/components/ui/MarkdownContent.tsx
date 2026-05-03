@@ -73,6 +73,9 @@ const staticComponents: Partial<Components> = {
         <strong className="font-semibold text-foreground">{children}</strong>
     ),
     em: ({ children }) => <em className="italic">{children}</em>,
+    img: ({ src, alt }) => (
+        <img src={src} alt={alt || ''} className="w-full h-auto max-w-full rounded-lg my-4" loading="lazy" />
+    ),
     code: ({ className, children }) => {
         const match = /language-(\w+)/.exec(className || '');
         const isInline = !className;

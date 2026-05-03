@@ -115,7 +115,7 @@ export function BasicInfoSection({
                                         <h4 className="text-sm font-semibold text-foreground/85 break-words">AI 专业五行分析</h4>
                                         <p className="text-xs text-foreground/45 mt-1 break-words leading-relaxed">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
                                     </div>
-                                    <div className="inline-flex items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/15 dark:to-orange-900/10 border border-amber-200/60 dark:border-amber-700/30 rounded-xl text-xs text-amber-800 dark:text-amber-200 font-medium w-fit max-w-full">
+                                    <div className="flex flex-wrap items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/15 dark:to-orange-900/10 border border-amber-200/60 dark:border-amber-700/30 rounded-xl text-xs text-amber-800 dark:text-amber-200 font-medium w-full max-w-full">
                                         <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                                         <span className="break-words leading-relaxed">请先补全出生时辰并保存命盘，再使用 AI 深度解读</span>
                                     </div>
@@ -135,7 +135,7 @@ export function BasicInfoSection({
                                         <h4 className="text-sm font-semibold text-foreground/85 break-words">AI 专业五行分析</h4>
                                         <p className="text-xs text-foreground/45 mt-1 break-words leading-relaxed">深度洞察五行旺衰与调候建议</p>
                                     </div>
-                                    <div className="inline-flex items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/15 dark:to-indigo-900/10 border border-blue-200/60 dark:border-blue-700/30 rounded-xl text-xs text-blue-700 dark:text-blue-300 font-medium w-fit max-w-full">
+                                    <div className="flex flex-wrap items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/15 dark:to-indigo-900/10 border border-blue-200/60 dark:border-blue-700/30 rounded-xl text-xs text-blue-700 dark:text-blue-300 font-medium w-full max-w-full">
                                         <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                                         <span className="break-words leading-relaxed">请先点击页面右上角「保存」命盘，即可解锁 AI 深度解读功能</span>
                                     </div>
@@ -187,7 +187,7 @@ export function BasicInfoSection({
                                         <h4 className="text-sm font-semibold text-foreground/85 break-words">AI 性格特征分析</h4>
                                         <p className="text-xs text-foreground/45 mt-1 break-words leading-relaxed">未知时辰仅支持前端查看，不支持保存与 AI 深度分析</p>
                                     </div>
-                                    <div className="inline-flex items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/15 dark:to-pink-900/10 border border-purple-200/60 dark:border-purple-700/30 rounded-xl text-xs text-purple-700 dark:text-purple-300 font-medium w-fit max-w-full">
+                                    <div className="flex flex-wrap items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-900/15 dark:to-pink-900/10 border border-purple-200/60 dark:border-purple-700/30 rounded-xl text-xs text-purple-700 dark:text-purple-300 font-medium w-full max-w-full">
                                         <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                                         <span className="break-words leading-relaxed">请先补全出生时辰并保存命盘，再使用 AI 性格分析</span>
                                     </div>
@@ -207,7 +207,7 @@ export function BasicInfoSection({
                                         <h4 className="text-sm font-semibold text-foreground/85 break-words">AI 性格特征分析</h4>
                                         <p className="text-xs text-foreground/45 mt-1 break-words leading-relaxed">基于十神命局的深度性格画像</p>
                                     </div>
-                                    <div className="inline-flex items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/15 dark:to-fuchsia-900/10 border border-violet-200/60 dark:border-violet-700/30 rounded-xl text-xs text-violet-700 dark:text-violet-300 font-medium w-fit max-w-full">
+                                    <div className="flex flex-wrap items-start gap-2 px-3.5 py-2.5 bg-gradient-to-r from-violet-50 to-fuchsia-50 dark:from-violet-900/15 dark:to-fuchsia-900/10 border border-violet-200/60 dark:border-violet-700/30 rounded-xl text-xs text-violet-700 dark:text-violet-300 font-medium w-full max-w-full">
                                         <Info className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                                         <span className="break-words leading-relaxed">保存命盘后即可开启 AI 性格特征分析</span>
                                     </div>
