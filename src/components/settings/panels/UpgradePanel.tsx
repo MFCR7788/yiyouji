@@ -28,6 +28,7 @@ import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { useToast } from '@/components/ui/Toast';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
 import { getMembershipInfo, type MembershipInfo } from '@/lib/user/membership';
+import { requestBrowserJson } from '@/lib/browser-api';
 
 function ActionButton({
   icon,
@@ -72,6 +73,7 @@ export default function UpgradePanel() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [transactionsRefreshKey, setTransactionsRefreshKey] = useState(0);
+  const [registrationBonus, setRegistrationBonus] = useState(0);
   const { showToast } = useToast();
 
   const checkinEnabled = featureLoaded && isFeatureEnabled('checkin');
@@ -88,6 +90,31 @@ export default function UpgradePanel() {
     setMembershipError(result.error.message || '获取会员状态失败');
     return result;
   }, []);
+
+  const fetchRegistrationBonus = useCallback(async () => {
+    if (!user) {
+      setRegistrationBonus(0);
+      return;
+    }
+
+    try {
+      const result = await requestBrowserJson<{
+        items?: Array<{ source: string; amount: number }>;
+      }>('/api/credits/transactions?limit=50', { method: 'GET' });
+
+      if (result.data?.items) {
+        const registrationTx = result.data.items.find((tx) => tx.source === 'registration');
+        if (registrationTx && registrationTx.amount > 0) {
+          setRegistrationBonus(registrationTx.amount);
+        } else {
+          setRegistrationBonus(0);
+        }
+      }
+    } catch (error) {
+      console.error('获取注册赠送积分失败:', error);
+      setRegistrationBonus(0);
+    }
+  }, [user]);
 
   const refreshCheckinStatus = useCallback(async () => {
     if (!user || !checkinEnabled) {
@@ -130,14 +157,16 @@ export default function UpgradePanel() {
       if (sessionLoading) return;
       if (user) {
         await refreshMembership(user.id);
+        await fetchRegistrationBonus();
       } else {
         setMembership(null);
         setMembershipError(null);
+        setRegistrationBonus(0);
       }
       setLoading(false);
     };
     void init();
-  }, [refreshMembership, sessionLoading, user]);
+  }, [fetchRegistrationBonus, refreshMembership, sessionLoading, user]);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -271,6 +300,7 @@ export default function UpgradePanel() {
         <CreditProgressBar
           credits={membership?.aiChatCount ?? 0}
           membershipType={currentPlan}
+          bonusFromRegistration={registrationBonus}
         />
       )}
 

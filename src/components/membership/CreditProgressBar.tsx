@@ -10,11 +10,13 @@ import { getPlanConfig } from '@/lib/user/membership';
 interface CreditProgressBarProps {
     credits: number;
     membershipType: MembershipType;
+    bonusFromRegistration?: number;
 }
 
 export function CreditProgressBar({
   credits,
   membershipType,
+  bonusFromRegistration,
 }: CreditProgressBarProps) {
   const plan = getPlanConfig(membershipType);
   const baseLimit = plan.creditLimit;
@@ -22,6 +24,8 @@ export function CreditProgressBar({
   const scaleMax = Math.max(credits, baseLimit, 1);
   const fillPercentage = Math.min((credits / scaleMax) * 100, 100);
   const limitMarkerPercentage = Math.min((baseLimit / scaleMax) * 100, 100);
+  const earnedFromRegistration = bonusFromRegistration && bonusFromRegistration > 0 ? bonusFromRegistration : 0;
+  const otherCredits = credits - earnedFromRegistration;
 
   return (
     <section className="overflow-hidden rounded-lg border border-[#ebe8e2] bg-[#f7f6f3]">
@@ -52,6 +56,12 @@ export function CreditProgressBar({
             </div>
           )}
         </div>
+        {earnedFromRegistration > 0 && (
+          <div className="mt-2 flex items-center justify-between text-xs text-[#37352f]/48">
+            <span>新用户赠送 {earnedFromRegistration} 积分</span>
+            {otherCredits > 0 && <span>其他 {otherCredits} 积分</span>}
+          </div>
+        )}
       </div>
     </section>
   );
