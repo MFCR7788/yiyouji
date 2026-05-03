@@ -6,6 +6,7 @@ import { pricingPlans, type PlanId, planIdToMembership } from '@/lib/user/member
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useToast } from '@/components/ui/Toast';
+import { PaymentModal } from './PaymentModal';
 
 const planIcons: Record<string, React.ReactNode> = {
     free: <Zap className="h-5 w-5" />,
@@ -23,6 +24,13 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
     const { user } = useSessionSafe();
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [purchasingPlan, setPurchasingPlan] = useState<string | null>(null);
+    const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [paymentData, setPaymentData] = useState<{
+        orderId: string;
+        codeUrl?: string;
+        planName: string;
+        price: number;
+    } | null>(null);
     const { showToast } = useToast();
 
     const paidPlans = pricingPlans.filter(p => p.price > 0);
@@ -48,8 +56,14 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
             });
             const data = await res.json();
             if (data.success) {
+                setPaymentData({
+                    orderId: data.data.orderId,
+                    codeUrl: data.data.codeUrl,
+                    planName: data.data.plan.name,
+                    price: data.data.plan.price,
+                });
+                setShowPaymentModal(true);
                 showToast('success', data.data?.message || '订单已创建');
-                onPurchaseSuccess?.();
             } else {
                 showToast('error', data.error || '购买失败');
             }
@@ -58,6 +72,19 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
         } finally {
             setPurchasingPlan(null);
         }
+    };
+
+    const handlePaymentSuccess = () => {
+        onPurchaseSuccess?.();
+        setTimeout(() => {
+            setShowPaymentModal(false);
+            setPaymentData(null);
+        }, 1500);
+    };
+
+    const handleClosePayment = () => {
+        setShowPaymentModal(false);
+        setPaymentData(null);
     };
 
     return (
@@ -156,6 +183,17 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
             </div>
 
             <AuthModal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)} />
+            {paymentData && (
+                <PaymentModal
+                    isOpen={showPaymentModal}
+                    onClose={handleClosePayment}
+                    orderId={paymentData.orderId}
+                    codeUrl={paymentData.codeUrl}
+                    planName={paymentData.planName}
+                    price={paymentData.price}
+                    onPaymentSuccess={handlePaymentSuccess}
+                />
+            )}
         </div>
     );
 }

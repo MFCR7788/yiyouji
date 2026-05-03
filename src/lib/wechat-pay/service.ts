@@ -1,7 +1,7 @@
 import { getSystemAdminClient } from '@/lib/supabase-server'
-import { WechatPayClient, getWechatPayConfig, isWechatPayConfigured } from './client'
+import { WechatPayClient, getWechatPayConfig } from './client'
 import type { MembershipOrder, WechatPayTransaction } from './types'
-import type { PlanId, MembershipType } from '@/lib/user/membership'
+import type { PlanId } from '@/lib/user/membership'
 import { planIdToMembership } from '@/lib/user/membership'
 
 function generateOutTradeNo(orderId: string): string {
@@ -110,4 +110,103 @@ export async function createPaymentOrder(
   }
 }
 
-export async function handlePaymentSuccess(
+export async function handlePaymentSuccess(transaction: WechatPayTransaction): Promise<void> {
+  const supabase = getSystemAdminClient()
+  const { out_trade_no, transaction_id, success_time } = transaction
+
+  const { data: order, error: orderError } = await supabase
+    .from('membership_orders')
+    .select('*')
+    .eq('out_trade_no', out_trade_no)
+    .single()
+
+  if (orderError || !order) {
+    console.error('[Payment] Order not found:', out_trade_no, orderError)
+    return
+  }
+
+  if (order.status === 'paid') {
+    console.log('[Payment] Order already paid:', order.id)
+    return
+  }
+
+  const planId = order.plan_id as PlanId
+  const membershipType = planIdToMembership(planId)
+
+  const { data: userData } = await supabase.from('users').select('*').eq('id', order.user_id).single()
+
+  let newExpiresAt: Date
+  if (userData?.membership_expires_at && new Date(userData.membership_expires_at) > new Date()) {
+    newExpiresAt = new Date(userData.membership_expires_at)
+  } else {
+    newExpiresAt = new Date()
+  }
+  newExpiresAt.setMonth(newExpiresAt.getMonth() + order.months)
+
+  await supabase
+    .from('users')
+    .update({
+      membership: membershipType,
+      membership_expires_at: newExpiresAt.toISOString(),
+    })
+    .eq('id', order.user_id)
+
+  await supabase
+    .from('membership_orders')
+    .update({
+      status: 'paid',
+      transaction_id,
+      paid_at: success_time || new Date().toISOString(),
+    })
+    .eq('id', order.id)
+}
+
+export async function queryOrderStatus(orderId: string): Promise<MembershipOrder> {
+  const supabase = getSystemAdminClient()
+
+  const { data: order, error: orderError } = await supabase
+    .from('membership_orders')
+    .select('*')
+    .eq('id', orderId)
+    .single()
+
+  if (orderError || !order) {
+    throw new Error('Order not found')
+  }
+
+  const payConfig = getWechatPayConfig()
+
+  if (payConfig && order.out_trade_no && order.status === 'pending') {
+    try {
+      const client = new WechatPayClient(payConfig)
+      const transaction = await client.queryOrder(order.out_trade_no)
+
+      if (transaction.trade_state === 'SUCCESS') {
+        await handlePaymentSuccess(transaction)
+      }
+    } catch (e) {
+      console.error('[Payment] Query wechat order failed:', e)
+    }
+  }
+
+  const { data: refreshedOrder } = await supabase
+    .from('membership_orders')
+    .select('*')
+    .eq('id', orderId)
+    .single()
+
+  return {
+    id: refreshedOrder!.id,
+    user_id: refreshedOrder!.user_id,
+    plan_id: refreshedOrder!.plan_id,
+    amount: refreshedOrder!.amount,
+    months: refreshedOrder!.months,
+    status: refreshedOrder!.status,
+    out_trade_no: refreshedOrder!.out_trade_no,
+    transaction_id: refreshedOrder!.transaction_id,
+    paid_at: refreshedOrder!.paid_at ? new Date(refreshedOrder!.paid_at) : undefined,
+    created_at: new Date(refreshedOrder!.created_at),
+    updated_at: new Date(refreshedOrder!.updated_at),
+  }
+}
+

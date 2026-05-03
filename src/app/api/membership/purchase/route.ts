@@ -1,8 +1,23 @@
 import { NextRequest } from 'next/server';
 import { jsonError, jsonOk, requireUserContext } from '@/lib/api-utils';
+import { createPaymentOrder } from '@/lib/wechat-pay/service';
+import { isWechatPayConfigured } from '@/lib/wechat-pay/client';
+import type { PlanId } from '@/lib/user/membership';
 
 interface PurchaseBody {
     planId: string;
+}
+
+function getClientIp(request: NextRequest): string {
+    const forwardedFor = request.headers.get('x-forwarded-for');
+    if (forwardedFor) {
+        return forwardedFor.split(',')[0].trim();
+    }
+    const realIp = request.headers.get('x-real-ip');
+    if (realIp) {
+        return realIp;
+    }
+    return '127.0.0.1';
 }
 
 export async function POST(request: NextRequest) {
@@ -16,46 +31,35 @@ export async function POST(request: NextRequest) {
         const body = (await request.json()) as PurchaseBody;
         const { planId } = body;
 
-        const validPlans = [
-            { id: 'plus', price: 98, months: 3, membershipType: 'plus' },
-            { id: 'plus_6m', price: 168, months: 6, membershipType: 'plus' },
-            { id: 'pro', price: 258, months: 12, membershipType: 'pro' },
-        ];
+        const clientIp = getClientIp(request);
 
-        const plan = validPlans.find(p => p.id === planId);
-        if (!plan) {
-            return jsonError('无效的套餐', 400, { success: false });
-        }
+        const { orderId, codeUrl, order } = await createPaymentOrder(
+            user.id,
+            planId as PlanId,
+            clientIp,
+        );
 
-        const { data: orderData, error: orderError } = await auth.db
-            .from('membership_orders')
-            .insert({
-                user_id: user.id,
-                plan_id: plan.id,
-                amount: plan.price,
-                months: plan.months,
-                status: 'pending',
-            })
-            .select('id')
-            .single();
-
-        if (orderError) {
-            console.error('[membership/purchase] 创建订单失败:', orderError);
-            return jsonError('创建订单失败，请稍后重试', 500, { success: false });
-        }
+        const planNames: Record<string, string> = {
+            plus: 'Plus 会员(3个月)',
+            plus_6m: 'Plus 会员(6个月)',
+            pro: 'Pro 会员(1年)',
+        };
 
         return jsonOk({
             success: true,
             data: {
-                orderId: orderData.id,
+                orderId,
+                codeUrl,
                 plan: {
-                    id: plan.id,
-                    name: plan.id === 'plus' ? 'Plus 会员(3个月)' : plan.id === 'plus_6m' ? 'Plus 会员(6个月)' : 'Pro 会员(1年)',
-                    price: plan.price,
-                    months: plan.months,
+                    id: planId,
+                    name: planNames[planId] || planId,
+                    price: order.amount,
+                    months: order.months,
                 },
-                payUrl: null,
-                message: '订单已创建，请联系管理员完成支付',
+                paymentConfigured: isWechatPayConfigured(),
+                message: isWechatPayConfigured()
+                    ? '订单已创建，请扫码支付'
+                    : '订单已创建，请联系管理员完成支付',
             },
         });
     } catch (error) {
