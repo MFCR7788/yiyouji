@@ -142,104 +142,113 @@ function parseEnvFallbackModels(): AIModelConfig[] {
   }
 }
 
+function createDefaultModels(): AIModelConfig[] {
+  const models: AIModelConfig[] = [];
+
+  // DeepSeek 聊天模型
+  const deepseekChat = normalizeEnvFallbackModel({
+    id: 'deepseek-chat',
+    name: 'DeepSeek Chat',
+    vendor: 'deepseek',
+    usageType: 'chat',
+    apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+    apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+    supportsReasoning: false,
+  });
+  if (deepseekChat) models.push(deepseekChat);
+
+  // DeepSeek V4 Flash 聊天模型
+  const deepseekV4Flash = normalizeEnvFallbackModel({
+    id: 'deepseek-v4-flash',
+    name: 'DeepSeek V4 Flash',
+    vendor: 'deepseek',
+    usageType: 'chat',
+    apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+    apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+    supportsReasoning: true,
+    isReasoningDefault: false,
+  });
+  if (deepseekV4Flash) models.push(deepseekV4Flash);
+
+  // DeepSeek V4 Pro 聊天模型
+  const deepseekV4Pro = normalizeEnvFallbackModel({
+    id: 'deepseek-v4-pro',
+    name: 'DeepSeek V4 Pro',
+    vendor: 'deepseek',
+    usageType: 'chat',
+    apiUrl: 'https://api.deepseek.com/v1/chat/completions',
+    apiKeyEnvVar: 'DEEPSEEK_API_KEY',
+    supportsReasoning: false,
+  });
+  if (deepseekV4Pro) models.push(deepseekV4Pro);
+
+  // Gemini 视觉模型 (用于面相、手相)
+  const geminiFlashVl = normalizeEnvFallbackModel({
+    id: 'gemini-2.0-flash-vl',
+    name: 'Gemini 2.0 Flash VL',
+    vendor: 'gemini-vl',
+    usageType: 'chat',
+    supportsVision: true,
+    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-vision',
+    apiKeyEnvVar: 'GEMINI_API_KEY',
+    supportsReasoning: false,
+  });
+  if (geminiFlashVl) models.push(geminiFlashVl);
+
+  // Qwen VL 视觉模型
+  const qwenVl = normalizeEnvFallbackModel({
+    id: 'qwen-vl-plus',
+    name: 'Qwen VL Plus',
+    vendor: 'qwen-vl',
+    usageType: 'chat',
+    supportsVision: true,
+    apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    apiKeyEnvVar: 'QWEN_API_KEY',
+    supportsReasoning: false,
+  });
+  if (qwenVl) models.push(qwenVl);
+
+  // 豆包（火山引擎）视觉模型 - 用于面相、手相分析
+  // 使用最新版 Doubao Seed 2.0 Pro (2026.02)，支持深度思考+多模态理解+视觉定位
+  // API 接口: Responses API (/api/v3/responses)
+  const doubaoVision = normalizeEnvFallbackModel({
+    id: 'doubao-vision',
+    name: '豆包 Vision Pro (Seed 2.0)',
+    vendor: 'volc',
+    usageType: 'chat',
+    supportsVision: true,
+    apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    apiKeyEnvVar: 'VOLC_API_KEY',
+    modelId: 'doubao-seed-2-0-pro-260215',
+    supportsReasoning: true,
+    isReasoningDefault: false,
+  });
+  if (doubaoVision) models.push(doubaoVision);
+
+  return models;
+}
+
 // ===== 动态生成模型配置 =====
 
 export function buildModels(): AIModelConfig[] {
   const envModels = parseEnvFallbackModels();
-  if (envModels.length > 0) {
+  
+  // 检查环境变量配置是否有效（必须包含至少一个有效模型）
+  const hasValidModels = envModels.length > 0;
+  
+  if (hasValidModels) {
     return envModels;
   }
 
   const isDevMode = process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true';
+  
   if (isDevMode) {
-    console.warn('[ai-config] No MINGAI_FALLBACK_MODELS_JSON env var found, using default dev models');
-
-    const devModels: AIModelConfig[] = [];
-
-    // DeepSeek 聊天模型
-    const deepseekChat = normalizeEnvFallbackModel({
-      id: 'deepseek-chat',
-      name: 'DeepSeek Chat',
-      vendor: 'deepseek',
-      usageType: 'chat',
-      apiUrl: 'https://api.deepseek.com/v1/chat/completions',
-      apiKeyEnvVar: 'DEEPSEEK_API_KEY',
-      supportsReasoning: false,
-    });
-    if (deepseekChat) devModels.push(deepseekChat);
-
-    // DeepSeek V4 Flash 聊天模型
-    const deepseekV4Flash = normalizeEnvFallbackModel({
-      id: 'deepseek-v4-flash',
-      name: 'DeepSeek V4 Flash',
-      vendor: 'deepseek',
-      usageType: 'chat',
-      apiUrl: 'https://api.deepseek.com/v1/chat/completions',
-      apiKeyEnvVar: 'DEEPSEEK_API_KEY',
-      supportsReasoning: true,
-      isReasoningDefault: false,
-    });
-    if (deepseekV4Flash) devModels.push(deepseekV4Flash);
-
-    // DeepSeek V4 Pro 聊天模型
-    const deepseekV4Pro = normalizeEnvFallbackModel({
-      id: 'deepseek-v4-pro',
-      name: 'DeepSeek V4 Pro',
-      vendor: 'deepseek',
-      usageType: 'chat',
-      apiUrl: 'https://api.deepseek.com/v1/chat/completions',
-      apiKeyEnvVar: 'DEEPSEEK_API_KEY',
-      supportsReasoning: false,
-    });
-    if (deepseekV4Pro) devModels.push(deepseekV4Pro);
-
-    // Gemini 视觉模型 (用于面相、手相)
-    const geminiFlashVl = normalizeEnvFallbackModel({
-      id: 'gemini-2.0-flash-vl',
-      name: 'Gemini 2.0 Flash VL',
-      vendor: 'gemini-vl',
-      usageType: 'chat',
-      supportsVision: true,
-      apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-vision',
-      apiKeyEnvVar: 'GEMINI_API_KEY',
-      supportsReasoning: false,
-    });
-    if (geminiFlashVl) devModels.push(geminiFlashVl);
-
-    // Qwen VL 视觉模型
-    const qwenVl = normalizeEnvFallbackModel({
-      id: 'qwen-vl-plus',
-      name: 'Qwen VL Plus',
-      vendor: 'qwen-vl',
-      usageType: 'chat',
-      supportsVision: true,
-      apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-      apiKeyEnvVar: 'QWEN_API_KEY',
-      supportsReasoning: false,
-    });
-    if (qwenVl) devModels.push(qwenVl);
-
-    // 豆包（火山引擎）视觉模型 - 用于面相、手相分析
-    // 使用最新版 Doubao Seed 2.0 Pro (2026.02)，支持深度思考+多模态理解+视觉定位
-    // API 接口: Responses API (/api/v3/responses)
-    const doubaoVision = normalizeEnvFallbackModel({
-      id: 'doubao-vision',
-      name: '豆包 Vision Pro (Seed 2.0)',
-      vendor: 'volc',
-      usageType: 'chat',
-      supportsVision: true,
-      apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
-      apiKeyEnvVar: 'VOLC_API_KEY',
-      modelId: 'doubao-seed-2-0-pro-260215',
-      supportsReasoning: true,
-      isReasoningDefault: false,
-    });
-    if (doubaoVision) devModels.push(doubaoVision);
-
-    return devModels;
+    console.warn('[ai-config] No valid MINGAI_FALLBACK_MODELS_JSON env var found, using default dev models');
+  } else {
+    console.warn('[ai-config] No valid MINGAI_FALLBACK_MODELS_JSON env var found in production, using default models');
   }
 
-  return [];
+  return createDefaultModels();
 }
 
 // 懒加载模型配置（环境变量）
