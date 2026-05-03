@@ -10,12 +10,9 @@ import {
     Edit3,
     ChevronLeft,
     ChevronRight,
-    Star,
     Coins,
     Eye,
     AlertTriangle,
-    CheckCircle2,
-    XCircle,
     Loader2,
 } from 'lucide-react';
 import { requestBrowserData } from '@/lib/browser-api';
@@ -23,7 +20,6 @@ import { useToast } from '@/components/ui/Toast';
 import type { AdminOperationLog } from '@/lib/admin/admin-operation-logs';
 
 type MembershipTier = 'free' | 'plus' | 'pro';
-type UserStatus = 'active' | 'disabled';
 
 interface UserInfo {
     id: string;
