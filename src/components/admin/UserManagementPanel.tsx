@@ -66,6 +66,7 @@ const MEMBERSHIP_LABELS: Record<MembershipTier, { label: string; color: string }
 export function UserManagementPanel() {
     const [users, setUsers] = useState<UserInfo[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
     const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
     const [userDetail, setUserDetail] = useState<UserDetail | null>(null);
     const [detailLoading, setDetailLoading] = useState(false);
@@ -103,6 +104,7 @@ export function UserManagementPanel() {
     // 加载用户列表
     const loadUsers = useCallback(async (page = 1) => {
         setLoading(true);
+        setLoadError(null);
         try {
             const params = new URLSearchParams({
                 page: String(page),
@@ -123,7 +125,9 @@ export function UserManagementPanel() {
             setTotalUsers(payload.pagination?.total || 0);
             setCurrentPage(page);
         } catch (err) {
+            const errorMsg = err instanceof Error ? err.message : '加载用户列表时发生未知错误';
             console.error('Failed to load users:', err);
+            setLoadError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -344,6 +348,18 @@ export function UserManagementPanel() {
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
                             <span className="ml-3 text-gray-600">加载中...</span>
+                        </div>
+                    ) : loadError ? (
+                        <div className="text-center py-12">
+                            <AlertTriangle className="w-12 h-12 mx-auto mb-4 text-red-400" />
+                            <p className="text-red-600 font-medium mb-2">加载失败</p>
+                            <p className="text-sm text-gray-500 max-w-md mx-auto">{loadError}</p>
+                            <button
+                                onClick={() => void loadUsers(currentPage)}
+                                className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                            >
+                                重试
+                            </button>
                         </div>
                     ) : users.length === 0 ? (
                         <div className="text-center py-12 text-gray-500">
