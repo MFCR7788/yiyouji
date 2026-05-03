@@ -227,11 +227,11 @@ export function AIAnalysisSection({
     }
 
     const content = (
-        <div className="rounded-xl border border-border bg-background overflow-hidden w-full">
+        <div className="rounded-xl border border-border bg-background overflow-hidden w-full max-w-full box-border">
             <div className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${headerGradientClass}`}>
-                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 w-full">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 w-full max-w-full">
                     <div className={`p-2 rounded-xl ${iconContainerClass} flex-shrink-0`}>{icon}</div>
-                    <div className="flex-1 min-w-0 w-full">
+                    <div className="flex-1 min-w-0 w-full max-w-full">
                         <h4 className="font-semibold text-base break-words">{title}</h4>
                         <p className="text-sm text-foreground/50 break-words">{subtitle}</p>
                     </div>
@@ -280,7 +280,7 @@ export function AIAnalysisSection({
     );
 
     return (
-        <div className="space-y-3 w-full">
+        <div className="space-y-3 w-full max-w-full">
             {modelControls}
             <AIAnalysisLock type={type} title={title} description={lockDescription}
                 isUnlocked={isUnlocked || canBypassLockWithCustomProvider} placeholder={placeholder} userId={userId}
