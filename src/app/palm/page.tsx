@@ -138,15 +138,17 @@ export default function PalmPage() {
             }
 
             // 跳转到结果页面
-            if (data.data?.readingId || data.data?.analysis) {
+            if (data.data?.analysis) {
                 // 存储分析结果到 sessionStorage
+                // readingId 使用 conversationId（如果 readingId 不存在）
+                const recordId = data.data.readingId || data.data.conversationId;
                 writeSessionJSON('palm_result', {
-                    readingId: data.data.readingId,
+                    readingId: recordId,
                     conversationId: data.data.conversationId,
                     analysisType: selectedType,
                     handType,
                     analysis: data.data.analysis,
-                    isTemporary: !data.data.readingId
+                    isTemporary: !recordId
                 });
                 router.push('/palm/result');
             } else {
