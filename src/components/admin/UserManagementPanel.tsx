@@ -24,6 +24,7 @@ type MembershipTier = 'free' | 'plus' | 'pro';
 interface UserInfo {
     id: string;
     email: string;
+    phone: string | null;
     nickname: string | null;
     avatar_url: string | null;
     membership: MembershipTier;
@@ -309,7 +310,7 @@ export function UserManagementPanel() {
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                                 <input
                                     type="text"
-                                    placeholder="搜索昵称或邮箱..."
+                                    placeholder="搜索昵称或手机号..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -342,8 +343,9 @@ export function UserManagementPanel() {
                     </div>
                 </div>
 
-                {/* 用户表格 */}
+                {/* 用户表格 - 支持水平滚动 */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                    <div className="overflow-x-auto">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -393,7 +395,7 @@ export function UserManagementPanel() {
                                                         <div className="text-sm font-medium text-gray-900">
                                                             {user.nickname || '未设置昵称'}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">{user.email}</div>
+                                                        <div className="text-sm text-gray-500">{user.phone || user.email || '未绑定手机号'}</div>
                                                     </div>
                                                 </div>
                                             </td>
@@ -441,63 +443,63 @@ export function UserManagementPanel() {
                                     ))}
                                 </tbody>
                             </table>
-
-                            {/* 分页控件 */}
-                            {totalPages > 1 && (
-                                <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-                                    <div className="flex-1 flex justify-between sm:hidden">
+                        </>
+                    )}
+                    </div>
+                    {/* 分页控件 */}
+                    {totalPages > 1 && (
+                        <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                            <div className="flex-1 flex justify-between sm:hidden">
+                                <button
+                                    onClick={() => currentPage > 1 && loadUsers(currentPage - 1)}
+                                    disabled={currentPage <= 1}
+                                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    上一页
+                                </button>
+                                <button
+                                    onClick={() => currentPage < totalPages && loadUsers(currentPage + 1)}
+                                    disabled={currentPage >= totalPages}
+                                    className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                >
+                                    下一页
+                                </button>
+                            </div>
+                            <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p className="text-sm text-gray-700">
+                                        显示第{' '}
+                                        <span className="font-medium">{(currentPage - 1) * 20 + 1}</span>
+                                        {' '}到{' '}
+                                        <span className="font-medium">{Math.min(currentPage * 20, totalUsers)}</span>
+                                        {' '}条，共{' '}
+                                        <span className="font-medium">{totalUsers}</span>
+                                        {' '}条
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
                                         <button
                                             onClick={() => currentPage > 1 && loadUsers(currentPage - 1)}
                                             disabled={currentPage <= 1}
-                                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                            className="relative inline-flex items-center px-2 py-2 rounded-l-md ring-1 ring-inset ring-gray-300 bg-white text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                                         >
-                                            上一页
+                                            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
                                         </button>
+                                        <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 bg-white">
+                                            {currentPage} / {totalPages}
+                                        </span>
                                         <button
                                             onClick={() => currentPage < totalPages && loadUsers(currentPage + 1)}
                                             disabled={currentPage >= totalPages}
-                                            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                                            className="relative inline-flex items-center px-2 py-2 rounded-r-md ring-1 ring-inset ring-gray-300 bg-white text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
                                         >
-                                            下一页
+                                            <ChevronRight className="h-5 w-5" aria-hidden="true" />
                                         </button>
-                                    </div>
-                                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                        <div>
-                                            <p className="text-sm text-gray-700">
-                                                显示第{' '}
-                                                <span className="font-medium">{(currentPage - 1) * 20 + 1}</span>
-                                                {' '}到{' '}
-                                                <span className="font-medium">{Math.min(currentPage * 20, totalUsers)}</span>
-                                                {' '}条，共{' '}
-                                                <span className="font-medium">{totalUsers}</span>
-                                                {' '}条
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                                                <button
-                                                    onClick={() => currentPage > 1 && loadUsers(currentPage - 1)}
-                                                    disabled={currentPage <= 1}
-                                                    className="relative inline-flex items-center px-2 py-2 rounded-l-md ring-1 ring-inset ring-gray-300 bg-white text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                                                >
-                                                    <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-                                                </button>
-                                                <span className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-900 ring-1 ring-inset ring-gray-300 bg-white">
-                                                    {currentPage} / {totalPages}
-                                                </span>
-                                                <button
-                                                    onClick={() => currentPage < totalPages && loadUsers(currentPage + 1)}
-                                                    disabled={currentPage >= totalPages}
-                                                    className="relative inline-flex items-center px-2 py-2 rounded-r-md ring-1 ring-inset ring-gray-300 bg-white text-gray-400 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                                                >
-                                                    <ChevronRight className="h-5 w-5" aria-hidden="true" />
-                                                </button>
-                                            </nav>
-                                        </div>
-                                    </div>
+                                    </nav>
                                 </div>
-                            )}
-                        </>
+                            </div>
+                        </div>
                     )}
                 </div>
             </div>
@@ -537,7 +539,7 @@ export function UserManagementPanel() {
                                     <h3 className="text-xl font-bold text-gray-900">
                                         {userDetail.nickname || '未设置昵称'}
                                     </h3>
-                                    <p className="text-gray-500">{userDetail.email}</p>
+                                    <p className="text-gray-500">{userDetail.phone || userDetail.email || '未绑定手机号'}</p>
                                     <div className="mt-2 flex items-center gap-3">
                                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${MEMBERSHIP_LABELS[userDetail.membership].color}`}>
                                             {MEMBERSHIP_LABELS[userDetail.membership].label}

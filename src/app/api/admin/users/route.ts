@@ -55,10 +55,11 @@ export async function GET(request: NextRequest) {
             return jsonError('获取用户列表失败', 500);
         }
 
-        // 批量获取用户邮箱（使用 Auth Admin 客户端）
+        // 批量获取用户邮箱和手机号（使用 Auth Admin 客户端）
         const userIds = (users || []).map((u: Record<string, unknown>) => u.id as string);
 
         const emailMap: Record<string, string> = {};
+        const phoneMap: Record<string, string | null> = {};
         const lastSignInMap: Record<string, string | null> = {};
 
         const authAdminClient = getAuthAdminClient();
@@ -68,9 +69,15 @@ export async function GET(request: NextRequest) {
                     perPage: 1000
                 });
 
-                (authUsers?.users || []).forEach((au: { id: string; email?: string; last_sign_in_at?: string | null }) => {
+                (authUsers?.users || []).forEach((au: { id: string; email?: string; phone?: string; user_metadata?: Record<string, unknown>; last_sign_in_at?: string | null }) => {
                     if (au.email) {
                         emailMap[au.id] = au.email;
+                    }
+                    // 获取手机号：先从 auth 表的 phone 字段获取，如果没有则从 user_metadata 中获取
+                    if (au.phone) {
+                        phoneMap[au.id] = au.phone;
+                    } else if (au.user_metadata?.phone) {
+                        phoneMap[au.id] = au.user_metadata.phone as string;
                     }
                     lastSignInMap[au.id] = au.last_sign_in_at ?? null;
                 });
@@ -78,7 +85,7 @@ export async function GET(request: NextRequest) {
                 console.error('[admin-users][GET] Auth admin listUsers failed:', authErr);
             }
         } else {
-            console.warn('[admin-users][GET] SUPABASE_SECRET_KEY not configured, skipping email fetch');
+            console.warn('[admin-users][GET] SUPABASE_SECRET_KEY not configured, skipping fetch');
         }
 
         // 获取每个用户的积分余额
@@ -117,6 +124,7 @@ export async function GET(request: NextRequest) {
         const userList = (users || []).map((user: Record<string, unknown>) => ({
             id: user.id as string,
             email: emailMap[user.id as string] || '',
+            phone: phoneMap[user.id as string] || null,
             nickname: user.nickname as string | null,
             avatar_url: user.avatar_url as string | null,
             membership: user.membership as 'free' | 'plus' | 'pro',

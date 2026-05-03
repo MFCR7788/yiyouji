@@ -37,8 +37,9 @@ export async function GET(request: NextRequest, context: RouteContext) {
             return jsonError('用户不存在', 404);
         }
 
-        // 获取邮箱信息（使用 Auth Admin 客户端）
+        // 获取邮箱和手机号信息（使用 Auth Admin 客户端）
         let userEmail = '';
+        let userPhone: string | null = null;
         let lastSignInAt: string | null = null;
 
         const authAdminClient = getAuthAdminClient();
@@ -46,6 +47,12 @@ export async function GET(request: NextRequest, context: RouteContext) {
             try {
                 const { data: authUser } = await authAdminClient.auth.admin.getUserById(userId);
                 userEmail = authUser?.user?.email || '';
+                // 获取手机号：先从 auth 表的 phone 字段获取，如果没有则从 user_metadata 中获取
+                if (authUser?.user?.phone) {
+                    userPhone = authUser.user.phone;
+                } else if (authUser?.user?.user_metadata?.phone) {
+                    userPhone = authUser.user.user_metadata.phone as string;
+                }
                 lastSignInAt = authUser?.user?.last_sign_in_at || null;
             } catch (authErr) {
                 console.error('[admin-users][GET by id] Auth admin getUserById failed:', authErr);
@@ -86,6 +93,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
             user: {
                 id: user.id,
                 email: userEmail,
+                phone: userPhone,
                 nickname: user.nickname,
                 avatar_url: user.avatar_url,
                 membership: user.membership,
