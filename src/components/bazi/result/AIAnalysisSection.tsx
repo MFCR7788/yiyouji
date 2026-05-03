@@ -227,16 +227,16 @@ export function AIAnalysisSection({
     }
 
     const content = (
-        <div className="rounded-xl border border-border bg-background overflow-hidden w-full">
+        <div className="rounded-xl border border-border bg-background overflow-hidden w-full max-w-full">
             <div className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${headerGradientClass}`}>
-                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
+                <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 w-full">
                     <div className={`p-2 rounded-xl ${iconContainerClass} flex-shrink-0`}>{icon}</div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 w-full">
                         <h4 className="font-semibold text-base break-words">{title}</h4>
                         <p className="text-sm text-foreground/50 break-words">{subtitle}</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-end">
                     {analysis && !loading && (
                         <button onClick={handleCopy} className="p-2 rounded-lg hover:bg-foreground/5 transition-colors flex-shrink-0" title="复制">
                             {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-foreground/50" />}

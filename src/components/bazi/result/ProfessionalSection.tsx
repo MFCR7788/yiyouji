@@ -47,9 +47,9 @@ export function ProfessionalSection({
     const hasGanZhiHighlights = relationHighlights.length > 0;
 
     return (
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-4 sm:space-y-5 md:space-y-6 w-full max-w-full">
             {/* 专业排盘表格卡片 */}
-            <section className="bg-background rounded-xl border border-border overflow-hidden">
+            <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
                 <ProfessionalTable
                     canonicalChart={canonicalChart}
                     isUnknownTime={isUnknownTime}
@@ -58,19 +58,19 @@ export function ProfessionalSection({
                     activeLiuYue={activeLiuYue ?? undefined}
                     activeLiuRi={activeLiuRi}
                 />
-                <div className="px-4 md:px-6 py-4 border-t border-border/60 space-y-1.5 text-xs md:text-sm text-foreground/45 font-medium">
-                        <div>
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-t border-border/60 space-y-1.5 text-xs sm:text-sm md:text-sm text-foreground/45 font-medium w-full">
+                        <div className="break-words w-full">
                             起运：{proData.startAgeDetail}
                         {canonicalChart.基本信息.胎元 && ` 胎元：${canonicalChart.基本信息.胎元}`}
                         {canonicalChart.基本信息.命宫 && ` 命宫：${canonicalChart.基本信息.命宫}`}
                     </div>
                     {hasGanZhiHighlights ? (
-                        <div>
+                        <div className="break-words w-full">
                             干支关系：{relationHighlights.join('、')}
                         </div>
                     ) : null}
                     {canonicalChart.基本信息.真太阳时 ? (
-                        <div>
+                        <div className="break-words w-full">
                             真太阳时：{canonicalChart.基本信息.真太阳时.真太阳时}（钟表 {canonicalChart.基本信息.真太阳时.钟表时间}）
                         </div>
                     ) : null}
@@ -78,14 +78,14 @@ export function ProfessionalSection({
             </section>
 
             {/* 大运排布卡片 */}
-            <section className="bg-background rounded-xl border border-border overflow-hidden">
-                <div className="px-4 md:px-6 py-4 md:py-5">
-                    <h2 className="text-sm font-semibold flex items-center gap-2">
-                        <TrendingUp className="w-4 h-4 text-[#2eaadc]" />
+            <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+                    <h2 className="text-sm font-semibold flex items-center gap-2 break-words">
+                        <TrendingUp className="w-4 h-4 text-[#2eaadc] flex-shrink-0" />
                         大运排布
                     </h2>
                 </div>
-                <div className="px-4 md:px-6 pb-4 md:pb-6">
+                <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6 w-full">
                     <DaYunTable
                         daYun={proData.daYun}
                         selectedIndex={selectedDaYunIndex}
@@ -96,14 +96,14 @@ export function ProfessionalSection({
 
             {/* 流年运势卡片 */}
             {currentLiuNian.length > 0 && (
-                <section className="bg-background rounded-xl border border-border overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 md:py-5">
-                        <h2 className="text-sm font-semibold flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-[#2eaadc]" />
+                <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+                        <h2 className="text-sm font-semibold flex items-center gap-2 break-words">
+                            <Calendar className="w-4 h-4 text-[#2eaadc] flex-shrink-0" />
                             流年运势
                         </h2>
                     </div>
-                    <div className="px-4 md:px-6 pb-4 md:pb-6">
+                    <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6 w-full">
                         <LiuNianTable
                             liuNian={currentLiuNian}
                             selectedYear={selectedLiuNianYear}
@@ -115,20 +115,20 @@ export function ProfessionalSection({
 
             {/* 流月卡片 */}
             {liuYue.length > 0 && (
-                <section className="bg-background rounded-xl border border-border overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 md:py-5">
-                        <h2 className="text-sm font-semibold flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-[#2eaadc]" />
+                <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+                        <h2 className="text-sm font-semibold flex items-center gap-2 break-words">
+                            <Calendar className="w-4 h-4 text-[#2eaadc] flex-shrink-0" />
                             {selectedLiuNianYear}年 流月
                         </h2>
                     </div>
-                    <div className="px-4 md:px-6 pb-4 md:pb-6">
+                    <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6 w-full">
                         <LiuYueTable
                             liuYue={liuYue}
                             selectedMonth={selectedLiuYueMonth}
                             onSelect={onSelectLiuYue}
                         />
-                        <p className="mt-3 md:mt-4 text-xs text-foreground/40 font-medium italic">
+                        <p className="mt-3 md:mt-4 text-xs text-foreground/40 font-medium italic break-words">
                             * 点击特定流月以展开流日详情
                         </p>
                     </div>
@@ -137,14 +137,14 @@ export function ProfessionalSection({
 
             {/* 流日记录卡片 */}
             {liuRi.length > 0 && activeLiuYue && (
-                <section className="bg-background rounded-xl border border-border overflow-hidden">
-                    <div className="px-4 md:px-6 py-4 md:py-5">
-                        <h2 className="text-sm font-semibold flex items-center gap-2">
-                            <Calendar className="w-4 h-4 text-[#2eaadc]" />
+                <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+                        <h2 className="text-sm font-semibold flex items-center gap-2 break-words">
+                            <Calendar className="w-4 h-4 text-[#2eaadc] flex-shrink-0" />
                             流日记录（{activeLiuYue.startDate} — {activeLiuYue.endDate}）
                         </h2>
                     </div>
-                    <div className="px-4 md:px-6 pb-4 md:pb-6">
+                    <div className="px-3 sm:px-4 md:px-6 pb-3 sm:pb-4 md:pb-6 w-full">
                         <LiuRiTable
                             liuRi={liuRi}
                             selectedDate={selectedLiuRiDate}
