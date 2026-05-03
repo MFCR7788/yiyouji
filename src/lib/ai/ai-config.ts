@@ -182,45 +182,18 @@ function createDefaultModels(): AIModelConfig[] {
   });
   if (deepseekV4Pro) models.push(deepseekV4Pro);
 
-  // Gemini 视觉模型 (用于面相、手相)
-  const geminiFlashVl = normalizeEnvFallbackModel({
-    id: 'gemini-2.0-flash-vl',
-    name: 'Gemini 2.0 Flash VL',
-    vendor: 'gemini-vl',
-    usageType: 'chat',
-    supportsVision: true,
-    apiUrl: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-vision',
-    apiKeyEnvVar: 'GEMINI_API_KEY',
-    supportsReasoning: false,
-  });
-  if (geminiFlashVl) models.push(geminiFlashVl);
-
-  // Qwen VL 视觉模型
-  const qwenVl = normalizeEnvFallbackModel({
-    id: 'qwen-vl-plus',
-    name: 'Qwen VL Plus',
-    vendor: 'qwen-vl',
-    usageType: 'chat',
-    supportsVision: true,
-    apiUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
-    apiKeyEnvVar: 'QWEN_API_KEY',
-    supportsReasoning: false,
-  });
-  if (qwenVl) models.push(qwenVl);
-
   // 豆包（火山引擎）视觉模型 - 用于面相、手相分析
-  // 使用最新版 Doubao Seed 2.0 Pro (2026.02)，支持深度思考+多模态理解+视觉定位
-  // API 接口: Responses API (/api/v3/responses)
+  // 使用 Doubao Seed 2.0 Lite，专注于视觉分析任务
   const doubaoVision = normalizeEnvFallbackModel({
     id: 'doubao-vision',
-    name: '豆包 Vision Pro (Seed 2.0)',
+    name: '豆包 Vision Lite (Seed 2.0)',
     vendor: 'volc',
     usageType: 'chat',
     supportsVision: true,
     apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
     apiKeyEnvVar: 'VOLC_API_KEY',
-    modelId: 'doubao-seed-2-0-pro-260215',
-    supportsReasoning: true,
+    modelId: 'doubao-seed-2-0-lite-260215',
+    supportsReasoning: false,
     isReasoningDefault: false,
   });
   if (doubaoVision) models.push(doubaoVision);
