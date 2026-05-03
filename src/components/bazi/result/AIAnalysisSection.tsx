@@ -182,15 +182,15 @@ export function AIAnalysisSection({
     };
 
     const placeholder = (
-        <div className="p-3 sm:p-4 md:p-6 space-y-4 min-h-[280px] w-full">
-            <div className="flex items-center gap-3 flex-wrap">
-                <div className={`p-2 rounded-xl ${iconContainerClass}`}>{icon}</div>
-                <div className="flex-1 min-w-0">
+        <div className="p-3 sm:p-4 md:p-6 space-y-4 min-h-[280px] w-full overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+                <div className={`p-2 rounded-xl ${iconContainerClass} flex-shrink-0`}>{icon}</div>
+                <div className="flex-1 min-w-0 w-full">
                     <h4 className="font-bold break-words">{title}</h4>
                     <p className="text-sm text-foreground-secondary break-words">{subtitle}</p>
                 </div>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 w-full">
                 <div className="h-4 bg-foreground/10 rounded w-full" />
                 <div className="h-4 bg-foreground/10 rounded w-4/5" />
                 <div className="h-4 bg-foreground/10 rounded w-3/4" />
@@ -202,7 +202,7 @@ export function AIAnalysisSection({
     );
 
     const modelControls = (
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 w-full">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 w-full overflow-x-hidden">
             <ModelSelector
                 compact
                 selectedModel={selectedModel}
@@ -217,7 +217,7 @@ export function AIAnalysisSection({
 
     if (sessionUserId === userId && membershipPending) {
         return (
-            <div className="space-y-2 w-full">
+            <div className="space-y-2 w-full overflow-x-hidden">
                 {modelControls}
                 <div className="flex min-h-[280px] items-center justify-center rounded-xl border border-border bg-background">
                     <SoundWaveLoader variant="inline" />
@@ -227,11 +227,11 @@ export function AIAnalysisSection({
     }
 
     const content = (
-        <div className="rounded-xl border border-border bg-background overflow-hidden w-full max-w-full">
+        <div className="rounded-xl border border-border bg-background overflow-hidden overflow-x-hidden w-full max-w-full">
             <div className={`px-3 sm:px-4 md:px-6 py-3 sm:py-4 border-b border-border flex flex-col sm:flex-row sm:items-center justify-between gap-3 ${headerGradientClass}`}>
                 <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0 w-full">
                     <div className={`p-2 rounded-xl ${iconContainerClass} flex-shrink-0`}>{icon}</div>
-                    <div className="flex-1 min-w-0 w-full">
+                    <div className="flex-1 min-w-0 w-full overflow-x-hidden">
                         <h4 className="font-semibold text-base break-words">{title}</h4>
                         <p className="text-sm text-foreground/50 break-words">{subtitle}</p>
                     </div>
@@ -280,7 +280,7 @@ export function AIAnalysisSection({
     );
 
     return (
-        <div className="space-y-3 w-full">
+        <div className="space-y-3 w-full overflow-x-hidden">
             {modelControls}
             <AIAnalysisLock type={type} title={title} description={lockDescription}
                 isUnlocked={isUnlocked || canBypassLockWithCustomProvider} placeholder={placeholder} userId={userId}
