@@ -339,6 +339,21 @@ export function getSettingsCenterRouteTarget(
   return getSettingsCenterRouteTargetForPath('/bazi', tab, options);
 }
 
+export function getSettingsPageRouteTarget(tab: SettingsCenterTab): string {
+  const tabToPath: Partial<Record<SettingsCenterTab, string>> = {
+    general: '/settings/general',
+    profile: '/settings/profile',
+    upgrade: '/settings/upgrade',
+    personalization: '/settings/personalization',
+    help: '/settings/help',
+    charts: '/settings/charts',
+    'knowledge-base': '/settings/knowledge-base',
+    'mcp-service': '/settings/mcp-service',
+  };
+
+  return tabToPath[tab] ?? `/settings/general`;
+}
+
 export function getSettingsCenterTabFromRouteTarget(href: string): SettingsCenterTab | null {
   const hashIndex = href.indexOf('#');
   if (hashIndex < 0) {

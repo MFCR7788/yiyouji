@@ -22,6 +22,7 @@ import { getMobileItemsRecord, toFeatureId } from '@/lib/navigation/registry';
 import {
     getSettingsCenterTabFromRouteTarget,
     openSettingsCenter,
+    getSettingsPageRouteTarget,
 } from '@/lib/settings-center';
 
 const ALL_NAV_ITEMS = getMobileItemsRecord();
@@ -249,14 +250,14 @@ export function MobileNav() {
                         return (
                             <li key={item.href}>
                                 <Link
-                                    href={item.href}
+                                    href={settingsTab ? getSettingsPageRouteTarget(settingsTab) : item.href}
                                     onClick={(event) => {
                                         if (!settingsTab) {
                                             return;
                                         }
 
                                         event.preventDefault();
-                                        openSettingsCenter(settingsTab);
+                                        window.location.href = getSettingsPageRouteTarget(settingsTab);
                                     }}
                                     className={`
                                         flex flex-col items-center justify-center
