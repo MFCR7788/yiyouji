@@ -345,7 +345,7 @@ export function UserManagementPanel() {
 
                 {/* 用户表格 - 支持水平滚动 */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto overflow-y-auto">
+                    <div className="overflow-x-auto overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', maxHeight: '60vh' }}>
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
@@ -426,17 +426,24 @@ export function UserManagementPanel() {
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">
                                                 <button
                                                     onClick={() => loadUserDetail(user.id)}
-                                                    className="text-blue-600 hover:text-blue-900"
+                                                    className="text-blue-600 hover:text-blue-900 cursor-pointer"
                                                 >
                                                     <Eye className="w-4 h-4 inline mr-1" />
                                                     查看
                                                 </button>
                                                 <button
                                                     onClick={() => startEdit(user)}
-                                                    className="text-green-600 hover:text-green-900"
+                                                    className="text-green-600 hover:text-green-900 cursor-pointer"
                                                 >
                                                     <Edit3 className="w-4 h-4 inline mr-1" />
                                                     编辑
+                                                </button>
+                                                <button
+                                                    onClick={() => showConfirmDialog('delete', user.id, user.nickname || user.phone || user.email || '用户')}
+                                                    className="text-red-600 hover:text-red-900 cursor-pointer"
+                                                >
+                                                    <Trash2 className="w-4 h-4 inline mr-1" />
+                                                    删除
                                                 </button>
                                             </td>
                                         </tr>
