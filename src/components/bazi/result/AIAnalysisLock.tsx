@@ -97,7 +97,7 @@ export function AIAnalysisLock({
     // 积分不足时的覆盖层
     if (isCreditsInsufficient) {
         return (
-            <div className="relative rounded-2xl border border-amber-500/30 overflow-hidden">
+            <div className="relative rounded-xl border border-amber-500/30 overflow-hidden">
                 <div className="blur-sm pointer-events-none select-none opacity-60 min-h-[280px]">
                     {placeholder}
                 </div>
@@ -125,7 +125,7 @@ export function AIAnalysisLock({
 
     // 未解锁，显示模糊锁定效果
     return (
-        <div className="relative rounded-2xl border border-border overflow-hidden">
+        <div className="relative rounded-xl border border-border overflow-hidden">
             {/* 模糊的占位内容 - 增加最小高度 */}
             <div className="blur-sm pointer-events-none select-none opacity-60 min-h-[280px]">
                 {placeholder}

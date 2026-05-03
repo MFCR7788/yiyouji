@@ -29,7 +29,7 @@ export function ProfileSummaryCard({
     ].filter((item): item is { label: string; value: string } => Boolean(item));
 
     return (
-        <div className="bg-background border border-border rounded-md px-3 sm:px-5 py-3 sm:py-4 mb-4 sm:mb-6 shadow-sm">
+        <div className="bg-background border border-border rounded-xl px-4 md:px-6 py-4 md:py-5 mb-4 md:mb-6">
             <div className="flex flex-col gap-2 sm:gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex flex-wrap items-center gap-2 min-w-0">
                     <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight truncate text-foreground">
