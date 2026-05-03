@@ -24,6 +24,10 @@
  *       "summary": [
  *         { "type": "summary_text", "text": "..." }
  *       ]
+ *     },
+ *     {
+ *       "type": "message",
+ *       "content": [{ "type": "output_text", "text": "..." }]
  *     }
  *   ]
  * }
@@ -40,11 +44,43 @@ export interface VolcResponseOutputItem {
         type: string;
         text: string;
     }>;
+    content?: Array<{
+        type: string;
+        text: string;
+    }>;
     status?: string;
 }
 
 export interface VolcResponseResult {
     output: VolcResponseOutputItem[];
+}
+
+/**
+ * 创建带代理的 fetch 函数
+ */
+function createProxyFetch() {
+    const httpsProxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
+    
+    if (!httpsProxy) {
+        console.log('[volc-responses] 未检测到代理环境变量，使用默认 fetch');
+        return undefined;
+    }
+    
+    try {
+        const { ProxyAgent } = require('undici');
+        const agent = new ProxyAgent(httpsProxy);
+        
+        const proxyFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
+            const options = { ...init, dispatcher: agent } as any;
+            return globalThis.fetch(input, options);
+        };
+        
+        console.log(`[volc-responses] ✅ 已创建带代理的 fetch: ${httpsProxy}`);
+        return proxyFetch as unknown as typeof fetch;
+    } catch (err) {
+        console.warn('[volc-responses] ⚠️ 无法创建代理 fetch:', err instanceof Error ? err.message : err);
+        return undefined;
+    }
 }
 
 export async function callVolcResponsesAPI(
@@ -87,7 +123,14 @@ export async function callVolcResponsesAPI(
         ],
     };
 
-    const response = await fetch(config.apiUrl, {
+    // 使用带代理的 fetch（如果可用）
+    const proxyFetch = createProxyFetch();
+    
+    console.log(`[volc-responses] 📡 调用 API: ${config.apiUrl}`);
+    console.log(`[volc-respaces] 🧠 模型: ${config.modelId}`);
+    console.log(`[volc-responses] 🖼️  图片: ${imageBase64 ? '有 (' + Math.round(imageBase64.length / 1024) + 'KB)' : '无'}`);
+    
+    const response = await (proxyFetch || fetch)(config.apiUrl, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -96,22 +139,42 @@ export async function callVolcResponsesAPI(
         body: JSON.stringify(body),
     });
 
+    console.log(`[volc-responses] 📊 响应状态: ${response.status}`);
+
     if (!response.ok) {
         const errorText = await response.text();
+        console.error(`[volc-responses] ❌ API 错误: ${errorText.substring(0, 300)}`);
         throw new Error(`Volc API error: ${response.status} - ${errorText}`);
     }
 
     const result: VolcResponseResult = await response.json();
     
-    // 解析响应：从 output 中找到 reasoning 类型，然后提取 summary 中的文本
+    console.log(`[volc-responses] ✅ 收到响应，output 数量: ${(result.output || []).length}`);
+    
+    // 解析响应：优先从 message 类型中提取 output_text
     for (const item of result.output || []) {
-        if (item.summary && item.summary.length > 0) {
+        // 方式1：message.content[].text
+        if (item.type === 'message' && item.content && Array.isArray(item.content)) {
+            const textItem = item.content.find(c => c.type === 'output_text' || c.text);
+            if (textItem?.text) {
+                console.log(`[volc-responses] ✅ 从 message 提取文本 (${textItem.text.length} 字符)`);
+                return textItem.text;
+            }
+        }
+        
+        // 方式2：reasoning.summary[].text (旧版兼容)
+        if (item.summary && Array.isArray(item.summary)) {
             const textItem = item.summary.find(s => s.type === 'summary_text' || s.text);
             if (textItem?.text) {
+                console.log(`[volc-responses] ✅ 从 reasoning 提取文本 (${textItem.text.length} 字符)`);
                 return textItem.text;
             }
         }
     }
-
-    throw new Error('Empty response from Volc API');
+    
+    // 如果都没找到，记录完整响应用于调试
+    console.error('[volc-responses] ⚠️ 无法从响应中提取文本！');
+    console.error('[volc-responses] 完整响应:', JSON.stringify(result).substring(0, 500));
+    
+    throw new Error('Empty or unparseable response from Volc API');
 }
