@@ -106,11 +106,14 @@ export function SidebarUserCard({ user, collapsed = false }: SidebarUserCardProp
   const membership = profileResolved && !profileError ? buildMembershipInfo(profile ?? null) : null;
   const avatarUrl = profile?.avatar_url ?? null;
   const displayName = profile?.nickname || user.email?.split('@')[0] || '用户';
+  const isAdmin = profile?.is_admin === true;
   const membershipLabel = profileLoading || !profileResolved
     ? '...'
     : profileError
       ? '加载失败'
-      : membershipLabels[membership?.type || 'free'];
+      : isAdmin
+        ? '管理员'
+        : membershipLabels[membership?.type || 'free'];
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
