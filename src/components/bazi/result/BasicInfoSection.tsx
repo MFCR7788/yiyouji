@@ -57,7 +57,7 @@ export function BasicInfoSection({
     return (
         <div className="space-y-4 sm:space-y-5 md:space-y-6 animate-fade-in w-full">
             {/* 日主特征卡片 */}
-            <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+            <section className="bg-background rounded-xl border border-border overflow-visible w-full">
                 <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5 w-full">
                     <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
                         <div className="p-2 rounded-lg bg-foreground/5 flex-shrink-0">
@@ -92,7 +92,7 @@ export function BasicInfoSection({
             <div className="space-y-4 sm:space-y-5 md:space-y-6 w-full">
                 {/* 五行分析 */}
                 {!hasKnownBirthTime ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <section className="bg-background rounded-xl border border-border overflow-visible w-full">
                         <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
@@ -114,7 +114,7 @@ export function BasicInfoSection({
                         </div>
                     </section>
                 ) : !isSaved ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <section className="bg-background rounded-xl border border-border overflow-visible w-full">
                         <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
@@ -168,7 +168,7 @@ export function BasicInfoSection({
 
                 {/* 性格分析 */}
                 {!hasKnownBirthTime ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <section className="bg-background rounded-xl border border-border overflow-visible w-full">
                         <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
@@ -190,7 +190,7 @@ export function BasicInfoSection({
                         </div>
                     </section>
                 ) : !isSaved ? (
-                    <section className="bg-background rounded-xl border border-border overflow-hidden w-full">
+                    <section className="bg-background rounded-xl border border-border overflow-visible w-full">
                         <div className="px-3 sm:px-4 md:px-6 py-3 sm:py-4 w-full">
                             <div className="flex flex-col sm:flex-row items-start gap-2 sm:gap-3">
                                 <div className="p-2 rounded-lg bg-background border border-border/60 flex-shrink-0">
