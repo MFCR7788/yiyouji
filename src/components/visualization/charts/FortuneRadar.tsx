@@ -144,7 +144,7 @@ function FortuneRadarInner({
   }
 
   return (
-    <div ref={ref} className={`space-y-4 ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''}`}>
+    <div ref={ref} className={`space-y-4 w-full max-w-full ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''}`}>
       {/* Title */}
       {!compact && (data.title || data.subtitle) && (
         <div>
@@ -160,7 +160,7 @@ function FortuneRadarInner({
       )}
 
       {/* Radar Chart with Center Score */}
-      <div className="relative">
+      <div className="relative w-full max-w-full overflow-hidden">
         <ResponsiveContainer width="100%" height={radarHeight}>
           <RadarChart
             data={radarData}
@@ -243,7 +243,7 @@ function FortuneRadarInner({
       </div>
 
       {/* Score Bars Grid */}
-      <div className={`grid gap-2.5 ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+      <div className={`grid gap-2.5 w-full max-w-full ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
         {getDimensionsByKeys(dimensionKeys).map((dimConfig) => {
           const scoreEntry = scores[dimConfig.key];
           if (!scoreEntry) return null;
@@ -302,7 +302,7 @@ function FortuneRadarInner({
 
       {/* Top Advice */}
       {topAdvice && !compact && (
-        <div className="bg-[var(--color-background-secondary)]/50 border border-[var(--color-border)]/50 rounded-xl p-3">
+        <div className="bg-[var(--color-background-secondary)]/50 border border-[var(--color-border)]/50 rounded-xl p-3 w-full max-w-full break-words">
           <div className="text-xs text-[var(--color-foreground-secondary)] leading-relaxed">
             {topAdvice}
           </div>
