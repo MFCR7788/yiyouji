@@ -345,7 +345,7 @@ export function UserManagementPanel() {
 
                 {/* 用户表格 - 支持水平滚动 */}
                 <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto overflow-y-auto">
                     {loading ? (
                         <div className="flex items-center justify-center py-12">
                             <Loader2 className="w-8 h-8 animate-spin text-blue-500" />

@@ -24,7 +24,6 @@ import {
 } from 'lucide-react';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
 import { useCurrentUserProfile } from '@/lib/hooks/useCurrentUserProfile';
-import { useSessionSafe } from '@/components/providers/ClientProviders';
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -166,9 +165,8 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isFeatureEnabled, loaded: featureLoaded } = useFeatureToggles();
-  useCurrentUserProfile({ enabled: true });
-  const session = useSessionSafe();
-  const isAdmin = session?.user?.user_metadata?.is_admin === true;
+  const { profile } = useCurrentUserProfile({ enabled: true });
+  const isAdmin = profile?.is_admin === true;
 
   const filteredNavItems = SETTINGS_NAV_ITEMS.filter((item) => {
     if (item.featureId && featureLoaded && !isFeatureEnabled(item.featureId)) {

@@ -21,7 +21,6 @@ import { DEFAULT_MOBILE_MAIN_ITEMS, DEFAULT_MOBILE_DRAWER_ORDER } from '@/lib/us
 import { getMobileItemsRecord, toFeatureId } from '@/lib/navigation/registry';
 import {
     getSettingsCenterTabFromRouteTarget,
-    openSettingsCenter,
     getSettingsPageRouteTarget,
 } from '@/lib/settings-center';
 
@@ -197,20 +196,14 @@ export function MobileNav() {
                             return (
                                 <Link
                                     key={item.href}
-                                    href={item.href}
+                                    href={settingsTab ? getSettingsPageRouteTarget(settingsTab) : item.href}
                                     className={`flex flex-col items-center justify-center p-3 rounded-xl
                                         transition-colors duration-200
                                         ${isActive
                                             ? 'bg-accent/10 text-accent'
                                             : 'bg-background-secondary hover:bg-accent/5 text-foreground-secondary'
                                         }`}
-                                    onClick={(event) => {
-                                        if (settingsTab) {
-                                            event.preventDefault();
-                                            closeDrawer();
-                                            openSettingsCenter(settingsTab);
-                                            return;
-                                        }
+                                    onClick={() => {
                                         closeDrawer();
                                     }}
                                 >
