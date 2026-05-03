@@ -249,9 +249,9 @@ export function AIAnalysisSection({
                     </button>
                 </div>
             </div>
-            <div className="p-3 sm:p-4 md:p-6 prose prose-sm sm:prose-base dark:prose-invert max-w-none min-h-[200px] w-full">
+            <div className="p-3 sm:p-4 md:p-6 prose prose-sm sm:prose-base dark:prose-invert max-w-full min-h-[200px] w-full overflow-hidden box-border">
                 {loading ? (
-                    <div className="flex flex-col items-center justify-center py-6 sm:py-8 gap-3">
+                    <div className="flex flex-col items-center justify-center py-6 sm:py-8 gap-3 w-full">
                         {streaming.isStreaming && (streaming.content || streaming.reasoning) ? (
                             <>
                                 {streaming.reasoning && (
@@ -259,20 +259,20 @@ export function AIAnalysisSection({
                                         startTime={streaming.reasoningStartTime} duration={streaming.reasoningDuration} />
                                 )}
                                 {streaming.content && (
-                                    <MarkdownContent content={streaming.content} className="text-sm sm:text-base text-foreground/70 break-words" />
+                                    <MarkdownContent content={streaming.content} className="text-sm sm:text-base text-foreground/70 break-words w-full" />
                                 )}
                             </>
                         ) : (
                             <>
                                 <SoundWaveLoader variant="inline" />
-                                <p className="text-sm text-foreground/50 text-center break-words">{loadingText}</p>
+                                <p className="text-sm text-foreground/50 text-center break-words w-full">{loadingText}</p>
                             </>
                         )}
                     </div>
                 ) : (
                     <>
                         {analysisReasoning && <ThinkingBlock content={analysisReasoning} duration={streaming.reasoningDuration} />}
-                        <MarkdownContent content={analysis || '点击「重新分析」开始AI分析'} className="text-sm sm:text-base text-foreground/70 break-words" />
+                        <MarkdownContent content={analysis || '点击「重新分析」开始AI分析'} className="text-sm sm:text-base text-foreground/70 break-words w-full" />
                     </>
                 )}
             </div>
