@@ -102,7 +102,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
                 created_at: user.created_at,
                 updated_at: user.updated_at,
                 last_sign_in_at: lastSignInAt,
-                credits: creditTx?.[0]?.balance_after || 0,
+                credits: user.ai_chat_count || 0,
             },
             recentTransactions: (creditTx || []).slice(0, 20),
             recentOperations: (operationLogs || []),

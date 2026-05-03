@@ -18,12 +18,35 @@ interface CreditTransactionInput {
 }
 
 /**
+ * 获取用户当前积分余额
+ */
+async function getUserCredits(userId: string): Promise<number> {
+    const supabase = getSystemAdminClient();
+    const { data, error } = await supabase
+        .from('users')
+        .select('ai_chat_count')
+        .eq('id', userId)
+        .maybeSingle();
+    
+    if (error) {
+        console.error('[credit-log] 获取用户积分失败:', error.message);
+        return 0;
+    }
+    
+    return (data?.ai_chat_count as number) || 0;
+}
+
+/**
  * 记录一笔积分交易
  * @returns 成功返回 true，失败返回 false
  */
 export async function logCreditTransaction(input: CreditTransactionInput): Promise<boolean> {
     try {
         const supabase = getSystemAdminClient();
+        
+        // 获取当前余额用于计算交易后的余额
+        const currentBalance = await getUserCredits(input.userId);
+        const balanceAfter = currentBalance + input.amount;
 
         const { error } = await supabase
             .from('credit_transactions')
@@ -35,6 +58,7 @@ export async function logCreditTransaction(input: CreditTransactionInput): Promi
                 description: input.description || null,
                 reference_type: input.referenceType || null,
                 reference_id: input.referenceId || null,
+                balance_after: balanceAfter,
             });
 
         if (error) {

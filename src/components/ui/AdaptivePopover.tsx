@@ -100,7 +100,7 @@ export function AdaptivePopover({
   showModeToggle = false,
 }: AdaptivePopoverProps) {
   const [internalOpen, setInternalOpen] = useState(false);
-  const [currentMode, setCurrentMode] = useState<Mode>('menu');
+  const [detectedMode, setDetectedMode] = useState<Mode>('menu');
   const [popoverPos, setPopoverPos] = useState<PopoverPosition>({ top: 0, left: 0, transformOrigin: 'center' });
   const [isAnimating, setIsAnimating] = useState(false);
   
@@ -108,17 +108,17 @@ export function AdaptivePopover({
   const popoverRef = useRef<HTMLDivElement>(null);
   const isControlled = controlledOpen !== undefined;
   const isOpen = isControlled ? controlledOpen : internalOpen;
+  
+  const currentMode = mode !== 'auto' ? mode : detectedMode;
 
-  // 响应式检测
   useEffect(() => {
     if (mode !== 'auto') {
-      setCurrentMode(mode);
       return;
     }
 
     const checkScreenSize = () => {
       const isMobile = window.innerWidth < breakpoint;
-      setCurrentMode(isMobile ? 'dialog' : 'menu');
+      setDetectedMode(isMobile ? 'dialog' : 'menu');
     };
 
     checkScreenSize();
