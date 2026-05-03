@@ -244,8 +244,9 @@ export function AdaptivePopover({
 
   const toggleMode = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
-    setCurrentMode(prev => prev === 'menu' ? 'dialog' : 'menu');
-  }, []);
+    if (mode !== 'auto') return;
+    setDetectedMode(prev => prev === 'menu' ? 'dialog' : 'menu');
+  }, [mode]);
 
   // 打开时计算位置
   useEffect(() => {
