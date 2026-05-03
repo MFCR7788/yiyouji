@@ -63,12 +63,12 @@ export async function GET(request: NextRequest) {
         
         const emailMap: Record<string, string> = {};
         const lastSignInMap: Record<string, string | null> = {};
-        
-        (authUsers?.users || []).forEach((au: { id: string; email: string | null; last_sign_in_at: string | null }) => {
+
+        (authUsers?.users || []).forEach((au: { id: string; email?: string; last_sign_in_at?: string | null }) => {
             if (au.email) {
                 emailMap[au.id] = au.email;
-                lastSignInMap[au.id] = au.last_sign_in_at;
             }
+            lastSignInMap[au.id] = au.last_sign_in_at ?? null;
         });
 
         // 获取每个用户的积分余额
