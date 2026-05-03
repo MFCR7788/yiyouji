@@ -1,10 +1,10 @@
 /**
  * 会员权限逻辑
- * 
+ *
  * Free/Plus/Pro 三级会员体系
- * - Free: 积分上限 10，签到随机 1-3 积分
- * - Plus: 积分上限 20，签到奖励 x2
- * - Pro: 积分上限 50，签到奖励 x3
+ * - Free: 基础功能，签到 10 积分/天
+ * - Plus: 3个月 ¥98 或 6个月 ¥168
+ * - Pro: 1年 ¥258
  */
 
 import { requestBrowserJson, type BrowserApiError } from '@/lib/browser-api';
@@ -77,70 +77,99 @@ export function isMembershipExpired(source: {
     return expiresAt !== null && expiresAt <= new Date();
 }
 
+export type PlanId = 'free' | 'plus' | 'plus_6m' | 'pro';
+
 export interface PricingPlan {
-    id: MembershipType;
+    id: PlanId;
     name: string;
     price: number;
+    originalPrice?: number;
     period: string;
+    periodMonths: number;
     features: string[];
     popular?: boolean;
-    /** 可累计积分上限 */
+    badge?: string;
     creditLimit: number;
 }
 
-// 会员套餐配置
 export const pricingPlans: PricingPlan[] = [
     {
         id: 'free',
-        name: 'Free',
+        name: '免费版',
         price: 0,
         period: '永久',
+        periodMonths: 0,
         features: [
             '基础命盘排盘',
             '每日/月运势预览',
             '塔罗牌、六爻、MBTI解读',
-            '积分上限 10',
-            '每日签到随机 1-3 积分',
+            '每日签到 +10 积分',
         ],
         creditLimit: 10,
     },
     {
         id: 'plus',
-        name: 'Plus',
-        price: 0,
-        period: '30 天',
+        name: 'Plus 会员',
+        price: 98,
+        originalPrice: 117,
+        period: '3个月',
+        periodMonths: 3,
+        badge: '超值',
         features: [
-            '全部 Free 功能',
-            '积分上限 20',
-            '每日签到奖励 x2',
-            '更多模型支持',
-            '全部AI分析',
-            '知识库',
+            '全部免费版功能',
+            '积分上限提升至 500',
+            '更多 AI 模型支持',
+            '全部 AI 分析功能',
+            '知识库使用',
         ],
         popular: true,
-        creditLimit: 20,
+        creditLimit: 500,
+    },
+    {
+        id: 'plus_6m',
+        name: 'Plus 会员',
+        price: 168,
+        originalPrice: 234,
+        period: '6个月',
+        periodMonths: 6,
+        badge: '推荐',
+        features: [
+            '全部 Plus 功能',
+            '每月均僅 ¥28',
+            '更长时间享受会员权益',
+        ],
+        creditLimit: 500,
     },
     {
         id: 'pro',
-        name: 'Pro',
-        price: 0,
-        period: '30 天',
+        name: 'Pro 会员',
+        price: 258,
+        originalPrice: 468,
+        period: '1年',
+        periodMonths: 12,
+        badge: '最划算',
         features: [
             '全部 Plus 功能',
-            '积分上限 50',
-            '每日签到奖励 x3',
+            '积分上限提升至 1000',
             '获取更高级模型支持',
             '更精确的知识库',
+            '每月均僅 ¥21.5',
         ],
-        creditLimit: 50,
+        creditLimit: 1000,
     },
 ];
 
 /**
  * 获取套餐配置
  */
-export function getPlanConfig(type: MembershipType): PricingPlan {
+export function getPlanConfig(type: PlanId): PricingPlan {
     return pricingPlans.find(p => p.id === type) || pricingPlans[0];
+}
+
+export function planIdToMembership(planId: PlanId): MembershipType {
+    if (planId === 'plus' || planId === 'plus_6m') return 'plus';
+    if (planId === 'pro') return 'pro';
+    return 'free';
 }
 
 /**

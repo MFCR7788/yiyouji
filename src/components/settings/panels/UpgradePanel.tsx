@@ -2,7 +2,7 @@
  * 订阅内容
  *
  * 'use client' 标记说明：
- * - 使用 hooks 管理会员、签到、激活码与积分记录状态
+ * - 使用 hooks 管理会员、签到与积分记录状态
  * - 该模块供统一设置中心复用
  */
 'use client';
@@ -11,7 +11,6 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   CalendarCheck,
   CheckCircle2,
-  Key,
   RefreshCw,
   Lock,
 } from 'lucide-react';
@@ -24,7 +23,7 @@ import { AuthModal } from '@/components/auth/AuthModalV2';
 import { CheckinModal } from '@/components/checkin/CheckinModal';
 import { CreditProgressBar } from '@/components/membership/CreditProgressBar';
 import { CreditTransactionsPanel } from '@/components/membership/CreditTransactionsPanel';
-import { KeyActivationModal } from '@/components/membership/KeyActivationModal';
+import { MembershipCards } from '@/components/membership/MembershipCards';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { useToast } from '@/components/ui/Toast';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
@@ -34,16 +33,12 @@ function ActionButton({
   icon,
   label,
   onClick,
-  href,
   disabled = false,
-  title,
 }: {
   icon: ReactNode;
   label: string;
   onClick?: () => void;
-  href?: string;
   disabled?: boolean;
-  title?: string;
 }) {
   const className = `inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors duration-150 ${
     disabled
@@ -51,21 +46,11 @@ function ActionButton({
       : 'border-[#e2ddd4] bg-[#efedea] text-[#37352f] hover:bg-[#e7e4de] active:bg-[#dfdbd4]'
   }`;
 
-  if (href && !disabled) {
-    return (
-      <a href={href} className={className} title={title}>
-        {icon}
-        <span>{label}</span>
-      </a>
-    );
-  }
-
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      title={title}
       className={className}
     >
       {icon}
@@ -85,7 +70,6 @@ export default function UpgradePanel() {
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [checkinSubmitting, setCheckinSubmitting] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showKeyModal, setShowKeyModal] = useState(false);
   const [showCheckinModal, setShowCheckinModal] = useState(false);
   const [transactionsRefreshKey, setTransactionsRefreshKey] = useState(0);
   const { showToast } = useToast();
@@ -129,7 +113,6 @@ export default function UpgradePanel() {
       console.error('获取签到状态失败:', error);
       setCheckinStatus(null);
       setCheckinError('获取签到状态失败，请稍后重试');
-      return null;
     } finally {
       setCheckinLoading(false);
     }
@@ -166,12 +149,7 @@ export default function UpgradePanel() {
     void refreshCheckinStatus();
   }, [checkinEnabled, refreshCheckinStatus, sessionLoading, user]);
 
-  const handleKeySuccess = (info: MembershipInfo | null) => {
-    if (info) {
-      setMembership(info);
-      setMembershipError(null);
-    }
-
+  const handlePurchaseSuccess = () => {
     if (user) {
       void refreshMembershipAndCheckin(user.id);
     }
@@ -242,11 +220,11 @@ export default function UpgradePanel() {
       ? '签到中'
       : checkinError && !checkinStatus
         ? '状态加载失败'
-      : checkinStatus?.todayCheckedIn
-        ? '已签到'
-        : checkinStatus?.blockedReason === 'credit_cap_reached'
-          ? '已封顶'
-          : '立即签到';
+        : checkinStatus?.todayCheckedIn
+          ? '已签到'
+          : checkinStatus?.blockedReason === 'credit_cap_reached'
+            ? '已封顶'
+            : '立即签到';
   const checkinButtonIcon = !user
     ? <CalendarCheck className="h-4 w-4" />
     : checkinSubmitting
@@ -255,9 +233,9 @@ export default function UpgradePanel() {
         ? <RefreshCw className="h-4 w-4" />
         : checkinStatus?.todayCheckedIn
           ? <CheckCircle2 className="h-4 w-4" />
-        : checkinStatus?.blockedReason === 'credit_cap_reached'
-          ? <Lock className="h-4 w-4" />
-          : <CalendarCheck className="h-4 w-4" />;
+          : checkinStatus?.blockedReason === 'credit_cap_reached'
+            ? <Lock className="h-4 w-4" />
+            : <CalendarCheck className="h-4 w-4" />;
   const checkinDisabled = !!user && (checkinSubmitting || checkinLoading || !!checkinError || !checkinStatus?.canCheckin);
 
   if (loading) {
@@ -298,17 +276,6 @@ export default function UpgradePanel() {
 
       <div className="rounded-lg border border-[#ebe8e2] bg-[#f7f6f3] px-4 py-4">
         <div className="flex flex-wrap gap-2">
-          <ActionButton
-            onClick={() => {
-              if (!user) {
-                setShowAuthModal(true);
-                return;
-              }
-              setShowKeyModal(true);
-            }}
-            icon={<Key className="h-4 w-4" />}
-            label="输入激活码"
-          />
           {checkinEnabled ? (
             <div className="flex items-center gap-2">
               <ActionButton
@@ -343,17 +310,13 @@ export default function UpgradePanel() {
         ) : null}
       </div>
 
+      <MembershipCards currentType={currentPlan} onPurchaseSuccess={handlePurchaseSuccess} />
+
       <CreditTransactionsPanel pageSize={5} refreshKey={transactionsRefreshKey} />
 
       <AuthModal
         isOpen={showAuthModal}
         onClose={() => setShowAuthModal(false)}
-      />
-
-      <KeyActivationModal
-        isOpen={showKeyModal}
-        onClose={() => setShowKeyModal(false)}
-        onSuccess={handleKeySuccess}
       />
 
       <CheckinModal

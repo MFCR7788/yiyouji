@@ -3,7 +3,7 @@
  *
  * 当前规则：
  * - 每日只能签到一次
- * - 签到奖励依会员等级发放
+ * - 签到奖励固定 10 积分
  * - 若签到前已达到/超过当前会员积分上限，则不可签到
  * - 若签到前仍低于上限，则本次签到奖励完整发放，允许单次超过上限
  * - 不再维护连续签到、经验值和等级
@@ -82,11 +82,7 @@ export async function getCheckinStatus(
         canCheckin: !todayCheckedIn && !capReached,
         lastCheckin: lastResult.data?.checkin_date || null,
         todayCheckedIn,
-        rewardRange: membership === 'pro'
-            ? [3, 9]
-            : membership === 'plus'
-                ? [2, 6]
-                : [1, 3],
+        rewardRange: [10, 10],
         currentCredits,
         creditLimit,
         blockedReason: todayCheckedIn

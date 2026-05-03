@@ -220,15 +220,19 @@ export function buildModels(): AIModelConfig[] {
     if (qwenVl) devModels.push(qwenVl);
 
     // 豆包（火山引擎）视觉模型 - 用于面相、手相分析
+    // 使用最新版 Doubao Seed 2.0 Pro (2026.02)，支持深度思考+多模态理解+视觉定位
+    // API 接口: Responses API (/api/v3/responses)
     const doubaoVision = normalizeEnvFallbackModel({
       id: 'doubao-vision',
-      name: '豆包 Vision Pro',
+      name: '豆包 Vision Pro (Seed 2.0)',
       vendor: 'volc',
       usageType: 'chat',
       supportsVision: true,
       apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
       apiKeyEnvVar: 'VOLC_API_KEY',
-      supportsReasoning: false,
+      modelId: 'doubao-seed-2-0-pro-260215',
+      supportsReasoning: true,
+      isReasoningDefault: false,
     });
     if (doubaoVision) devModels.push(doubaoVision);
 
