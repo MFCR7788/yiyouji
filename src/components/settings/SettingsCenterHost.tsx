@@ -48,6 +48,9 @@ const LazyAdminAIServicesContent = lazy(async () => ({
 const LazyAdminMcpContent = lazy(async () => ({
   default: (await import('@/components/settings/AccountAdminPanels')).AdminMcpContent,
 }));
+const LazyAdminUsersContent = lazy(async () => ({
+  default: (await import('@/components/settings/AccountAdminPanels')).AdminUsersContent,
+}));
 
 export type SettingsCenterTabItem = {
   id: SettingsCenterTab;
@@ -183,6 +186,8 @@ function renderSettingsCenterPanel(
       return renderLazyPanel(<LazyAdminAIServicesContent />);
     case 'admin-mcp':
       return renderLazyPanel(<LazyAdminMcpContent />);
+    case 'admin-users':
+      return renderLazyPanel(<LazyAdminUsersContent />);
   }
 }
 

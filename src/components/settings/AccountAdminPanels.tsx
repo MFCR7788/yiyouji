@@ -30,6 +30,9 @@ const LazyAIGatewayPanel = lazy(async () => ({
 const LazyMcpKeyManagementPanel = lazy(async () => ({
   default: (await import('@/components/admin/McpKeyManagementPanel')).McpKeyManagementPanel,
 }));
+const LazyUserManagementPanel = lazy(async () => ({
+  default: (await import('@/components/admin/UserManagementPanel')).UserManagementPanel,
+}));
 
 function PanelFallback() {
   return (
@@ -184,6 +187,18 @@ export function AdminMcpContent() {
       <Suspense fallback={<PanelFallback />}>
         <div className="rounded-lg border border-border bg-background p-4">
           <LazyMcpKeyManagementPanel />
+        </div>
+      </Suspense>
+    </Section>
+  );
+}
+
+export function AdminUsersContent() {
+  return (
+    <Section title="用户管理" description="管理系统用户、会员等级、积分和账户状态。">
+      <Suspense fallback={<PanelFallback />}>
+        <div className="rounded-lg border border-border bg-background p-4">
+          <LazyUserManagementPanel />
         </div>
       </Suspense>
     </Section>

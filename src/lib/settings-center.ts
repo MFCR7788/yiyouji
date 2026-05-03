@@ -13,6 +13,7 @@ export const SETTINGS_CENTER_TABS = [
   'admin-features',
   'admin-ai-services',
   'admin-mcp',
+  'admin-users',
   'help',
 ] as const;
 
@@ -61,6 +62,7 @@ const SETTINGS_CENTER_TAB_META: Record<SettingsCenterTab, Omit<SettingsCenterTab
   'admin-features': { id: 'admin-features', label: '功能与激活码', group: 'management' },
   'admin-ai-services': { id: 'admin-ai-services', label: 'AI 服务', group: 'management' },
   'admin-mcp': { id: 'admin-mcp', label: 'MCP 管理', group: 'management' },
+  'admin-users': { id: 'admin-users', label: '用户管理', group: 'management' },
 };
 
 function isSettingsCenterTabDisabled(tab: SettingsCenterTab, flags: SettingsCenterFlags) {
