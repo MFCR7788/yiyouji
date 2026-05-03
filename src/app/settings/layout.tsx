@@ -15,9 +15,16 @@ import {
   Menu,
   X,
   ChevronRight,
+  Key,
+  Megaphone,
+  Wallet,
+  Bot,
+  Wrench,
+  Users,
 } from 'lucide-react';
 import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
 import { useCurrentUserProfile } from '@/lib/hooks/useCurrentUserProfile';
+import { useSessionSafe } from '@/components/providers/ClientProviders';
 
 interface SettingsLayoutProps {
   children: ReactNode;
@@ -68,6 +75,14 @@ const SETTINGS_NAV_ITEMS = [
     featureId: 'ai-personalization',
   },
   {
+    id: 'byok',
+    label: '自定义模型',
+    icon: Key,
+    href: '/settings/byok',
+    group: 'extensions',
+    description: '自定义 AI 模型配置',
+  },
+  {
     id: 'charts',
     label: '命盘',
     icon: Sparkles,
@@ -96,11 +111,55 @@ const SETTINGS_NAV_ITEMS = [
   },
 ];
 
-type NavGroup = 'account' | 'extensions';
+const ADMIN_NAV_ITEMS = [
+  {
+    id: 'admin-announcements',
+    label: '公告',
+    icon: Megaphone,
+    href: '/settings/admin/announcements',
+    group: 'management',
+    description: '管理系统公告',
+  },
+  {
+    id: 'admin-features',
+    label: '功能与激活码',
+    icon: Wallet,
+    href: '/settings/admin/features',
+    group: 'management',
+    description: '功能开关与激活码管理',
+  },
+  {
+    id: 'admin-ai-services',
+    label: 'AI 服务',
+    icon: Bot,
+    href: '/settings/admin/ai-services',
+    group: 'management',
+    description: 'AI 服务配置',
+  },
+  {
+    id: 'admin-mcp',
+    label: 'MCP 管理',
+    icon: Wrench,
+    href: '/settings/admin/mcp',
+    group: 'management',
+    description: 'MCP 服务管理',
+  },
+  {
+    id: 'admin-users',
+    label: '用户管理',
+    icon: Users,
+    href: '/settings/admin/users',
+    group: 'management',
+    description: '用户账户管理',
+  },
+];
+
+type NavGroup = 'account' | 'extensions' | 'management';
 
 const GROUP_LABELS: Record<NavGroup, string> = {
   account: '账户设置',
   extensions: '功能扩展',
+  management: '管理',
 };
 
 export default function SettingsLayout({ children }: SettingsLayoutProps) {
@@ -108,6 +167,8 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isFeatureEnabled, loaded: featureLoaded } = useFeatureToggles();
   useCurrentUserProfile({ enabled: true });
+  const session = useSessionSafe();
+  const isAdmin = session?.user?.user_metadata?.is_admin === true;
 
   const filteredNavItems = SETTINGS_NAV_ITEMS.filter((item) => {
     if (item.featureId && featureLoaded && !isFeatureEnabled(item.featureId)) {
@@ -116,7 +177,9 @@ export default function SettingsLayout({ children }: SettingsLayoutProps) {
     return true;
   });
 
-  const groupedItems = filteredNavItems.reduce(
+  const allNavItems = isAdmin ? [...filteredNavItems, ...ADMIN_NAV_ITEMS] : filteredNavItems;
+
+  const groupedItems = allNavItems.reduce(
     (acc, item) => {
       const group = item.group as NavGroup;
       if (!acc[group]) {
