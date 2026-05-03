@@ -160,10 +160,12 @@ package_deploy() {
     # 删除旧的打包文件
     rm -f "$DEPLOY_FILE"
     
-    # 创建新的打包文件（只包含必要文件）
-    tar -czvf "$DEPLOY_FILE" \
+    # 创建新的打包文件（只包含必要文件，不包含 .env）
+    # 注意：不打包 .env 文件，因为服务器上的 .env 由 GitHub Actions 生成
+    # --no-xattrs: 排除 macOS 扩展属性，避免 Linux 解压时警告
+    tar -czvf "$DEPLOY_FILE" --no-xattrs \
         -C .next/standalone . \
-        -C ../.. .env public \
+        -C ../.. public \
         2>&1 | tail -5
     
     FILE_SIZE=$(du -h "$DEPLOY_FILE" | cut -f1)
