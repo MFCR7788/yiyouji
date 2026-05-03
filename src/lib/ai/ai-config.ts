@@ -184,13 +184,14 @@ function createDefaultModels(): AIModelConfig[] {
 
   // 豆包（火山引擎）视觉模型 - 用于面相、手相分析
   // 使用 Doubao Seed 2.0 Lite，专注于视觉分析任务
+  // 使用 Responses API (/api/v3/responses)，支持图像输入
   const doubaoVision = normalizeEnvFallbackModel({
     id: 'doubao-vision',
     name: '豆包 Vision Lite (Seed 2.0)',
     vendor: 'volc',
     usageType: 'chat',
     supportsVision: true,
-    apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/chat/completions',
+    apiUrl: 'https://ark.cn-beijing.volces.com/api/v3/responses',
     apiKeyEnvVar: 'VOLC_API_KEY',
     modelId: 'doubao-seed-2-0-lite-260215',
     supportsReasoning: false,
