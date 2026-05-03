@@ -11,8 +11,8 @@ export function LiuNianTable({
     onSelect: (year: number) => void;
 }) {
     return (
-        <div className="overflow-x-auto -mx-2 px-2 scrollbar-thin">
-            <div className="flex gap-2 min-w-max">
+        <div className="overflow-x-auto -mx-3 sm:-mx-2 px-2 sm:px-2 scrollbar-thin">
+            <div className="flex gap-1.5 sm:gap-2 min-w-max">
                 {liuNian.map((ln, index) => {
                     const isSelected = selectedYear === ln.year;
                     const ganElement = getStemElement(ln.gan);
@@ -23,29 +23,29 @@ export function LiuNianTable({
                             key={index}
                             onClick={() => onSelect(ln.year)}
                             className={`
-                                flex-shrink-0 w-14 text-center p-2.5 rounded-md border transition-colors
+                                flex-shrink-0 w-12 sm:w-14 text-center p-1.5 sm:p-2.5 rounded-md border transition-colors
                                 ${isSelected
                                     ? 'border-[#2eaadc] bg-blue-50/30'
                                     : 'border-border bg-background hover:bg-background-secondary'
                                 }
                             `}
                         >
-                            <div className="text-[10px] font-bold text-foreground/30 uppercase tracking-wider">{ln.year}</div>
-                            <div className="flex flex-col items-center gap-0.5 my-1.5">
+                            <div className="text-[9px] sm:text-[10px] font-bold text-foreground/30 uppercase tracking-wider">{ln.year}</div>
+                            <div className="flex flex-col items-center gap-0.5 my-1 sm:my-1.5">
                                 <span
-                                    className="text-sm font-bold"
+                                    className="text-sm sm:text-sm font-bold"
                                     style={{ color: ganElement ? getElementColor(ganElement) : undefined }}
                                 >
                                     {ln.gan}
                                 </span>
                                 <span
-                                    className="text-sm font-bold"
+                                    className="text-sm sm:text-sm font-bold"
                                     style={{ color: zhiElement ? getElementColor(zhiElement) : undefined }}
                                 >
                                     {ln.zhi}
                                 </span>
                             </div>
-                            <div className="text-[10px] font-bold text-foreground/40">{ln.age}岁</div>
+                            <div className="text-[9px] sm:text-[10px] font-bold text-foreground/40">{ln.age}岁</div>
                         </button>
                     );
                 })}
