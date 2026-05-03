@@ -22,15 +22,15 @@ export function LiuNianTable({
                             key={index}
                             onClick={() => onSelect(ln.year)}
                             className={`
-                                flex-shrink-0 w-12 sm:w-14 text-center p-1.5 sm:p-2.5 rounded-md border transition-colors
+                                flex-shrink-0 min-w-[48px] sm:min-w-[56px] w-auto sm:w-14 text-center p-1.5 sm:p-2.5 rounded-md border transition-colors word-break break-words
                                 ${isSelected
                                     ? 'border-[#2eaadc] bg-blue-50/30'
                                     : 'border-border bg-background hover:bg-background-secondary'
                                 }
                             `}
                         >
-                            <div className="text-[9px] sm:text-[10px] font-bold text-foreground/30 uppercase tracking-wider">{ln.year}</div>
-                            <div className="flex flex-col items-center gap-0.5 my-1 sm:my-1.5">
+                            <div className="text-[9px] sm:text-[10px] font-bold text-foreground/30 uppercase tracking-wider whitespace-normal">{ln.year}</div>
+                            <div className="flex flex-col items-center gap-0.5 my-1 sm:my-1.5 whitespace-nowrap">
                                 <span
                                     className="text-sm sm:text-sm font-bold"
                                     style={{ color: ganElement ? getElementColor(ganElement) : undefined }}
@@ -44,7 +44,7 @@ export function LiuNianTable({
                                     {ln.zhi}
                                 </span>
                             </div>
-                            <div className="text-[9px] sm:text-[10px] font-bold text-foreground/40">{ln.age}岁</div>
+                            <div className="text-[9px] sm:text-[10px] font-bold text-foreground/40 whitespace-normal">{ln.age}岁</div>
                         </button>
                     );
                 })}

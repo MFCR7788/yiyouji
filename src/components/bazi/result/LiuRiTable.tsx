@@ -23,17 +23,17 @@ export function LiuRiTable({
                             type="button"
                             onClick={() => onSelect(ri.date)}
                             className={`
-                                flex-shrink-0 w-11 sm:w-12 text-center p-1.5 sm:p-2 rounded-md border transition-colors
+                                flex-shrink-0 min-w-[44px] sm:min-w-[48px] w-auto sm:w-12 text-center p-1.5 sm:p-2 rounded-md border transition-colors word-break break-words
                                 ${isSelected
                                     ? 'border-[#2eaadc] bg-blue-50/30'
                                     : 'border-border bg-background hover:bg-background-secondary'
                                 }
                             `}
                         >
-                            <div className="text-[9px] sm:text-[10px] font-mono text-foreground/40 mb-1 sm:mb-1.5 leading-none">
+                            <div className="text-[9px] sm:text-[10px] font-mono text-foreground/40 mb-1 sm:mb-1.5 leading-none whitespace-nowrap">
                                 {ri.date.split('-')[1]}/{ri.date.split('-')[2]}
                             </div>
-                            <div className="flex flex-col items-center gap-0.5">
+                            <div className="flex flex-col items-center gap-0.5 whitespace-nowrap">
                                 <span
                                     className="text-xs font-bold"
                                     style={{ color: ganElement ? getElementColor(ganElement) : undefined }}
