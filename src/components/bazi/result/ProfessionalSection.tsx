@@ -49,7 +49,7 @@ export function ProfessionalSection({
 
     return (
         <div className="space-y-6 sm:space-y-8">
-            <section className="bg-background border border-border rounded-md px-0.5 sm:px-1 pb-3 sm:pb-4 pt-1 sm:pt-2">
+            <section className="bg-background border border-border rounded-md px-3 sm:px-3 pb-3 sm:pb-4 pt-1 sm:pt-2">
                 {/* <h2 className="text-sm font-semibold mb-6 flex items-center gap-2">
                     <Sparkles className="w-4 h-4 text-[#2eaadc]" />
                     命盘详情

@@ -584,7 +584,7 @@ function BaziResultContent() {
     const dayMasterDescription = getDayMasterDescription(canonicalBazi.基本信息.日主 as Parameters<typeof getDayMasterDescription>[0]);
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background overflow-x-hidden">
             <div className="w-full mx-auto px-2 sm:px-4 py-6 sm:py-8 animate-fade-in max-w-4xl">
                 <ResultHeader
                     chartId={chartId}
