@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import {
     getSystemAdminClient,
+    getAuthAdminClient,
     jsonError,
     jsonOk,
     requireAdminContext,
@@ -54,22 +55,31 @@ export async function GET(request: NextRequest) {
             return jsonError('获取用户列表失败', 500);
         }
 
-        // 批量获取用户邮箱
+        // 批量获取用户邮箱（使用 Auth Admin 客户端）
         const userIds = (users || []).map((u: Record<string, unknown>) => u.id as string);
-        
-        const { data: authUsers } = await supabase.auth.admin.listUsers({ 
-            perPage: 1000 
-        });
-        
+
         const emailMap: Record<string, string> = {};
         const lastSignInMap: Record<string, string | null> = {};
 
-        (authUsers?.users || []).forEach((au: { id: string; email?: string; last_sign_in_at?: string | null }) => {
-            if (au.email) {
-                emailMap[au.id] = au.email;
+        const authAdminClient = getAuthAdminClient();
+        if (authAdminClient) {
+            try {
+                const { data: authUsers } = await authAdminClient.auth.admin.listUsers({
+                    perPage: 1000
+                });
+
+                (authUsers?.users || []).forEach((au: { id: string; email?: string; last_sign_in_at?: string | null }) => {
+                    if (au.email) {
+                        emailMap[au.id] = au.email;
+                    }
+                    lastSignInMap[au.id] = au.last_sign_in_at ?? null;
+                });
+            } catch (authErr) {
+                console.error('[admin-users][GET] Auth admin listUsers failed:', authErr);
             }
-            lastSignInMap[au.id] = au.last_sign_in_at ?? null;
-        });
+        } else {
+            console.warn('[admin-users][GET] SUPABASE_SECRET_KEY not configured, skipping email fetch');
+        }
 
         // 获取每个用户的积分余额
         const creditPromises = userIds.map(async (userId: string) => {
@@ -91,14 +101,18 @@ export async function GET(request: NextRequest) {
             creditResults.map((r) => [r.userId, r.balance])
         );
 
-        // 记录查看操作
-        await logAdminOperation({
-            adminId: auth.user.id,
-            adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-            operationType: 'view_user',
-            description: `查看用户列表 (第${page}页, 搜索: ${search || '无'})`,
-            details: { page, limit, search, filters: { membership, isAdmin } },
-        });
+        // 记录查看操作（非阻塞，失败不影响主流程）
+        try {
+            await logAdminOperation({
+                adminId: auth.user.id,
+                adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                operationType: 'view_user',
+                description: `查看用户列表 (第${page}页, 搜索: ${search || '无'})`,
+                details: { page, limit, search, filters: { membership, isAdmin } },
+            });
+        } catch (logErr) {
+            console.error('[admin-users][GET] Failed to log operation:', logErr);
+        }
 
         const userList = (users || []).map((user: Record<string, unknown>) => ({
             id: user.id as string,

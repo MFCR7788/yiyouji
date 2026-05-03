@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server';
 import {
     getSystemAdminClient,
+    getAuthAdminClient,
     jsonError,
     jsonOk,
     requireAdminContext,
@@ -36,8 +37,20 @@ export async function GET(request: NextRequest, context: RouteContext) {
             return jsonError('用户不存在', 404);
         }
 
-        // 获取邮箱信息
-        const { data: authUser } = await supabase.auth.admin.getUserById(userId);
+        // 获取邮箱信息（使用 Auth Admin 客户端）
+        let userEmail = '';
+        let lastSignInAt: string | null = null;
+
+        const authAdminClient = getAuthAdminClient();
+        if (authAdminClient) {
+            try {
+                const { data: authUser } = await authAdminClient.auth.admin.getUserById(userId);
+                userEmail = authUser?.user?.email || '';
+                lastSignInAt = authUser?.user?.last_sign_in_at || null;
+            } catch (authErr) {
+                console.error('[admin-users][GET by id] Auth admin getUserById failed:', authErr);
+            }
+        }
 
         // 获取积分余额和交易记录
         const { data: creditTx } = await supabase
@@ -55,20 +68,24 @@ export async function GET(request: NextRequest, context: RouteContext) {
             .order('created_at', { ascending: false })
             .limit(20);
 
-        // 记录查看操作
-        await logAdminOperation({
-            adminId: auth.user.id,
-            adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-            operationType: 'view_user',
-            targetUserId: userId,
-            targetUserEmail: authUser?.user?.email,
-            description: `查看用户详情 (${authUser?.user?.email || userId})`,
-        });
+        // 记录查看操作（非阻塞）
+        try {
+            await logAdminOperation({
+                adminId: auth.user.id,
+                adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                operationType: 'view_user',
+                targetUserId: userId,
+                targetUserEmail: userEmail,
+                description: `查看用户详情 (${userEmail || userId})`,
+            });
+        } catch (logErr) {
+            console.error('[admin-users][GET by id] Failed to log operation:', logErr);
+        }
 
         return jsonOk({
             user: {
                 id: user.id,
-                email: authUser?.user?.email || '',
+                email: userEmail,
                 nickname: user.nickname,
                 avatar_url: user.avatar_url,
                 membership: user.membership,
@@ -76,7 +93,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
                 is_admin: user.is_admin,
                 created_at: user.created_at,
                 updated_at: user.updated_at,
-                last_sign_in_at: authUser?.user?.last_sign_in_at,
+                last_sign_in_at: lastSignInAt,
                 credits: creditTx?.[0]?.balance_after || 0,
             },
             recentTransactions: (creditTx || []).slice(0, 20),
@@ -128,15 +145,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         // 处理会员等级修改
         if ('membership' in updates && ['free', 'plus', 'pro'].includes(updates.membership as string)) {
             updateData.membership = updates.membership;
-            
+
             if (updates.membership === 'plus' || updates.membership === 'pro') {
-                updateData.membership_expires_at = updates.membership_expires_at 
+                updateData.membership_expires_at = updates.membership_expires_at
                     ? new Date(updates.membership_expires_at as string).toISOString()
                     : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 默认1年
             } else {
                 updateData.membership_expires_at = null;
             }
-            
+
             operationType = 'update_membership';
             description = `将用户会员等级从 ${currentUser.membership} 改为 ${updates.membership}`;
         }
@@ -194,7 +211,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
         if (Object.keys(updateData).length > 0) {
             updateData.updated_at = new Date().toISOString();
-            
+
             const { error: updateError } = await supabase
                 .from('users')
                 .update(updateData)
@@ -202,35 +219,43 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
             if (updateError) {
                 console.error('[admin-users][PATCH] Update failed:', updateError);
-                
-                // 记录失败的操作
-                await logAdminOperation({
-                    adminId: auth.user.id,
-                    adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-                    operationType: (operationType as 'edit_user_info') || 'edit_user_info',
-                    targetUserId: userId,
-                    description: `${description} - 失败`,
-                    status: 'failed',
-                    errorMessage: updateError.message,
-                    details: { updates, error: updateError },
-                });
+
+                // 记录失败的操作（非阻塞）
+                try {
+                    await logAdminOperation({
+                        adminId: auth.user.id,
+                        adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                        operationType: (operationType as 'edit_user_info') || 'edit_user_info',
+                        targetUserId: userId,
+                        description: `${description} - 失败`,
+                        status: 'failed',
+                        errorMessage: updateError.message,
+                        details: { updates, error: updateError },
+                    });
+                } catch (logErr) {
+                    console.error('[admin-users][PATCH] Failed to log failed operation:', logErr);
+                }
 
                 return jsonError('更新用户信息失败', 500);
             }
 
-            // 记录成功的操作
-            await logAdminOperation({
-                adminId: auth.user.id,
-                adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-                operationType: (operationType as any) || 'edit_user_info',
-                targetUserId: userId,
-                description,
-                details: { 
-                    previousValue: currentUser, 
-                    newValue: updates,
-                    updateData 
-                },
-            });
+            // 记录成功的操作（非阻塞）
+            try {
+                await logAdminOperation({
+                    adminId: auth.user.id,
+                    adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                    operationType: (operationType as any) || 'edit_user_info',
+                    targetUserId: userId,
+                    description,
+                    details: {
+                        previousValue: currentUser,
+                        newValue: updates,
+                        updateData
+                    },
+                });
+            } catch (logErr) {
+                console.error('[admin-users][PATCH] Failed to log success operation:', logErr);
+            }
         }
 
         // 返回更新后的用户信息
@@ -247,15 +272,20 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
         });
     } catch (err) {
         console.error('[admin-users][PATCH] Error:', err);
-        
-        await logAdminOperation({
-            adminId: auth.user.id,
-            operationType: 'edit_user_info',
-            targetUserId: userId,
-            description: '更新用户信息时发生错误',
-            status: 'failed',
-            errorMessage: err instanceof Error ? err.message : String(err),
-        });
+
+        // 记录错误日志（非阻塞）
+        try {
+            await logAdminOperation({
+                adminId: auth.user.id,
+                operationType: 'edit_user_info',
+                targetUserId: userId,
+                description: '更新用户信息时发生错误',
+                status: 'failed',
+                errorMessage: err instanceof Error ? err.message : String(err),
+            });
+        } catch (logErr) {
+            console.error('[admin-users][PATCH] Failed to log error:', logErr);
+        }
 
         return jsonError('服务器内部错误', 500);
     }
@@ -285,48 +315,61 @@ export async function POST(request: NextRequest, context: RouteContext) {
         return jsonError('action 必须是 disable 或 enable', 400);
     }
 
-    const supabase = getSystemAdminClient();
+    const authAdminClient = getAuthAdminClient();
+    if (!authAdminClient) {
+        return jsonError('SUPABASE_SECRET_KEY 未配置，无法执行此操作', 503);
+    }
 
     try {
         if (action === 'disable') {
             // 禁用用户：在 Supabase Auth 中 ban 用户
-            const { error: banError } = await supabase.auth.admin.updateUserById(userId, {
+            const { error: banError } = await authAdminClient.auth.admin.updateUserById(userId, {
                 ban_duration: '9999y', // 实际上永久禁用
             });
 
             if (banError) {
                 console.error('[admin-users][POST] Ban failed:', banError);
-                return jsonError('禁用用户失败', 500);
+                return jsonError('禁用用户失败: ' + banError.message, 500);
             }
 
-            await logAdminOperation({
-                adminId: auth.user.id,
-                adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-                operationType: 'disable_user',
-                targetUserId: userId,
-                description: `禁用用户账号`,
-                details: { reason: (body as Record<string, unknown>).reason },
-            });
+            // 记录操作（非阻塞）
+            try {
+                await logAdminOperation({
+                    adminId: auth.user.id,
+                    adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                    operationType: 'disable_user',
+                    targetUserId: userId,
+                    description: `禁用用户账号`,
+                    details: { reason: (body as Record<string, unknown>).reason },
+                });
+            } catch (logErr) {
+                console.error('[admin-users][POST] Failed to log ban operation:', logErr);
+            }
 
             return jsonOk({ success: true, message: '用户已被禁用' });
         } else {
             // 启用用户：解除 ban
-            const { error: unbanError } = await supabase.auth.admin.updateUserById(userId, {
+            const { error: unbanError } = await authAdminClient.auth.admin.updateUserById(userId, {
                 ban_duration: undefined,
             });
 
             if (unbanError) {
                 console.error('[admin-users][POST] Unban failed:', unbanError);
-                return jsonError('启用用户失败', 500);
+                return jsonError('启用用户失败: ' + unbanError.message, 500);
             }
 
-            await logAdminOperation({
-                adminId: auth.user.id,
-                adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-                operationType: 'enable_user',
-                targetUserId: userId,
-                description: `启用用户账号`,
-            });
+            // 记录操作（非阻塞）
+            try {
+                await logAdminOperation({
+                    adminId: auth.user.id,
+                    adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                    operationType: 'enable_user',
+                    targetUserId: userId,
+                    description: `启用用户账号`,
+                });
+            } catch (logErr) {
+                console.error('[admin-users][POST] Failed to log unban operation:', logErr);
+            }
 
             return jsonOk({ success: true, message: '用户已启用' });
         }
@@ -357,6 +400,10 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
     }
 
     const supabase = getSystemAdminClient();
+    const authAdminClient = getAuthAdminClient();
+    if (!authAdminClient) {
+        return jsonError('SUPABASE_SECRET_KEY 未配置，无法执行此操作', 503);
+    }
 
     try {
         // 检查是否尝试删除自己
@@ -395,42 +442,51 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
             return jsonError('删除用户数据失败', 500);
         }
 
-        // 删除 Supabase Auth 中的用户
-        const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(userId);
+        // 删除 Supabase Auth 中的用户（使用 Auth Admin 客户端）
+        const { error: deleteAuthError } = await authAdminClient.auth.admin.deleteUser(userId);
 
         if (deleteAuthError) {
             console.error('[admin-users][DELETE] Delete from auth failed:', deleteAuthError);
-            return jsonError('删除用户认证信息失败', 500);
+            return jsonError('删除用户认证信息失败: ' + deleteAuthError.message, 500);
         }
 
-        // 记录删除操作
-        await logAdminOperation({
-            adminId: auth.user.id,
-            adminNickname: auth.user.user_metadata?.nickname as string | undefined,
-            operationType: 'delete_user',
-            targetUserId: userId,
-            description: `彻底删除用户账号及所有相关数据`,
-            details: { 
-                deletedAt: new Date().toISOString(),
-                requiresConfirmation: true 
-            },
-        });
+        // 记录删除操作（非阻塞）
+        try {
+            await logAdminOperation({
+                adminId: auth.user.id,
+                adminNickname: auth.user.user_metadata?.nickname as string | undefined,
+                operationType: 'delete_user',
+                targetUserId: userId,
+                description: `彻底删除用户账号及所有相关数据`,
+                details: {
+                    deletedAt: new Date().toISOString(),
+                    requiresConfirmation: true
+                },
+            });
+        } catch (logErr) {
+            console.error('[admin-users][DELETE] Failed to log delete operation:', logErr);
+        }
 
-        return jsonOk({ 
-            success: true, 
-            message: '用户已彻底删除，此操作不可逆' 
+        return jsonOk({
+            success: true,
+            message: '用户已彻底删除，此操作不可逆'
         });
     } catch (err) {
         console.error('[admin-users][DELETE] Error:', err);
-        
-        await logAdminOperation({
-            adminId: auth.user.id,
-            operationType: 'delete_user',
-            targetUserId: userId,
-            description: '删除用户时发生错误',
-            status: 'failed',
-            errorMessage: err instanceof Error ? err.message : String(err),
-        });
+
+        // 记录错误日志（非阻塞）
+        try {
+            await logAdminOperation({
+                adminId: auth.user.id,
+                operationType: 'delete_user',
+                targetUserId: userId,
+                description: '删除用户时发生错误',
+                status: 'failed',
+                errorMessage: err instanceof Error ? err.message : String(err),
+            });
+        } catch (logErr) {
+            console.error('[admin-users][DELETE] Failed to log delete error:', logErr);
+        }
 
         return jsonError('删除用户失败', 500);
     }
