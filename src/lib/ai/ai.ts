@@ -515,8 +515,20 @@ export async function callAIVision(
     }
     const systemPrompt = buildSystemPrompt(personality, chartContext, options);
 
+    // 🔑 关键修复：volc-responses 格式完全绕过 AI SDK，避免 data URI 验证问题
+    if (config.apiFormat === 'volc-responses' || config.vendor === 'volc') {
+        console.log(`[ai] 🎯 检测到火山引擎模型 (${config.id})，使用原生 API 调用（绕过 AI SDK）`);
+        return await callVolcResponsesAPI(
+            config,
+            messages,
+            options?.imageBase64,
+            options?.imageMimeType
+        );
+    }
+
     return await runWithSourceFallback(config, async (runtimeConfig) => {
-        if (runtimeConfig.apiFormat === 'volc-responses') {
+        // 二次检查：防止 source fallback 后 apiFormat 丢失
+        if (runtimeConfig.apiFormat === 'volc-responses' || runtimeConfig.vendor === 'volc') {
             return await callVolcResponsesAPI(
                 runtimeConfig,
                 messages,

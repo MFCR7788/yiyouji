@@ -1,36 +1,8 @@
 /**
- * 火山引擎 Responses API Provider
+ * 火山引擎 Vision API Provider
  * 
- * 专门处理火山引擎的 /api/v3/responses 接口格式
- * 请求格式：
- * {
- *   "model": "xxx",
- *   "input": [
- *     {
- *       "role": "user",
- *       "content": [
- *         { "type": "input_image", "image_url": "..." },
- *         { "type": "input_text", "text": "..." }
- *       ]
- *     }
- *   ]
- * }
- * 
- * 响应格式：
- * {
- *   "output": [
- *     {
- *       "type": "reasoning",
- *       "summary": [
- *         { "type": "summary_text", "text": "..." }
- *       ]
- *     },
- *     {
- *       "type": "message",
- *       "content": [{ "type": "output_text", "text": "..." }]
- *     }
- *   ]
- * }
+ * 使用 OpenAI 兼容的 /api/v3/chat/completions 接口格式
+ * 支持图片输入（base64 格式）
  */
 
 import type { AIModelConfig } from '@/types';
@@ -38,48 +10,42 @@ import type { ChatMessage } from '@/types';
 
 export type AIRequestMessage = Pick<ChatMessage, 'role' | 'content'>;
 
-export interface VolcResponseOutputItem {
-    type: string;
-    summary?: Array<{
-        type: string;
-        text: string;
+export interface VolcChatResponse {
+    id: string;
+    choices: Array<{
+        index: number;
+        message: {
+            role: string;
+            content: string;
+        };
+        finish_reason: string;
     }>;
-    content?: Array<{
-        type: string;
-        text: string;
-    }>;
-    status?: string;
-}
-
-export interface VolcResponseResult {
-    output: VolcResponseOutputItem[];
+    usage?: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+    };
 }
 
 /**
- * 创建带代理的 fetch 函数
+ * 配置全局代理（如果需要）
+ * 使用 setGlobalDispatcher 而非 dispatcher 选项
  */
-function createProxyFetch() {
+function configureProxyIfNeeded(): void {
     const httpsProxy = process.env.HTTPS_PROXY || process.env.HTTP_PROXY;
     
     if (!httpsProxy) {
-        console.log('[volc-responses] 未检测到代理环境变量，使用默认 fetch');
-        return undefined;
+        console.log('[volc-vision] 未检测到代理环境变量');
+        return;
     }
     
     try {
-        const { ProxyAgent } = require('undici');
+        const { ProxyAgent, setGlobalDispatcher } = require('undici');
         const agent = new ProxyAgent(httpsProxy);
-        
-        const proxyFetch: typeof fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-            const options = { ...init, dispatcher: agent } as any;
-            return globalThis.fetch(input, options);
-        };
-        
-        console.log(`[volc-responses] ✅ 已创建带代理的 fetch: ${httpsProxy}`);
-        return proxyFetch as unknown as typeof fetch;
+        setGlobalDispatcher(agent);
+        console.log(`[volc-vision] ✅ 已配置全局代理: ${httpsProxy}`);
     } catch (err) {
-        console.warn('[volc-responses] ⚠️ 无法创建代理 fetch:', err instanceof Error ? err.message : err);
-        return undefined;
+        console.warn('[volc-vision] ⚠️ 无法配置代理:', err instanceof Error ? err.message : err);
     }
 }
 
@@ -91,7 +57,7 @@ export async function callVolcResponsesAPI(
 ): Promise<string> {
     const apiKey = process.env[config.apiKeyEnvVar];
     if (!apiKey) {
-        throw new Error(`${config.name || config.id} API key not configured`);
+        throw new Error(`${config.name || config.id} API key not configured (env: ${config.apiKeyEnvVar})`);
     }
 
     const userMessage = messages.find(m => m.role === 'user');
@@ -99,38 +65,54 @@ export async function callVolcResponsesAPI(
         throw new Error('No user message found');
     }
 
-    const content: Array<{ type: string; [key: string]: unknown }> = [];
-
+    // 构建消息内容（支持图片 + 文本）
+    let content: string | Array<{ type: string; [key: string]: unknown }>;
+    
     if (imageBase64) {
-        content.push({
-            type: 'input_image',
-            image_url: `data:${imageMimeType || 'image/jpeg'};base64,${imageBase64}`,
-        });
+        // 多模态内容：图片 + 文本
+        content = [
+            {
+                type: 'image_url',
+                image_url: {
+                    url: `data:${imageMimeType || 'image/jpeg'};base64,${imageBase64}`,
+                },
+            },
+            {
+                type: 'text',
+                text: userMessage.content,
+            },
+        ];
+    } else {
+        // 纯文本
+        content = userMessage.content;
     }
 
-    content.push({
-        type: 'input_text',
-        text: userMessage.content,
-    });
+    // 使用 chat/completions 端点（从 responses 转换）
+    const apiUrl = config.apiUrl.includes('/responses')
+        ? config.apiUrl.replace('/responses', '/chat/completions')
+        : config.apiUrl.replace(/\/api\/v3\/.*$/, '/api/v3/chat/completions');
 
     const body = {
         model: config.modelId,
-        input: [
+        messages: [
             {
                 role: 'user',
                 content,
             },
         ],
+        max_tokens: 4096,
+        temperature: 0.7,
     };
 
-    // 使用带代理的 fetch（如果可用）
-    const proxyFetch = createProxyFetch();
+    // 配置全局代理（如果需要）
+    configureProxyIfNeeded();
     
-    console.log(`[volc-responses] 📡 调用 API: ${config.apiUrl}`);
-    console.log(`[volc-respaces] 🧠 模型: ${config.modelId}`);
-    console.log(`[volc-responses] 🖼️  图片: ${imageBase64 ? '有 (' + Math.round(imageBase64.length / 1024) + 'KB)' : '无'}`);
+    console.log(`[volc-vision] 📡 调用 API: ${apiUrl}`);
+    console.log(`[volc-vision] 🧠 模型: ${config.modelId}`);
+    console.log(`[volc-vision] 🖼️  图片: ${imageBase64 ? '有 (' + Math.round(imageBase64.length / 1024) + 'KB)' : '无'}`);
+    console.log(`[volc-vision] 📝 请求体大小: ${JSON.stringify(body).length} 字节`);
     
-    const response = await (proxyFetch || fetch)(config.apiUrl, {
+    const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -139,42 +121,38 @@ export async function callVolcResponsesAPI(
         body: JSON.stringify(body),
     });
 
-    console.log(`[volc-responses] 📊 响应状态: ${response.status}`);
+    console.log(`[volc-vision] 📊 响应状态: ${response.status} ${response.statusText}`);
 
     if (!response.ok) {
         const errorText = await response.text();
-        console.error(`[volc-responses] ❌ API 错误: ${errorText.substring(0, 300)}`);
-        throw new Error(`Volc API error: ${response.status} - ${errorText}`);
+        console.error(`[volc-vision] ❌ API 错误 (${response.status}):`, errorText.substring(0, 500));
+        throw new Error(`Volc API error (${response.status}): ${errorText}`);
     }
 
-    const result: VolcResponseResult = await response.json();
+    const result: VolcChatResponse = await response.json();
     
-    console.log(`[volc-responses] ✅ 收到响应，output 数量: ${(result.output || []).length}`);
+    console.log(`[volc-vision] ✅ 收到响应, choices: ${(result.choices || []).length}`);
     
-    // 解析响应：优先从 message 类型中提取 output_text
-    for (const item of result.output || []) {
-        // 方式1：message.content[].text
-        if (item.type === 'message' && item.content && Array.isArray(item.content)) {
-            const textItem = item.content.find(c => c.type === 'output_text' || c.text);
-            if (textItem?.text) {
-                console.log(`[volc-responses] ✅ 从 message 提取文本 (${textItem.text.length} 字符)`);
-                return textItem.text;
-            }
-        }
+    // 解析 chat/completions 响应格式
+    if (result.choices && result.choices.length > 0) {
+        const choice = result.choices[0];
+        const text = choice.message?.content;
         
-        // 方式2：reasoning.summary[].text (旧版兼容)
-        if (item.summary && Array.isArray(item.summary)) {
-            const textItem = item.summary.find(s => s.type === 'summary_text' || s.text);
-            if (textItem?.text) {
-                console.log(`[volc-responses] ✅ 从 reasoning 提取文本 (${textItem.text.length} 字符)`);
-                return textItem.text;
+        if (text) {
+            console.log(`[volc-vision] ✅ 提取文本成功 (${text.length} 字符)`);
+            
+            // 记录 token 用量（如果有）
+            if (result.usage) {
+                console.log(`[volc-vision] 📊 Token 用量:`, result.usage);
             }
+            
+            return text;
         }
     }
     
     // 如果都没找到，记录完整响应用于调试
-    console.error('[volc-responses] ⚠️ 无法从响应中提取文本！');
-    console.error('[volc-responses] 完整响应:', JSON.stringify(result).substring(0, 500));
+    console.error('[volc-vision] ⚠️ 无法从响应中提取文本！');
+    console.error('[volc-vision] 完整响应:', JSON.stringify(result).substring(0, 500));
     
     throw new Error('Empty or unparseable response from Volc API');
 }

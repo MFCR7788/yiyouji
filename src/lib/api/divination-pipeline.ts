@@ -787,8 +787,20 @@ export function createInterpretHandler<
       }
 
       await refundCreditsOrLog(user.id, 1, `${tag} ai-call`);
-      console.error(`[${tag}] AI 调用失败:`, aiError);
-      return jsonError(extractAIErrorMessage(aiError), 500, { success: false });
+      
+      console.error(`[${tag}] AI 调用失败 (详细):`);
+      console.error(`  - error type: ${aiError?.constructor?.name || typeof aiError}`);
+      console.error(`  - message: ${aiError instanceof Error ? aiError.message : String(aiError)}`);
+      console.error(`  - stack: ${aiError instanceof Error ? aiError.stack : 'N/A'}`);
+      console.error(`  - full object:`, JSON.stringify(aiError, Object.getOwnPropertyNames(aiError || {}), 2).substring(0, 1000));
+      
+      return jsonError(extractAIErrorMessage(aiError), 500, { 
+        success: false,
+        _debug_error: process.env.NODE_ENV === 'development' ? {
+          type: aiError?.constructor?.name,
+          message: aiError instanceof Error ? aiError.message : String(aiError),
+        } : undefined
+      });
     }
   };
 
