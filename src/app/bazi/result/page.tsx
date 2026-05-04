@@ -611,7 +611,6 @@ function BaziResultContent() {
                     saved={saved}
                     saveDisabled={isUnknownTime}
                     onAutoSave={handleSave}
-                    showAutoSaveToggle={true}
                 />
 
                 <ProfileSummaryCard

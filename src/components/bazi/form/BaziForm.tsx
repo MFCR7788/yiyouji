@@ -278,7 +278,6 @@ export function BaziForm({
                 <SolarTimeInfoBar
                     mode="input"
                     formData={formData}
-                    showAutoSaveToggle={false}
                 />
 
                 {/* 提交按钮 */}

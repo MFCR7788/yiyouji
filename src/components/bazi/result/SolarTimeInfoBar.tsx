@@ -13,7 +13,7 @@ interface SolarTimeInfoBarProps {
     saved?: boolean;
     saveDisabled?: boolean;
     onAutoSave?: () => Promise<void>;
-    showAutoSaveToggle?: boolean;
+    onToggleAutoSave?: (enabled: boolean) => void;
 }
 
 export function SolarTimeInfoBar({
@@ -25,7 +25,7 @@ export function SolarTimeInfoBar({
     saved = false,
     saveDisabled = false,
     onAutoSave,
-    showAutoSaveToggle = true,
+    onToggleAutoSave,
 }: SolarTimeInfoBarProps) {
     const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
     const prevFormDataRef = useRef<string>('');
@@ -41,8 +41,12 @@ export function SolarTimeInfoBar({
     } else if (mode === 'input' && formData) {
         if (formData.birthYear && formData.birthMonth && formData.birthDay &&
             formData.birthHour !== undefined && formData.birthMinute !== undefined) {
-            const timeStr = `${String(formData.birthHour).padStart(2, '0')}:${String(formData.birthMinute).padStart(2, '0')}`;
-            solarTimeValue = `待计算 (${timeStr})`;
+            const year = formData.birthYear;
+            const month = String(formData.birthMonth).padStart(2, '0');
+            const day = String(formData.birthDay).padStart(2, '0');
+            const hour = String(formData.birthHour).padStart(2, '0');
+            const minute = String(formData.birthMinute).padStart(2, '0');
+            solarTimeValue = `${year}-${month}-${day} ${hour}:${minute}`;
         }
         longitudeValue = formData.longitude;
     }
@@ -57,11 +61,15 @@ export function SolarTimeInfoBar({
 
     const handleToggleAutoSave = useCallback(() => {
         if (saveDisabled) return;
-        setAutoSaveEnabled((prev) => !prev);
-    }, [saveDisabled]);
+        const newValue = !autoSaveEnabled;
+        setAutoSaveEnabled(newValue);
+        if (onToggleAutoSave) {
+            onToggleAutoSave(newValue);
+        }
+    }, [saveDisabled, autoSaveEnabled, onToggleAutoSave]);
 
     useEffect(() => {
-        if (!showAutoSaveToggle || !autoSaveEnabled || saveDisabled || saving || !saved || !onAutoSave) return;
+        if (!autoSaveEnabled || saveDisabled || saving || !saved || !onAutoSave) return;
 
         const currentData = JSON.stringify({
             solarTime: solarTimeValue,
@@ -85,7 +93,7 @@ export function SolarTimeInfoBar({
                 clearTimeout(saveTimeoutRef.current);
             }
         };
-    }, [showAutoSaveToggle, autoSaveEnabled, saveDisabled, saving, saved, solarTimeValue, longitudeValue, onAutoSave]);
+    }, [autoSaveEnabled, saveDisabled, saving, saved, solarTimeValue, longitudeValue, onAutoSave]);
 
     return (
         <div className="bg-background rounded-xl border border-border overflow-hidden shadow-sm w-full my-3 sm:my-4">
@@ -101,34 +109,32 @@ export function SolarTimeInfoBar({
                     </div>
                 </div>
 
-                {showAutoSaveToggle && (
-                    <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
-                        <span className={`text-sm font-medium whitespace-nowrap ${autoSaveEnabled ? 'text-[#C9A96E]' : 'text-foreground/50'}`}>
-                            保存
-                        </span>
-                        <button
-                            onClick={handleToggleAutoSave}
-                            disabled={saveDisabled}
-                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/50 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed ${
-                                autoSaveEnabled
-                                    ? 'bg-gradient-to-r from-[#D4AF37] to-[#C9A96E]'
-                                    : 'bg-gray-200 dark:bg-gray-700'
+                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                    <span className={`text-sm font-medium whitespace-nowrap ${autoSaveEnabled ? 'text-[#C9A96E]' : 'text-foreground/50'}`}>
+                        保存
+                    </span>
+                    <button
+                        onClick={handleToggleAutoSave}
+                        disabled={saveDisabled}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-300 focus:outline-none focus:ring-2 focus:ring-[#C9A96E]/50 focus:ring-offset-2 disabled:opacity-40 disabled:cursor-not-allowed ${
+                            autoSaveEnabled
+                                ? 'bg-gradient-to-r from-[#D4AF37] to-[#C9A96E]'
+                                : 'bg-gray-200 dark:bg-gray-700'
+                        }`}
+                        role="switch"
+                        aria-checked={autoSaveEnabled}
+                        aria-label="自动保存开关"
+                    >
+                        <span
+                            className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
+                                autoSaveEnabled ? 'translate-x-6' : 'translate-x-0.5'
                             }`}
-                            role="switch"
-                            aria-checked={autoSaveEnabled}
-                            aria-label="自动保存开关"
-                        >
-                            <span
-                                className={`inline-block h-5 w-5 transform rounded-full bg-white shadow-lg transition-transform duration-300 ${
-                                    autoSaveEnabled ? 'translate-x-6' : 'translate-x-0.5'
-                                }`}
-                            />
-                        </button>
-                    </div>
-                )}
+                        />
+                    </button>
+                </div>
             </div>
 
-            {showAutoSaveToggle && autoSaveEnabled && (
+            {autoSaveEnabled && (
                 <div className="px-4 sm:px-6 pb-3 sm:pb-4 pt-0">
                     <div className={`text-xs flex items-center gap-1.5 ${
                         saving
