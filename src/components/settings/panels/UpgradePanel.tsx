@@ -9,6 +9,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { MembershipCards } from '@/components/membership/MembershipCards';
+import { MembershipFeatureComparison } from '@/components/membership/MembershipFeatureComparison';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { getMembershipInfo, type MembershipInfo } from '@/lib/user/membership';
 
@@ -79,6 +80,7 @@ export default function UpgradePanel() {
       ) : null}
 
       <MembershipCards currentType={currentPlan} onPurchaseSuccess={handlePurchaseSuccess} />
+      <MembershipFeatureComparison />
     </div>
   );
 }
