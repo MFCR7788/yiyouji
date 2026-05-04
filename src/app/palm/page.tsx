@@ -16,6 +16,8 @@ import { writeSessionJSON } from '@/lib/cache/session-storage';
 import { DEFAULT_VISION_MODEL_ID } from '@/lib/ai/ai-config';
 import { VisionModelSelector } from '@/components/ui/VisionModelSelector';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
+import { useAppBootstrap } from '@/lib/hooks/useAppBootstrap';
+import { CreditProgressBar } from '@/components/membership/CreditProgressBar';
 import dynamic from 'next/dynamic';
 
 const HistoryDrawer = dynamic(
@@ -27,7 +29,11 @@ export default function PalmPage() {
     const router = useRouter();
     const { showToast } = useToast();
     const { user } = useSessionSafe();
+    const bootstrap = useAppBootstrap();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const credits = bootstrap.data.membership?.aiChatCount ?? 0;
+    const membershipType = bootstrap.data.membership?.type ?? 'free';
 
     const [selectedType, setSelectedType] = useState('full');
     const [handType, setHandType] = useState<HandType>('left');
@@ -375,6 +381,29 @@ export default function PalmPage() {
                             </div>
                         </div>
 
+                        {/* 积分显示 */}
+                        {user && (
+                            <div className="mb-4">
+                                <CreditProgressBar 
+                                    credits={credits} 
+                                    membershipType={membershipType} 
+                                />
+                            </div>
+                        )}
+
+                        {/* 积分消耗提示 */}
+                        <div className="mb-4 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-xl">
+                            <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200">
+                                <AlertCircle className="w-4 h-4" />
+                                <span>本次分析将消耗 <strong>2 积分</strong></span>
+                            </div>
+                            {user && (
+                                <div className="mt-2 text-xs text-amber-700/70 dark:text-amber-300/70">
+                                    当前可用积分：<strong>{credits}</strong>
+                                </div>
+                            )}
+                        </div>
+
                         {/* 分析按钮 */}
                         <button
                             onClick={handleAnalyze}
@@ -400,7 +429,7 @@ export default function PalmPage() {
 
                         <p className="text-center text-xs text-foreground-secondary/70 mt-4 flex items-center justify-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
-                            手相分析需要 Plus 会员或以上，每次消耗 1 积分
+                            手相分析需要 Plus 会员或以上，每次消耗 2 积分
                         </p>
                     </div>
                 </div>

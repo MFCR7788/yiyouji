@@ -16,6 +16,8 @@ import { writeSessionJSON } from '@/lib/cache/session-storage';
 import { DEFAULT_VISION_MODEL_ID } from '@/lib/ai/ai-config';
 import { VisionModelSelector } from '@/components/ui/VisionModelSelector';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
+import { useAppBootstrap } from '@/lib/hooks/useAppBootstrap';
+import { CreditProgressBar } from '@/components/membership/CreditProgressBar';
 import dynamic from 'next/dynamic';
 
 const HistoryDrawer = dynamic(
@@ -27,7 +29,11 @@ export default function FacePage() {
     const router = useRouter();
     const { showToast } = useToast();
     const { user } = useSessionSafe();
+    const bootstrap = useAppBootstrap();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    
+    const credits = bootstrap.data.membership?.aiChatCount ?? 0;
+    const membershipType = bootstrap.data.membership?.type ?? 'free';
 
     const [selectedType, setSelectedType] = useState('full');
     const [question, setQuestion] = useState('');
@@ -370,6 +376,29 @@ export default function FacePage() {
                             </div>
                         </div>
 
+                        {/* 积分显示 */}
+                        {user && (
+                            <div className="mb-4">
+                                <CreditProgressBar 
+                                    credits={credits} 
+                                    membershipType={membershipType} 
+                                />
+                            </div>
+                        )}
+
+                        {/* 积分消耗提示 */}
+                        <div className="mb-4 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/30 rounded-xl">
+                            <div className="flex items-center gap-2 text-sm text-purple-800 dark:text-purple-200">
+                                <AlertTriangle className="w-4 h-4" />
+                                <span>本次分析将消耗 <strong>2 积分</strong></span>
+                            </div>
+                            {user && (
+                                <div className="mt-2 text-xs text-purple-700/70 dark:text-purple-300/70">
+                                    当前可用积分：<strong>{credits}</strong>
+                                </div>
+                            )}
+                        </div>
+
                         {/* 分析按钮 */}
                         <button
                             onClick={handleAnalyze}
@@ -395,7 +424,7 @@ export default function FacePage() {
 
                         <p className="text-center text-xs text-foreground-secondary/70 mt-4 flex items-center justify-center gap-1.5">
                             <span className="w-1.5 h-1.5 rounded-full bg-purple-500/50" />
-                            面相分析需要 Plus 会员或以上，每次消耗 1 积分
+                            面相分析需要 Plus 会员或以上，每次消耗 2 积分
                         </p>
                     </div>
                 </div>

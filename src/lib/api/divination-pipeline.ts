@@ -46,10 +46,15 @@ import type { ChartTextDetailLevel } from '@/lib/divination/detail-level';
 
 /**
  * 计算需要扣减的积分数量
- * 如果是 Plus 模型或 Pro 模型，或者开启了推理模式，则扣减 2 积分
- * 否则扣减 1 积分
+ * 视觉模型（面相/手相）固定扣减 2 积分
+ * 文本模型：Plus 模型或 Pro 模型，或者开启了推理模式，则扣减 2 积分，否则扣减 1 积分
  */
-function calculateCreditAmount(modelConfig: AIModelConfig, reasoningEnabled: boolean): number {
+function calculateCreditAmount(modelConfig: AIModelConfig, reasoningEnabled: boolean, isVision?: boolean): number {
+    // 视觉模型固定扣减 2 积分
+    if (isVision) {
+        return 2;
+    }
+    
     const modelTier = getModelTier(modelConfig);
     const isPlusOrProModel = modelTier === 'plus' || modelTier === 'pro';
     const isUsingReasoning = reasoningEnabled;
@@ -730,7 +735,7 @@ export function createInterpretHandler<
     const { modelId: resolvedModelId, modelConfig, reasoningEnabled } = access;
 
     // 计算需要扣减的积分数量
-    const creditAmount = calculateCreditAmount(modelConfig, reasoningEnabled);
+    const creditAmount = calculateCreditAmount(modelConfig, reasoningEnabled, config.isVision);
     
     // 检查积分是否足够
     if (authInfo.credits < creditAmount) {
