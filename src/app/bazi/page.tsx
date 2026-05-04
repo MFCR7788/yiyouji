@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lunar, Solar, LunarYear } from 'lunar-javascript';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
@@ -20,6 +20,7 @@ import { normalizeBirthDateForCalendarSwitch } from '@/lib/divination/bazi-form-
 import { buildPlaceResolutionFallbackMessage, parseLongitude } from '@/lib/divination/place-resolution';
 import { useToast } from '@/components/ui/Toast';
 import { clampDay } from '@/lib/date-utils';
+import type { SolarTimeInfoBarRef } from '@/components/bazi/result/SolarTimeInfoBar';
 
 const parseNumber = (value: string | null, fallback: number) => {
     if (value === null || value.trim() === '') {
@@ -78,6 +79,7 @@ function BaziPageContent() {
         const hourParam = searchParams.get('hour');
         return hourParam === null || hourParam === '-1';
     });
+    const solarTimeInfoBarRef = useRef<SolarTimeInfoBarRef>(null);
 
 
 
@@ -286,6 +288,12 @@ function BaziPageContent() {
                 params.set('chart', chartId);
             }
 
+            // 检查自动保存开关状态
+            const shouldAutoSave = solarTimeInfoBarRef.current?.isAutoSaveEnabled() ?? false;
+            if (shouldAutoSave) {
+                params.set('auto_save', 'true');
+            }
+
             router.push(`/bazi/result?${params.toString()}`);
         } catch (error) {
             console.error('提交失败:', error);
@@ -336,6 +344,7 @@ function BaziPageContent() {
                         onToggleUnknownTime={() => setUnknownTime((prev) => !prev)}
                         onSubmit={handleSubmit}
                         isSubmitting={isSubmitting}
+                        solarTimeInfoBarRef={solarTimeInfoBarRef}
                     />
 
                     <InstantBaziPreview onUseInstant={handleUseInstant} />

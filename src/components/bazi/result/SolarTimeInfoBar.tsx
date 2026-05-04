@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useCallback, forwardRef, useImperativeHandle } from 'react';
 import type { BaziCanonicalJSON } from 'taibu-core/bazi';
 import type { BaziFormData } from '@/types';
 
@@ -37,32 +37,30 @@ function calculateTrueSolarTime(
     };
 }
 
+export interface SolarTimeInfoBarRef {
+    isAutoSaveEnabled: () => boolean;
+}
+
 interface SolarTimeInfoBarProps {
     mode: 'input' | 'result';
     canonicalChart?: BaziCanonicalJSON;
     formData?: BaziFormData;
     longitude?: number | undefined;
-    saving?: boolean;
-    saved?: boolean;
     saveDisabled?: boolean;
-    onAutoSave?: () => Promise<void>;
-    onToggleAutoSave?: (enabled: boolean) => void;
 }
 
-export function SolarTimeInfoBar({
+export const SolarTimeInfoBar = forwardRef<SolarTimeInfoBarRef, SolarTimeInfoBarProps>(({
     mode = 'input',
     canonicalChart,
     formData,
     longitude,
-    saving = false,
-    saved = false,
     saveDisabled = false,
-    onAutoSave,
-    onToggleAutoSave,
-}: SolarTimeInfoBarProps) {
+}, ref) => {
     const [autoSaveEnabled, setAutoSaveEnabled] = useState(false);
-    const prevFormDataRef = useRef<string>('');
-    const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    useImperativeHandle(ref, () => ({
+        isAutoSaveEnabled: () => autoSaveEnabled
+    }), [autoSaveEnabled]);
 
     let solarTimeValue = '--';
     let longitudeValue = longitude;
@@ -94,10 +92,9 @@ export function SolarTimeInfoBar({
                         currentLongitude
                     );
                     
-                    const year = solarTimeInfo.trueSolarTime.split(':')[0] ? 
-                        `${formData.birthYear}-${String(formData.birthMonth).padStart(2, '0')}-${String(formData.birthDay).padStart(2, '0')}` : '';
+                    const year = `${formData.birthYear}-${String(formData.birthMonth).padStart(2, '0')}-${String(formData.birthDay).padStart(2, '0')}`;
                     
-                    solarTimeValue = year ? `${year} ${solarTimeInfo.trueSolarTime}` : solarTimeInfo.trueSolarTime;
+                    solarTimeValue = `${year} ${solarTimeInfo.trueSolarTime}`;
                     longitudeValue = currentLongitude;
                     
                     if (solarTimeInfo.correctionMinutes) {
@@ -129,39 +126,8 @@ export function SolarTimeInfoBar({
 
     const handleToggleAutoSave = useCallback(() => {
         if (saveDisabled) return;
-        const newValue = !autoSaveEnabled;
-        setAutoSaveEnabled(newValue);
-        if (onToggleAutoSave) {
-            onToggleAutoSave(newValue);
-        }
-    }, [saveDisabled, autoSaveEnabled, onToggleAutoSave]);
-
-    useEffect(() => {
-        if (!autoSaveEnabled || saveDisabled || saving || !saved || !onAutoSave) return;
-
-        const currentData = JSON.stringify({
-            solarTime: solarTimeValue,
-            longitude: longitudeValue,
-        });
-
-        if (currentData !== prevFormDataRef.current) {
-            prevFormDataRef.current = currentData;
-
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-
-            saveTimeoutRef.current = setTimeout(() => {
-                void onAutoSave();
-            }, 1000);
-        }
-
-        return () => {
-            if (saveTimeoutRef.current) {
-                clearTimeout(saveTimeoutRef.current);
-            }
-        };
-    }, [autoSaveEnabled, saveDisabled, saving, saved, solarTimeValue, longitudeValue, onAutoSave]);
+        setAutoSaveEnabled(prev => !prev);
+    }, [saveDisabled]);
 
     return (
         <div className="bg-background rounded-xl border border-border overflow-hidden shadow-sm w-full my-3 sm:my-4">
@@ -182,7 +148,7 @@ export function SolarTimeInfoBar({
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0">
+                <div className="flex items-center gap-3 sm:gap-4 flex-shrink-0 self-end sm:self-center">
                     <span className={`text-sm font-medium whitespace-nowrap ${autoSaveEnabled ? 'text-[#C9A96E]' : 'text-foreground/50'}`}>
                         保存
                     </span>
@@ -206,27 +172,8 @@ export function SolarTimeInfoBar({
                     </button>
                 </div>
             </div>
-
-            {autoSaveEnabled && (
-                <div className="px-4 sm:px-6 pb-3 sm:pb-4 pt-0">
-                    <div className={`text-xs flex items-center gap-1.5 ${
-                        saving
-                            ? 'text-[#D4AF37] animate-pulse'
-                            : saved
-                                ? 'text-[#0f7b6c]'
-                                : 'text-foreground/45'
-                    }`}>
-                        <span className={`inline-block w-1.5 h-1.5 rounded-full ${
-                            saving
-                                ? 'bg-[#D4AF37]'
-                                : saved
-                                    ? 'bg-[#0f7b6c]'
-                                    : 'bg-gray-400'
-                        }`} />
-                        {saving ? '自动保存中...' : saved ? '已自动保存' : '等待数据变化'}
-                    </div>
-                </div>
-            )}
         </div>
     );
-}
+});
+
+SolarTimeInfoBar.displayName = 'SolarTimeInfoBar';
