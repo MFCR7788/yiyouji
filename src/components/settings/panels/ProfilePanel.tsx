@@ -375,28 +375,28 @@ export default function ProfilePanel() {
   };
 
   const handleSignOut = async () => {
-    setSigningOut(true);
-    setSignOutError('');
+        setSigningOut(true);
+        setSignOutError('');
 
-    try {
-      const result = await signOut();
-      if (result.success) {
-        // 成功退出，重定向到登录页面
-        router.push('/');
-        router.refresh();
-      } else {
-        setSignOutError(result.error?.message || '退出登录失败，请重试');
-        showToast('error', result.error?.message || '退出登录失败，请重试');
-      }
-    } catch (error) {
-      console.error('Sign out error:', error);
-      const errorMessage = error instanceof Error ? error.message : '退出登录失败，请重试';
-      setSignOutError(errorMessage);
-      showToast('error', errorMessage);
-    } finally {
-      setSigningOut(false);
-    }
-  };
+        try {
+            const result = await signOut();
+            if (result.success) {
+                // 成功退出，刷新页面保持在“我的”页面
+                router.refresh();
+                showToast('success', '已成功退出登录');
+            } else {
+                setSignOutError(result.error?.message || '退出登录失败，请重试');
+                showToast('error', result.error?.message || '退出登录失败，请重试');
+            }
+        } catch (error) {
+            console.error('Sign out error:', error);
+            const errorMessage = error instanceof Error ? error.message : '退出登录失败，请重试';
+            setSignOutError(errorMessage);
+            showToast('error', errorMessage);
+        } finally {
+            setSigningOut(false);
+        }
+    };
 
   if (loading || sessionLoading) {
     return (
