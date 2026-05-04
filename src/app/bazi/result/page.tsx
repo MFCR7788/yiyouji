@@ -5,7 +5,7 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useState, useEffect, useRef, Suspense } from 'react';
+import { useMemo, useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { Edit3, Save, Share2, Copy, Check } from 'lucide-react';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
@@ -68,8 +68,6 @@ function BaziResultContent() {
     const { showToast } = useToast();
     const { session, userId, membershipInfo, membershipResolved } = useSessionMembership();
     const credits = membershipResolved ? (membershipInfo?.aiChatCount ?? null) : null;
-    const shouldAutoSave = searchParams.get('auto_save') === 'true';
-    const autoSaveTriggered = useRef(false);
 
     type SavedBaziChartRow = {
         name: string;
@@ -494,22 +492,6 @@ function BaziResultContent() {
         return () => clearMenuItems();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [saving, saved, copied, isAdmin, canonicalBazi, jsonCopied, copyJson, setMenuItems, clearMenuItems, isUnknownTime]);
-
-    // 自动保存逻辑：当开关打开且数据加载完成后自动保存
-    useEffect(() => {
-        if (!shouldAutoSave || autoSaveTriggered.current) return;
-        if (loading || !baziOutput || !canonicalBazi) return;
-
-        autoSaveTriggered.current = true;
-
-        // 延迟执行自动保存，确保页面完全渲染
-        const timer = setTimeout(() => {
-            void handleSave();
-        }, 500);
-
-        return () => clearTimeout(timer);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [shouldAutoSave, loading, baziOutput, canonicalBazi]);
 
     // 选择大运 - 同时更新流年到该大运第一年
     const handleSelectDaYun = (index: number) => {

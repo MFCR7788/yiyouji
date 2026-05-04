@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { Clock, MapPin, ChevronRight } from 'lucide-react';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import type { BaziFormData } from '@/types';
@@ -15,7 +15,6 @@ import { SmartPillarsInput } from '@/components/bazi/form/SmartPillarsInput';
 import { TimeInputModal } from '@/components/bazi/form/TimeInputModal';
 import { PlaceInputModal } from '@/components/bazi/form/PlaceInputModal';
 import { YEAR_OPTIONS, MONTH_OPTIONS, LUNAR_MONTH_NAMES } from '@/components/bazi/form/options';
-import { SolarTimeInfoBar, type SolarTimeInfoBarRef } from '@/components/bazi/result/SolarTimeInfoBar';
 import { LunarYear } from 'lunar-javascript';
 import { getDayCount } from '@/lib/date-utils';
 
@@ -28,7 +27,6 @@ interface BaziFormProps {
     onToggleUnknownTime: () => void;
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
     isSubmitting: boolean;
-    solarTimeInfoBarRef?: React.RefObject<SolarTimeInfoBarRef | null>;
 }
 
 export function BaziForm({
@@ -38,12 +36,9 @@ export function BaziForm({
     onToggleUnknownTime,
     onSubmit,
     isSubmitting,
-    solarTimeInfoBarRef,
 }: BaziFormProps) {
     const [timeModalOpen, setTimeModalOpen] = useState(false);
     const [placeModalOpen, setPlaceModalOpen] = useState(false);
-    const defaultRef = useRef<SolarTimeInfoBarRef>(null);
-    const infoBarRef = (solarTimeInfoBarRef || defaultRef);
 
     const dayCount = formData.calendarType !== 'pillars'
         ? getDayCount(formData.calendarType, formData.birthYear, formData.birthMonth, formData.isLeapMonth)
@@ -277,13 +272,6 @@ export function BaziForm({
                     </div>
                     <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-foreground/30" />
                 </button>
-
-                {/* 真太阳时信息栏 - 位于出生地点和开始排盘按钮之间 */}
-                <SolarTimeInfoBar
-                    ref={infoBarRef}
-                    mode="input"
-                    formData={formData}
-                />
 
                 {/* 提交按钮 */}
                 <button
