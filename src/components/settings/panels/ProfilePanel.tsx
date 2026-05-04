@@ -9,9 +9,11 @@ import {
   CheckCircle2,
   RefreshCw,
   Lock,
+  LogOut,
 } from 'lucide-react';
-import { ensureUserRecord, updateNickname } from '@/lib/auth';
+import { ensureUserRecord, updateNickname, signOut } from '@/lib/auth';
 import { uploadAvatarForCurrentUser } from '@/lib/user/profile';
+import { useRouter } from 'next/navigation';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { StatusBanner } from '@/components/profile/StatusBanner';
@@ -61,6 +63,9 @@ export default function ProfilePanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ensuredUserIdRef = useRef<string | null>(null);
   const { user, loading: sessionLoading } = useSessionSafe();
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
+  const [signOutError, setSignOutError] = useState('');
   const { profile, loading: profileLoading, resolved: profileResolved, error: profileError, refresh: refreshProfile } = useCurrentUserProfile({ enabled: !!user });
   const { isFeatureEnabled, loaded: featureLoaded } = useFeatureToggles();
   const [nickname, setNickname] = useState('');
@@ -369,6 +374,30 @@ export default function ProfilePanel() {
     }
   };
 
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    setSignOutError('');
+
+    try {
+      const result = await signOut();
+      if (result.success) {
+        // 成功退出，重定向到登录页面
+        router.push('/');
+        router.refresh();
+      } else {
+        setSignOutError(result.error?.message || '退出登录失败，请重试');
+        showToast('error', result.error?.message || '退出登录失败，请重试');
+      }
+    } catch (error) {
+      console.error('Sign out error:', error);
+      const errorMessage = error instanceof Error ? error.message : '退出登录失败，请重试';
+      setSignOutError(errorMessage);
+      showToast('error', errorMessage);
+    } finally {
+      setSigningOut(false);
+    }
+  };
+
   if (loading || sessionLoading) {
     return (
       <div className="flex min-h-[240px] items-center justify-center rounded-lg border border-border bg-background">
@@ -581,6 +610,39 @@ export default function ProfilePanel() {
           </div>
 
           <CreditTransactionsPanel pageSize={5} refreshKey={transactionsRefreshKey} />
+
+          <section className="space-y-3">
+            <h2 className="px-1 text-xs font-semibold uppercase tracking-wider text-foreground/50">账户操作</h2>
+            <div className="rounded-md border border-border bg-background p-4">
+              {signOutError && (
+                <div className="mb-4 rounded-md bg-red-500/10 p-3 text-sm text-red-500">
+                  {signOutError}
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={handleSignOut}
+                disabled={signingOut}
+                className={`inline-flex w-full items-center justify-center gap-2 rounded-md border px-4 py-3 text-sm font-medium transition-all duration-150 ${
+                  signingOut
+                    ? 'cursor-not-allowed border-[#e7e2d9] bg-[#f1efeb] text-[#37352f]/42'
+                    : 'border-red-200 bg-red-50 text-red-600 hover:bg-red-100 active:bg-red-200'
+                }`}
+              >
+                {signingOut ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" opacity="0.25"/><path d="M4 12a8 8 0 018-8" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round"/></svg>
+                    正在退出...
+                  </span>
+                ) : (
+                  <>
+                    <LogOut className="h-4 w-4" />
+                    退出登录
+                  </>
+                )}
+              </button>
+            </div>
+          </section>
 
           <AuthModal
             isOpen={showAuthModal}
