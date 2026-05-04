@@ -88,36 +88,35 @@ export interface NavItemDef {
 // ---------------------------------------------------------------------------
 
 export const NAV_REGISTRY: readonly NavItemDef[] = [
-  // ── Tools ───────────────────────────────────────────────────────────────
-  { id: 'records', href: '/records', label: '命理记录', icon: Tags, category: 'tool' },
-  { id: 'monthly', href: '/monthly', label: '月运', icon: CalendarRange, category: 'divination' },
-
   // ── Divination ──────────────────────────────────────────────────────────
-  { id: 'palm', href: '/palm', label: '手相', icon: Hand, emoji: '🖐️', description: '手相分析', category: 'divination' },
-  { id: 'face', href: '/face', label: '面相', icon: ScanFace, emoji: '👤', description: '面相分析', category: 'divination' },
+  { id: 'bazi', href: '/bazi', label: '排盘', icon: PYinYang, emoji: '🔮', description: '四柱八字精批', category: 'divination' },
   { id: 'hepan', href: '/hepan', label: '八字合盘', icon: HeartHandshake, emoji: '💑', description: '八字合盘', category: 'divination' },
-  { id: 'liuyao', href: '/liuyao', label: '六爻', icon: Dices, emoji: '☯️', description: '六爻占卜', category: 'divination' },
   { id: 'ziwei', href: '/ziwei', label: '紫微斗数', icon: PCompassRose, emoji: '⭐', description: '紫微命盘', category: 'divination' },
   { id: 'tarot', href: '/tarot', label: '塔罗', icon: PStarOfDavid, emoji: '🃏', description: '塔罗占卜', category: 'divination' },
+  { id: 'liuyao', href: '/liuyao', label: '六爻', icon: Dices, emoji: '☯️', description: '六爻占卜', category: 'divination' },
   { id: 'qimen', href: '/qimen', label: '奇门遁甲', icon: PCheckerboard, emoji: '🧭', description: '奇门遁甲', category: 'divination' },
   { id: 'daliuren', href: '/daliuren', label: '大六壬', icon: Telescope, emoji: '📜', description: '大六壬', category: 'divination' },
+  { id: 'face', href: '/face', label: '面相', icon: ScanFace, emoji: '👤', description: '面相分析', category: 'divination' },
+  { id: 'palm', href: '/palm', label: '手相', icon: Hand, emoji: '🖐️', description: '手相分析', category: 'divination' },
   { id: 'mbti', href: '/mbti', label: 'MBTI', icon: Brain, emoji: '🧩', description: '性格测试', category: 'divination' },
 
-  // ── Community & User ─────────────────────────────────────────────────────
+  { id: 'daily', href: '/daily', label: '日运', icon: Sun, category: 'divination' },
+  { id: 'monthly', href: '/monthly', label: '月运', icon: CalendarRange, category: 'divination' },
+
+  // ── Tools ───────────────────────────────────────────────────────────────
+  { id: 'chat', href: '/chat', label: 'AI问盘', icon: BotMessageSquare, category: 'tool' },
+  { id: 'records', href: '/records', label: '命理记录', icon: Tags, category: 'tool' },
   { id: 'community', href: '/community', label: '社区', icon: Aperture, category: 'tool' },
+
+  // ── User ────────────────────────────────────────────────────────────────
+  { id: 'settings-profile', href: getSettingsCenterRouteTarget('profile'), label: '我的', icon: User, category: 'user' },
   { id: 'settings-general', href: getSettingsCenterRouteTarget('general'), label: '设置', icon: Settings, category: 'user' },
   { id: 'settings-upgrade', href: getSettingsCenterRouteTarget('upgrade'), label: '订阅', icon: CircleStar, featureId: 'upgrade', category: 'user' },
+  { id: 'settings-charts', href: getSettingsCenterRouteTarget('charts'), label: '命盘', icon: Scroll, featureId: 'charts', category: 'user' },
+  { id: 'notifications', href: '/user/notifications', label: '通知', icon: Bell, featureId: 'notifications', category: 'user' },
   { id: 'settings-personalization', href: getSettingsCenterRouteTarget('personalization'), label: '个性化', icon: MessageCircleHeart, featureId: 'ai-personalization', category: 'user' },
   { id: 'settings-knowledge-base', href: getSettingsCenterRouteTarget('knowledge-base'), label: '知识库', icon: BookOpenText, featureId: 'knowledge-base', category: 'user' },
   { id: 'settings-help', href: getSettingsCenterRouteTarget('help'), label: '帮助中心', icon: CircleQuestionMark, featureId: 'help', category: 'user' },
-
-  // ── Hidden/System Items (not shown in "更多" menu but kept for routing) ─────
-  { id: 'bazi', href: '/bazi', label: '排盘', icon: PYinYang, emoji: '🔮', description: '四柱八字精批', category: 'divination' },
-  { id: 'daily', href: '/daily', label: '日运', icon: Sun, category: 'divination' },
-  { id: 'chat', href: '/chat', label: 'AI问盘', icon: BotMessageSquare, category: 'tool' },
-  { id: 'settings-profile', href: getSettingsCenterRouteTarget('profile'), label: '我的', icon: User, category: 'user' },
-  { id: 'settings-charts', href: getSettingsCenterRouteTarget('charts'), label: '命盘', icon: Scroll, featureId: 'charts', category: 'user' },
-  { id: 'notifications', href: '/user/notifications', label: '通知', icon: Bell, featureId: 'notifications', category: 'user' },
 ] as const;
 
 // ---------------------------------------------------------------------------
