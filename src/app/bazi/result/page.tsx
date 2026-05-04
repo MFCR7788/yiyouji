@@ -24,7 +24,6 @@ import { ProfileSummaryCard } from '@/components/bazi/result/ProfileSummaryCard'
 import { ResultTabs, type ResultTab } from '@/components/bazi/result/ResultTabs';
 import { BasicInfoSection } from '@/components/bazi/result/BasicInfoSection';
 import { ProfessionalSection } from '@/components/bazi/result/ProfessionalSection';
-import { SolarTimeInfoBar } from '@/components/bazi/result/SolarTimeInfoBar';
 import { ResultFooterLinks } from '@/components/bazi/result/ResultFooterLinks';
 import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useToast } from '@/components/ui/Toast';
@@ -601,16 +600,6 @@ function BaziResultContent() {
                     onCopy={handleCopy}
                     onCopyJson={() => { void copyJson(); }}
                     onShare={handleShare}
-                />
-
-                <SolarTimeInfoBar
-                    mode="result"
-                    canonicalChart={canonicalBazi}
-                    longitude={formData.longitude}
-                    saving={saving}
-                    saved={saved}
-                    saveDisabled={isUnknownTime}
-                    onAutoSave={handleSave}
                 />
 
                 <ProfileSummaryCard

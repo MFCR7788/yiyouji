@@ -4,6 +4,39 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import type { BaziCanonicalJSON } from 'taibu-core/bazi';
 import type { BaziFormData } from '@/types';
 
+function calculateTrueSolarTime(
+    birthData: {
+        birthYear: number;
+        birthMonth: number;
+        birthDay: number;
+        birthHour: number;
+        birthMinute: number;
+    },
+    longitude: number
+): { trueSolarTime: string; correctionMinutes: number } {
+    const { birthHour, birthMinute } = birthData;
+
+    const STANDARD_LONGITUDE = 120.0;
+    const longitudeDiff = longitude - STANDARD_LONGITUDE;
+    const timeDifferenceMinutes = Math.round(longitudeDiff * 4);
+    
+    let totalMinutes = birthHour * 60 + birthMinute + timeDifferenceMinutes;
+    
+    if (totalMinutes < 0) {
+        totalMinutes += 24 * 60;
+    } else if (totalMinutes >= 24 * 60) {
+        totalMinutes -= 24 * 60;
+    }
+    
+    const trueSolarHour = Math.floor(totalMinutes / 60) % 24;
+    const trueSolarMinute = totalMinutes % 60;
+    
+    return {
+        trueSolarTime: `${String(trueSolarHour).padStart(2, '0')}:${String(trueSolarMinute).padStart(2, '0')}`,
+        correctionMinutes: timeDifferenceMinutes
+    };
+}
+
 interface SolarTimeInfoBarProps {
     mode: 'input' | 'result';
     canonicalChart?: BaziCanonicalJSON;
@@ -17,7 +50,7 @@ interface SolarTimeInfoBarProps {
 }
 
 export function SolarTimeInfoBar({
-    mode = 'result',
+    mode = 'input',
     canonicalChart,
     formData,
     longitude,
@@ -33,22 +66,57 @@ export function SolarTimeInfoBar({
 
     let solarTimeValue = '--';
     let longitudeValue = longitude;
+    let correctionInfo = '';
 
     if (mode === 'result' && canonicalChart) {
         const trueSolarTime = canonicalChart?.基本信息?.真太阳时;
         solarTimeValue = trueSolarTime?.真太阳时 || '--';
         longitudeValue = trueSolarTime?.经度 || longitude;
+        if (trueSolarTime?.校正分钟) {
+            correctionInfo = `(校正${trueSolarTime.校正分钟 > 0 ? '+' : ''}${trueSolarTime.校正分钟}分)`;
+        }
     } else if (mode === 'input' && formData) {
         if (formData.birthYear && formData.birthMonth && formData.birthDay &&
             formData.birthHour !== undefined && formData.birthMinute !== undefined) {
-            const year = formData.birthYear;
-            const month = String(formData.birthMonth).padStart(2, '0');
-            const day = String(formData.birthDay).padStart(2, '0');
-            const hour = String(formData.birthHour).padStart(2, '0');
-            const minute = String(formData.birthMinute).padStart(2, '0');
-            solarTimeValue = `${year}-${month}-${day} ${hour}:${minute}`;
+            
+            const currentLongitude = formData.longitude || longitude;
+            
+            if (currentLongitude && !isNaN(currentLongitude)) {
+                try {
+                    const solarTimeInfo = calculateTrueSolarTime(
+                        {
+                            birthYear: formData.birthYear,
+                            birthMonth: formData.birthMonth,
+                            birthDay: formData.birthDay,
+                            birthHour: formData.birthHour,
+                            birthMinute: formData.birthMinute,
+                        },
+                        currentLongitude
+                    );
+                    
+                    const year = solarTimeInfo.trueSolarTime.split(':')[0] ? 
+                        `${formData.birthYear}-${String(formData.birthMonth).padStart(2, '0')}-${String(formData.birthDay).padStart(2, '0')}` : '';
+                    
+                    solarTimeValue = year ? `${year} ${solarTimeInfo.trueSolarTime}` : solarTimeInfo.trueSolarTime;
+                    longitudeValue = currentLongitude;
+                    
+                    if (solarTimeInfo.correctionMinutes) {
+                        correctionInfo = `(校正${solarTimeInfo.correctionMinutes > 0 ? '+' : ''}${solarTimeInfo.correctionMinutes}分)`;
+                    }
+                } catch (error) {
+                    console.error('真太阳时计算错误:', error);
+                    const hour = String(formData.birthHour).padStart(2, '0');
+                    const minute = String(formData.birthMinute).padStart(2, '0');
+                    solarTimeValue = `${formData.birthYear}-${String(formData.birthMonth).padStart(2, '0')}-${String(formData.birthDay).padStart(2, '0')} ${hour}:${minute}`;
+                }
+            } else {
+                const hour = String(formData.birthHour).padStart(2, '0');
+                const minute = String(formData.birthMinute).padStart(2, '0');
+                solarTimeValue = `${formData.birthYear}-${String(formData.birthMonth).padStart(2, '0')}-${String(formData.birthDay).padStart(2, '0')} ${hour}:${minute}`;
+                solarTimeValue += ' (待设置地点)';
+            }
         }
-        longitudeValue = formData.longitude;
+        longitudeValue = formData.longitude || longitude;
     }
 
     const formatCoordinates = (lon: number | undefined): string => {
@@ -101,7 +169,12 @@ export function SolarTimeInfoBar({
                 <div className="flex flex-col gap-1.5 sm:gap-2 flex-1 min-w-0">
                     <div className="flex items-center gap-2 text-xs sm:text-sm">
                         <span className="text-foreground/60 font-medium whitespace-nowrap">真太阳时：</span>
-                        <span className="text-foreground/90 font-semibold break-all">{solarTimeValue}</span>
+                        <span className="text-foreground/90 font-semibold break-all">
+                            {solarTimeValue}
+                            {correctionInfo && (
+                                <span className="text-xs text-foreground/50 ml-1">{correctionInfo}</span>
+                            )}
+                        </span>
                     </div>
                     <div className="flex items-center gap-2 text-xs sm:text-sm">
                         <span className="text-foreground/60 font-medium whitespace-nowrap">地址经纬：</span>
