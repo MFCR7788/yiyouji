@@ -1,8 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import type { ChangeEvent } from 'react';
-import { Camera, User as UserIcon } from 'lucide-react';
+import {
+  Camera,
+  User as UserIcon,
+  CalendarCheck,
+  CheckCircle2,
+  RefreshCw,
+  Lock,
+} from 'lucide-react';
 import { ensureUserRecord, updateNickname } from '@/lib/auth';
 import { uploadAvatarForCurrentUser } from '@/lib/user/profile';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
@@ -11,6 +18,19 @@ import { StatusBanner } from '@/components/profile/StatusBanner';
 import { PasswordSection } from '@/components/profile/PasswordSection';
 import { SettingsLoginRequired } from '@/components/settings/SettingsLoginRequired';
 import { useCurrentUserProfile } from '@/lib/hooks/useCurrentUserProfile';
+import { AuthModal } from '@/components/auth/AuthModalV2';
+import { CheckinModal } from '@/components/checkin/CheckinModal';
+import { CreditProgressBar } from '@/components/membership/CreditProgressBar';
+import { CreditTransactionsPanel } from '@/components/membership/CreditTransactionsPanel';
+import { useToast } from '@/components/ui/Toast';
+import { useFeatureToggles } from '@/lib/hooks/useFeatureToggles';
+import { getMembershipInfo, type MembershipInfo } from '@/lib/user/membership';
+import { requestBrowserJson } from '@/lib/browser-api';
+import {
+  type CheckinStatus,
+  fetchCheckinStatus,
+  performCheckinAction,
+} from '@/components/checkin/checkin-client';
 
 function Avatar({ src, alt }: { src: string | null; alt: string }) {
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
@@ -42,6 +62,7 @@ export default function ProfilePanel() {
   const ensuredUserIdRef = useRef<string | null>(null);
   const { user, loading: sessionLoading } = useSessionSafe();
   const { profile, loading: profileLoading, resolved: profileResolved, error: profileError, refresh: refreshProfile } = useCurrentUserProfile({ enabled: !!user });
+  const { isFeatureEnabled, loaded: featureLoaded } = useFeatureToggles();
   const [nickname, setNickname] = useState('');
   const [originalNickname, setOriginalNickname] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -51,6 +72,86 @@ export default function ProfilePanel() {
   const [error, setError] = useState('');
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const isInitialized = useRef(false);
+
+  const [membership, setMembership] = useState<MembershipInfo | null>(null);
+  const [membershipError, setMembershipError] = useState<string | null>(null);
+  const [checkinStatus, setCheckinStatus] = useState<CheckinStatus | null>(null);
+  const [checkinError, setCheckinError] = useState<string | null>(null);
+  const [checkinLoading, setCheckinLoading] = useState(false);
+  const [checkinSubmitting, setCheckinSubmitting] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showCheckinModal, setShowCheckinModal] = useState(false);
+  const [transactionsRefreshKey, setTransactionsRefreshKey] = useState(0);
+  const [registrationBonus, setRegistrationBonus] = useState(0);
+  const { showToast } = useToast();
+
+  const checkinEnabled = featureLoaded && isFeatureEnabled('checkin');
+
+  const refreshMembership = useCallback(async (userId: string) => {
+    const result = await getMembershipInfo(userId);
+    if (result.ok) {
+      setMembership(result.info);
+      setMembershipError(null);
+      return result;
+    }
+
+    setMembershipError(result.error.message || '获取会员状态失败');
+    return result;
+  }, []);
+
+  const fetchRegistrationBonus = useCallback(async () => {
+    if (!user) {
+      setRegistrationBonus(0);
+      return;
+    }
+
+    try {
+      const result = await requestBrowserJson<{
+        items?: Array<{ source: string; amount: number }>;
+      }>('/api/credits/transactions?limit=50', { method: 'GET' });
+
+      if (result.data?.items) {
+        const registrationTx = result.data.items.find((tx) => tx.source === 'registration');
+        if (registrationTx && registrationTx.amount > 0) {
+          setRegistrationBonus(registrationTx.amount);
+        } else {
+          setRegistrationBonus(0);
+        }
+      }
+    } catch (error) {
+      console.error('获取注册赠送积分失败:', error);
+      setRegistrationBonus(0);
+    }
+  }, [user]);
+
+  const refreshCheckinStatus = useCallback(async () => {
+    if (!user || !checkinEnabled) {
+      setCheckinStatus(null);
+      setCheckinError(null);
+      return null;
+    }
+
+    setCheckinLoading(true);
+    try {
+      const nextStatus = await fetchCheckinStatus();
+      if (nextStatus.ok) {
+        setCheckinStatus(nextStatus.status);
+        setCheckinError(null);
+        return nextStatus.status;
+      }
+
+      console.error('获取签到状态失败:', nextStatus.error);
+      setCheckinStatus(null);
+      setCheckinError(nextStatus.error.message || '获取签到状态失败');
+      return null;
+    } catch (error) {
+      console.error('获取签到状态失败:', error);
+      setCheckinStatus(null);
+      setCheckinError('获取签到状态失败，请稍后重试');
+    } finally {
+      setCheckinLoading(false);
+    }
+  }, [checkinEnabled, user]);
 
   useEffect(() => {
     if (sessionLoading) return;
@@ -91,6 +192,113 @@ export default function ProfilePanel() {
     ensuredUserIdRef.current = user.id;
     void ensureUserRecord(user).then(() => refreshProfile());
   }, [profile, profileError, profileLoading, profileResolved, refreshProfile, sessionLoading, user]);
+
+  useEffect(() => {
+    const initCredits = async () => {
+      if (sessionLoading) return;
+      if (user) {
+        await refreshMembership(user.id);
+        await fetchRegistrationBonus();
+      } else {
+        setMembership(null);
+        setMembershipError(null);
+        setRegistrationBonus(0);
+      }
+    };
+    void initCredits();
+  }, [fetchRegistrationBonus, refreshMembership, sessionLoading, user]);
+
+  useEffect(() => {
+    if (sessionLoading) return;
+    if (!user || !checkinEnabled) {
+      setCheckinStatus(null);
+      setCheckinError(null);
+      return;
+    }
+    void refreshCheckinStatus();
+  }, [checkinEnabled, refreshCheckinStatus, sessionLoading, user]);
+
+  const handleCheckinClick = () => {
+    if (!user) {
+      setShowAuthModal(true);
+      return;
+    }
+    if (!checkinStatus?.canCheckin || checkinSubmitting) {
+      return;
+    }
+
+    setCheckinSubmitting(true);
+    void (async () => {
+      try {
+        const result = await performCheckinAction();
+        if (result.ok) {
+          setCheckinError(null);
+          setCheckinStatus((prev) => prev ? {
+            ...prev,
+            canCheckin: false,
+            todayCheckedIn: true,
+            blockedReason: 'already_checked_in',
+            currentCredits: typeof result.credits === 'number' ? result.credits : prev.currentCredits,
+            creditLimit: typeof result.creditLimit === 'number' ? result.creditLimit : prev.creditLimit,
+          } : prev);
+          showToast('success', `签到成功！+${result.rewardCredits} 积分`);
+          void refreshMembership(user.id);
+          setTransactionsRefreshKey((value) => value + 1);
+          return;
+        }
+
+        showToast('error', result.message || '签到失败');
+        if (result.blockedReason === 'already_checked_in') {
+          setCheckinStatus((prev) => prev ? {
+            ...prev,
+            canCheckin: false,
+            todayCheckedIn: true,
+            blockedReason: 'already_checked_in',
+          } : prev);
+        } else if (result.blockedReason === 'credit_cap_reached') {
+          setCheckinStatus((prev) => prev ? {
+            ...prev,
+            canCheckin: false,
+            blockedReason: 'credit_cap_reached',
+            currentCredits: typeof result.credits === 'number' ? result.credits : prev.currentCredits,
+            creditLimit: typeof result.creditLimit === 'number' ? result.creditLimit : prev.creditLimit,
+          } : prev);
+        }
+      } catch (error) {
+        console.error('签到失败:', error);
+        const errorMessage = error instanceof Error ? error.message : '签到失败，请稍后重试';
+        setCheckinError(errorMessage);
+        showToast('error', errorMessage);
+      } finally {
+        setCheckinSubmitting(false);
+      }
+    })();
+  };
+
+  const currentPlan = membership?.type || 'free';
+  const checkinButtonLabel = !user
+    ? '登录后签到'
+    : checkinSubmitting
+      ? '签到中'
+      : checkinError && !checkinStatus
+        ? '状态加载失败'
+        : checkinStatus?.todayCheckedIn
+          ? '已签到'
+          : checkinStatus?.blockedReason === 'credit_cap_reached'
+            ? '已封顶'
+            : '立即签到';
+  const checkinButtonIcon = !user
+    ? <CalendarCheck className="h-4 w-4" />
+    : checkinSubmitting
+      ? <CalendarCheck className="h-4 w-4" />
+      : checkinError && !checkinStatus
+        ? <RefreshCw className="h-4 w-4" />
+        : checkinStatus?.todayCheckedIn
+          ? <CheckCircle2 className="h-4 w-4" />
+          : checkinStatus?.blockedReason === 'credit_cap_reached'
+            ? <Lock className="h-4 w-4" />
+            : <CalendarCheck className="h-4 w-4" />;
+  const checkinDisabled = !!user && (checkinSubmitting || checkinLoading || !!checkinError || !checkinStatus?.canCheckin);
 
   const handleSave = async () => {
     if (!user) return;
@@ -305,6 +513,87 @@ export default function ProfilePanel() {
           <PasswordSection phone={((user.user_metadata?.phone as string) || '').replace(/[^0-9]/g, '').slice(0, 11) || ''} />
         </div>
       </section>
+
+      {user && (
+        <>
+          {membershipError && !membership ? (
+            <div className="rounded-lg border border-[#ead9bf] bg-[#fcf8ee] px-4 py-3 text-sm text-[#946c21]">
+              <div className="flex items-center justify-between gap-3">
+                <span className="min-w-0 flex-1">{membershipError}</span>
+                <button
+                  type="button"
+                  onClick={() => void refreshMembership(user.id)}
+                  className="shrink-0 rounded-md px-2 py-1 font-medium text-[#7c5f1c] transition-colors hover:bg-[#f4ead3]"
+                >
+                  重试
+                </button>
+              </div>
+            </div>
+          ) : (
+            <CreditProgressBar
+              credits={membership?.aiChatCount ?? 0}
+              membershipType={currentPlan}
+              bonusFromRegistration={registrationBonus}
+            />
+          )}
+
+          <div className="rounded-lg border border-[#ebe8e2] bg-[#f7f6f3] px-4 py-4">
+            <div className="flex flex-wrap gap-2">
+              {checkinEnabled ? (
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleCheckinClick}
+                    disabled={checkinDisabled}
+                    className={`inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                      checkinDisabled
+                        ? 'cursor-not-allowed border-[#e7e2d9] bg-[#f1efeb] text-[#37352f]/42'
+                        : 'border-[#e2ddd4] bg-[#efedea] text-[#37352f] hover:bg-[#e7e4de] active:bg-[#dfdbd4]'
+                    }`}
+                  >
+                    {checkinButtonIcon}
+                    <span>{checkinButtonLabel}</span>
+                  </button>
+                  {user && checkinStatus?.todayCheckedIn ? (
+                    <button
+                      type="button"
+                      onClick={() => setShowCheckinModal(true)}
+                      className="text-xs font-medium text-[#37352f]/55 transition-colors duration-150 hover:text-[#37352f]"
+                    >
+                      查看详情
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+            {checkinEnabled && user && checkinError ? (
+              <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border border-[#ead9bf] bg-[#fcf8ee] px-3 py-2 text-xs text-[#946c21]">
+                <span className="min-w-0 flex-1">{checkinError}</span>
+                <button
+                  type="button"
+                  onClick={() => void refreshCheckinStatus()}
+                  className="shrink-0 rounded-md px-2 py-1 font-medium text-[#7c5f1c] transition-colors hover:bg-[#f4ead3]"
+                >
+                  重试
+                </button>
+              </div>
+            ) : null}
+          </div>
+
+          <CreditTransactionsPanel pageSize={5} refreshKey={transactionsRefreshKey} />
+
+          <AuthModal
+            isOpen={showAuthModal}
+            onClose={() => setShowAuthModal(false)}
+          />
+
+          <CheckinModal
+            isOpen={showCheckinModal}
+            onClose={() => setShowCheckinModal(false)}
+            stackLevel="settings"
+          />
+        </>
+      )}
     </div>
   );
 }
