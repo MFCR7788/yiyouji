@@ -25,8 +25,8 @@ export const DEFAULT_MOBILE_MAIN_ITEMS = [
 ] as const;
 
 export const DEFAULT_MOBILE_DRAWER_ORDER = [
-  'liuyao', 'records', 'community', 'hepan', 'ziwei', 'tarot', 'qimen', 'daliuren',
-  'face', 'palm', 'mbti', 'monthly', 'settings-general',
+  'records', 'monthly', 'palm', 'face', 'hepan', 'liuyao', 'ziwei', 'tarot',
+  'qimen', 'daliuren', 'mbti', 'community', 'settings-general',
   'settings-upgrade',
   'settings-personalization', 'settings-knowledge-base', 'settings-help',
 ] as const;
