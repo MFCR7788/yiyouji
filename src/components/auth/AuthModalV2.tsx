@@ -94,7 +94,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                     return;
                 }
 
-                router.refresh();
+                // 开发模式下也跳转到我的页面
+                router.push('/settings/profile');
                 return;
             }
 
@@ -109,10 +110,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 }
             }
 
-            router.refresh();
+            // 登录成功后跳转到我的页面
+            router.push('/settings/profile');
         } catch (error) {
             console.error('Failed to check user profile:', error);
-            router.refresh();
+            // 出错时也尝试跳转到我的页面
+            router.push('/settings/profile');
         }
     }, [onClose, onSuccess, router]);
 
