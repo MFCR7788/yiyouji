@@ -662,7 +662,17 @@ function BaziResultContent() {
                 )}
 
                 <div className="mt-8 pt-8 border-t border-border/60">
-                    <ResultFooterLinks />
+                    <ResultFooterLinks
+                        onEdit={handleEdit}
+                        onSave={handleSave}
+                        onCopy={handleCopy}
+                        onShare={handleShare}
+                        saving={saving}
+                        saved={saved}
+                        copied={copied}
+                        saveDisabled={isUnknownTime}
+                        saveLabel={isUnknownTime ? '需时辰' : '保存'}
+                    />
                 </div>
             </div>
 
