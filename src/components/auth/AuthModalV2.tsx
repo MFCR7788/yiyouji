@@ -8,7 +8,6 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { X, ArrowLeft, RefreshCw, Phone } from 'lucide-react';
-import { openSettingsCenter } from '@/lib/settings-center';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { VerificationCodeInput } from '@/components/auth/VerificationCodeInput';
 import { sendPhoneCode, verifyPhoneCode } from '@/lib/auth/phone-auth';

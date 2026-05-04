@@ -9,7 +9,6 @@ import { useReducer, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { X, Lock, ArrowLeft, RefreshCw, Eye, EyeOff, Phone } from 'lucide-react';
-import { openSettingsCenter } from '@/lib/settings-center';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { signInWithEmailProtected } from '@/lib/auth';
 import { supabase } from '@/lib/auth';
