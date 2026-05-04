@@ -4,23 +4,32 @@
 -- 1. 启用 RLS（如果尚未启用）
 ALTER TABLE public.membership_orders ENABLE ROW LEVEL SECURITY;
 
--- 2. 为 service_role 添加完全访问权限（用于后端 API 操作）
+-- 2. 删除可能存在的旧策略（避免冲突）
+DROP POLICY IF EXISTS "Service role can do everything on membership_orders" ON public.membership_orders;
+DROP POLICY IF EXISTS "Users can view own orders" ON public.membership_orders;
+DROP POLICY IF EXISTS "Users can insert own orders" ON public.membership_orders;
+DROP POLICY IF EXISTS "Users can update own orders" ON public.membership_orders;
+
+-- 3. 为 service_role 添加完全访问权限（用于后端 API 操作）
 CREATE POLICY "Service role can do everything on membership_orders" 
 ON public.membership_orders 
 TO service_role
 USING (true)
 WITH CHECK (true);
 
--- 3. 确保认证用户只能操作自己的订单（原有策略保留）
-CREATE POLICY "Users can view own orders" ON public.membership_orders 
+-- 4. 确保认证用户只能操作自己的订单
+CREATE POLICY "Users can view own orders" 
+ON public.membership_orders 
 FOR SELECT 
 USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert own orders" ON public.membership_orders 
+CREATE POLICY "Users can insert own orders" 
+ON public.membership_orders 
 FOR INSERT 
 WITH CHECK (auth.uid() = user_id);
 
-CREATE POLICY "Users can update own orders" ON public.membership_orders 
+CREATE POLICY "Users can update own orders" 
+ON public.membership_orders 
 FOR UPDATE 
 USING (auth.uid() = user_id)
 WITH CHECK (auth.uid() = user_id);
