@@ -263,9 +263,21 @@ async function runCreditDecrementDirect(
 
 export async function attemptCreditUse(
     userId: string,
-    amount = 1,
+    amountOrOptions: number | CreditQueryOptions = 1,
     options?: CreditQueryOptions,
 ): Promise<CreditUseAttemptResult & { detail?: string }> {
+    
+    // 处理向后兼容的参数
+    let amount: number;
+    let actualOptions: CreditQueryOptions | undefined;
+    
+    if (typeof amountOrOptions === 'number') {
+        amount = amountOrOptions;
+        actualOptions = options;
+    } else {
+        amount = 1;
+        actualOptions = amountOrOptions;
+    }
     
     // 开发模式：检测 dev-user ID，跳过真实积分扣减
     const isDevUser = userId.startsWith('dev-user-') || userId === 'dev-user-id';
@@ -314,7 +326,7 @@ export async function attemptCreditUse(
         };
     }
 
-    const info = await getUserCreditInfo(userId, options);
+    const info = await getUserCreditInfo(userId, actualOptions);
     if (info.credits < amount) {
         return { ok: false, reason: 'insufficient_credits' };
     }
