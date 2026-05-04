@@ -3,7 +3,7 @@ import type { MembershipType } from "@/lib/user/membership";
 import { getDefaultModelConfigAsync, getModelConfigAsync } from "@/lib/server/ai-config";
 import { getModelUsageType, isUserSelectableUsageType } from "@/lib/ai/source-runtime";
 
-type ModelTier = "free" | "plus" | "pro" | "none";
+export type ModelTier = "free" | "plus" | "pro" | "none";
 
 /** 默认 vendor -> tier 映射（当数据库未配置 requiredTier 时的回退） */
 const VENDOR_DEFAULT_TIER: Record<string, ModelTier> = {
@@ -31,7 +31,7 @@ const GLM_MODEL_TIER: Record<string, ModelTier> = {
 /**
  * 获取模型所需等级（优先使用数据库配置）
  */
-function getModelTier(model: AIModelConfig): ModelTier {
+export function getModelTier(model: AIModelConfig): ModelTier {
     // 优先使用数据库配置的 requiredTier
     if (model.requiredTier) {
         return model.requiredTier;

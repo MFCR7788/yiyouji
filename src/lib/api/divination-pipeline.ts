@@ -17,8 +17,8 @@ import { createUIMessageStream, createUIMessageStreamResponse, type FinishReason
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   getSystemAdminClient,
-  jsonError,
   jsonOk,
+  jsonError,
   requireBearerUser,
   requireUserContext,
   resolveRequestDbClient,
@@ -31,7 +31,7 @@ import {
   UserStateResolutionError,
 } from '@/lib/user/credits';
 import { DEFAULT_MODEL_ID } from '@/lib/ai/ai-config';
-import { resolveModelAccessAsync } from '@/lib/ai/ai-access';
+import { resolveModelAccessAsync, getModelTier } from '@/lib/ai/ai-access';
 import { callAIWithReasoning, callAIUIMessageResult, callAIVision } from '@/lib/ai/ai';
 import {
   AIAnalysisConversationPersistenceError,
@@ -43,6 +43,24 @@ import type { AIPersonality } from '@/types';
 import type { ChartType } from '@/lib/visualization/chart-types';
 import { buildVisualizationOutputContractPrompt } from '@/lib/visualization/prompt';
 import type { ChartTextDetailLevel } from '@/lib/divination/detail-level';
+import type { ModelTier } from '@/lib/ai/ai-access';
+
+/**
+ * 计算需要扣减的积分数量
+ * 如果是 Plus 模型或 Pro 模型，或者开启了推理模式，则扣减 2 积分
+ * 否则扣减 1 积分
+ */
+function calculateCreditAmount(modelConfig: AIModelConfig, reasoningEnabled: boolean): number {
+    const modelTier = getModelTier(modelConfig);
+    const isPlusOrProModel = modelTier === 'plus' || modelTier === 'pro';
+    const isUsingReasoning = reasoningEnabled;
+    
+    if (isPlusOrProModel || isUsingReasoning) {
+        return 2;
+    }
+    
+    return 1;
+}
 
 // ─── Types ───
 
@@ -698,9 +716,6 @@ export function createInterpretHandler<
       }
       throw error;
     }
-    if (!authInfo.hasCredits) {
-      return jsonError('积分不足，请通过签到、激活码或会员权益获取积分后再使用', 402, { success: false });
-    }
 
     // 3. Model access
     const modelId = (body.modelId as string | undefined);
@@ -715,6 +730,14 @@ export function createInterpretHandler<
     }
     const { modelId: resolvedModelId, modelConfig, reasoningEnabled } = access;
 
+    // 计算需要扣减的积分数量
+    const creditAmount = calculateCreditAmount(modelConfig, reasoningEnabled);
+    
+    // 检查积分是否足够
+    if (authInfo.credits < creditAmount) {
+      return jsonError(`积分不足，本次使用需要${creditAmount}积分，请通过签到、激活码或会员权益获取积分后再使用`, 402, { success: false });
+    }
+
     // Build prompts, optionally appending visualization output contract
     const { systemPrompt: rawSystemPrompt, userPrompt } = await buildPrompts(input, promptContext);
     const resolvedAllowedChartTypes = typeof allowedChartTypes === 'function'
@@ -725,13 +748,13 @@ export function createInterpretHandler<
       : rawSystemPrompt;
 
     // 4. Deduct credit
-    const creditUse = await attemptCreditUse(user.id, {
+    const creditUse = await attemptCreditUse(user.id, creditAmount, {
       client: authContext.db,
       user,
     });
     if (!creditUse.ok) {
       if (creditUse.reason === 'insufficient_credits') {
-        return jsonError('积分不足，请通过签到、激活码或会员权益获取积分后再使用', 402, { success: false });
+        return jsonError(`积分不足，本次使用需要${creditAmount}积分，请通过签到、激活码或会员权益获取积分后再使用`, 402, { success: false });
       }
       
       const detailMsg = (creditUse as { detail?: string }).detail || '';
@@ -754,7 +777,7 @@ export function createInterpretHandler<
 
     try {
       const { logAiUsage } = await import('@/lib/user/credit-transactions');
-      await logAiUsage(user.id, 1, resolvedModelId, String(input.type));
+      await logAiUsage(user.id, creditAmount, resolvedModelId, String(input.type));
     } catch (logError) {
       console.error('[divination-pipeline] 记录 AI 使用日志失败:', logError);
     }
@@ -765,6 +788,7 @@ export function createInterpretHandler<
         return await handleVisionCall(
           input, user.id, resolvedModelId, modelConfig, reasoningEnabled,
           systemPrompt, userPrompt, promptContext, authContext.db,
+          creditAmount,
         );
       }
 
@@ -772,21 +796,23 @@ export function createInterpretHandler<
         return await handleStreamCall(
           input, user.id, resolvedModelId, reasoningEnabled,
           systemPrompt, userPrompt, promptContext, authContext.db,
+          creditAmount,
         );
       }
 
       return await handleNonStreamCall(
         input, user.id, resolvedModelId, reasoningEnabled,
         systemPrompt, userPrompt, promptContext, authContext.db,
+        creditAmount,
       );
     } catch (aiError) {
       if (aiError instanceof AIAnalysisConversationPersistenceError) {
-        await refundCreditsOrLog(user.id, 1, `${tag} persistence`);
+        await refundCreditsOrLog(user.id, creditAmount, `${tag} persistence`);
         console.error(`[${tag}] 分析结果保存失败:`, aiError);
         return jsonError('保存结果失败，请稍后重试', 500, { success: false });
       }
 
-      await refundCreditsOrLog(user.id, 1, `${tag} ai-call`);
+      await refundCreditsOrLog(user.id, creditAmount, `${tag} ai-call`);
       
       console.error(`[${tag}] AI 调用失败 (详细):`);
       console.error(`  - error type: ${aiError?.constructor?.name || typeof aiError}`);
@@ -811,6 +837,7 @@ export function createInterpretHandler<
     systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
     client?: SupabaseClient,
+    creditAmount: number = 1,
   ): Promise<Response> {
     const visionOpts = buildVisionOptions!(input);
     const analysisResult = await callAIVision(
@@ -840,6 +867,7 @@ export function createInterpretHandler<
     reasoningEnabled: boolean, systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
     client?: SupabaseClient,
+    creditAmount: number = 1,
   ): Promise<Response> {
     const streamResult = await callAIUIMessageResult(
       [{ role: 'user', content: userPrompt }],
@@ -853,7 +881,7 @@ export function createInterpretHandler<
       onStreamComplete: async ({ content, reasoning }) => {
         try {
           if (!content?.trim()) {
-            await refundCreditsOrLog(userId, 1, `${tag} stream-empty`);
+            await refundCreditsOrLog(userId, creditAmount, `${tag} stream-empty`);
             return { error: emptyResultMessage };
           }
           console.log(`[${tag}] 开始保存分析结果...`);
@@ -867,7 +895,7 @@ export function createInterpretHandler<
           }
           return {};
         } catch (err) {
-          await refundCreditsOrLog(userId, 1, `${tag} stream-persist`);
+          await refundCreditsOrLog(userId, creditAmount, `${tag} stream-persist`);
           const errorMessage = err instanceof Error ? err.message : String(err);
           console.error(`[${tag}] 流式结果保存失败:`, err);
           return { error: `保存结果失败: ${errorMessage}` };
@@ -882,6 +910,7 @@ export function createInterpretHandler<
     reasoningEnabled: boolean, systemPrompt: string, userPrompt: string,
     promptContext?: TContext,
     client?: SupabaseClient,
+    creditAmount: number = 1,
   ): Promise<Response> {
     const { content, reasoning: reasoningText } = await callAIWithReasoning(
       [{ role: 'user', content: userPrompt }],
@@ -891,7 +920,7 @@ export function createInterpretHandler<
       { reasoning: reasoningEnabled, temperature: 0.7 },
     );
     if (!content?.trim()) {
-      await refundCreditsOrLog(userId, 1, `${tag} empty-result`);
+      await refundCreditsOrLog(userId, creditAmount, `${tag} empty-result`);
       return jsonError(emptyResultMessage, 500, { success: false });
     }
 

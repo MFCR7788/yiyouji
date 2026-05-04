@@ -157,10 +157,12 @@ async function getCredits(userId: string): Promise<number> {
 
 /**
  * 消耗一次积分（简化逻辑，使用 RPC 或直接扣减）
+ * @param userId 用户 ID
+ * @param amount 扣减的积分数量，默认为 1
  * @returns 成功返回剩余积分，失败返回 null
  */
-export async function useCredit(userId: string): Promise<number | null> {
-    const result = await runCreditDecrement(userId);
+export async function useCredit(userId: string, amount = 1): Promise<number | null> {
+    const result = await runCreditDecrement(userId, amount);
     return result.status === 'ok' ? result.remaining : null;
 }
 
@@ -172,7 +174,7 @@ async function getCreditsModuleExports() {
     return await import('@/lib/user/credits');
 }
 
-async function runCreditDecrement(userId: string): Promise<
+async function runCreditDecrement(userId: string, amount = 1): Promise<
     | { status: 'ok'; remaining: number }
     | { status: 'no_change' }
     | { status: 'rpc_error'; errorDetail?: string }
@@ -185,7 +187,7 @@ async function runCreditDecrement(userId: string): Promise<
 
         if (error) {
             console.error('[credits] RPC decrement failed:', error.message, error.code, error.hint);
-            return await runCreditDecrementDirect(userId, `RPC: ${error.message}`);
+            return await runCreditDecrementDirect(userId, amount, `RPC: ${error.message}`);
         }
 
         if (typeof data === 'number') {
@@ -199,12 +201,13 @@ async function runCreditDecrement(userId: string): Promise<
     } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
         console.error('[credits] RPC call exception:', errMsg);
-        return await runCreditDecrementDirect(userId, `Exception: ${errMsg}`);
+        return await runCreditDecrementDirect(userId, amount, `Exception: ${errMsg}`);
     }
 }
 
 async function runCreditDecrementDirect(
     userId: string,
+    amount = 1,
     fallbackReason?: string
 ): Promise<
     | { status: 'ok'; remaining: number }
@@ -216,9 +219,9 @@ async function runCreditDecrementDirect(
     try {
         const { data, error } = await supabase
             .from('users')
-            .update({ ai_chat_count: { '-': 1 } })
+            .update({ ai_chat_count: { '-': amount } })
             .eq('id', userId)
-            .gt('ai_chat_count', 0)
+            .gte('ai_chat_count', amount)
             .select('ai_chat_count')
             .maybeSingle();
 
@@ -260,6 +263,7 @@ async function runCreditDecrementDirect(
 
 export async function attemptCreditUse(
     userId: string,
+    amount = 1,
     options?: CreditQueryOptions,
 ): Promise<CreditUseAttemptResult & { detail?: string }> {
     
@@ -286,7 +290,16 @@ export async function attemptCreditUse(
         };
     }
     
-    const decrementResult = await runCreditDecrement(userId);
+    // 验证积分数量
+    if (!Number.isInteger(amount) || amount <= 0) {
+        return { 
+            ok: false, 
+            reason: 'deduction_failed',
+            detail: `无效的积分扣减数量: ${amount}`
+        };
+    }
+    
+    const decrementResult = await runCreditDecrement(userId, amount);
     
     if (decrementResult.status === 'ok') {
         return { ok: true, remaining: decrementResult.remaining };
@@ -302,7 +315,7 @@ export async function attemptCreditUse(
     }
 
     const info = await getUserCreditInfo(userId, options);
-    if (info.credits <= 0) {
+    if (info.credits < amount) {
         return { ok: false, reason: 'insufficient_credits' };
     }
 
