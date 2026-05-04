@@ -137,9 +137,9 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                     return;
                 }
                 
-                // 先关闭弹窗，再跳转到我的页面
+                // 先关闭弹窗，再跳转到八字排盘页面
                 onClose();
-                router.push('/settings/profile');
+                router.push('/bazi');
                 return;
             }
             
@@ -155,14 +155,14 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 }
             }
             
-            // 关闭弹窗并跳转到我的页面
+            // 关闭弹窗并跳转到八字排盘页面
             onClose();
-            router.push('/settings/profile');
+            router.push('/bazi');
         } catch (error) {
             console.error('Failed to check user profile:', error);
             onClose();
-            // 出错时也尝试跳转到我的页面
-            router.push('/settings/profile');
+            // 出错时也尝试跳转到八字排盘页面
+            router.push('/bazi');
         }
     };
 
