@@ -89,7 +89,7 @@ export interface NavItemDef {
 
 export const NAV_REGISTRY: readonly NavItemDef[] = [
   // ── Divination ──────────────────────────────────────────────────────────
-  { id: 'bazi', href: '/bazi', label: '八字', icon: PYinYang, emoji: '🔮', description: '四柱八字精批', category: 'divination' },
+  { id: 'bazi', href: '/bazi', label: '排盘', icon: PYinYang, emoji: '🔮', description: '四柱八字精批', category: 'divination' },
   { id: 'hepan', href: '/hepan', label: '八字合盘', icon: HeartHandshake, emoji: '💑', description: '八字合盘', category: 'divination' },
   { id: 'ziwei', href: '/ziwei', label: '紫微斗数', icon: PCompassRose, emoji: '⭐', description: '紫微命盘', category: 'divination' },
   { id: 'tarot', href: '/tarot', label: '塔罗', icon: PStarOfDavid, emoji: '🃏', description: '塔罗占卜', category: 'divination' },
@@ -104,7 +104,7 @@ export const NAV_REGISTRY: readonly NavItemDef[] = [
   { id: 'monthly', href: '/monthly', label: '月运', icon: CalendarRange, category: 'divination' },
 
   // ── Tools ───────────────────────────────────────────────────────────────
-  { id: 'chat', href: '/chat', label: '新聊天', icon: BotMessageSquare, category: 'tool' },
+  { id: 'chat', href: '/chat', label: 'AI问盘', icon: BotMessageSquare, category: 'tool' },
   { id: 'records', href: '/records', label: '命理记录', icon: Tags, category: 'tool' },
   { id: 'community', href: '/community', label: '社区', icon: Aperture, category: 'tool' },
 

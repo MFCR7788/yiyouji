@@ -21,11 +21,11 @@ export const DEFAULT_TOOL_ORDER = [
 ] as const;
 
 export const DEFAULT_MOBILE_MAIN_ITEMS = [
-  'bazi', 'chat', 'daily', 'settings-profile',
+  'bazi', 'settings-charts', 'chat', 'daily', 'settings-profile',
 ] as const;
 
 export const DEFAULT_MOBILE_DRAWER_ORDER = [
-  'settings-charts', 'liuyao', 'records', 'community', 'hepan', 'ziwei', 'tarot', 'qimen', 'daliuren',
+  'liuyao', 'records', 'community', 'hepan', 'ziwei', 'tarot', 'qimen', 'daliuren',
   'face', 'palm', 'mbti', 'monthly', 'settings-general',
   'settings-upgrade',
   'settings-personalization', 'settings-knowledge-base', 'settings-help',
