@@ -838,26 +838,48 @@ export function createInterpretHandler<
     client?: SupabaseClient,
     creditAmount: number = 1,
   ): Promise<Response> {
-    const visionOpts = buildVisionOptions!(input);
-    const analysisResult = await callAIVision(
-      [{ role: 'user', content: userPrompt }],
-      personality,
-      resolvedModelId,
-      `\n\n${systemPrompt}\n\n`,
-      { reasoning: reasoningEnabled, temperature: 0.7, ...visionOpts },
-    );
+    try {
+      const visionOpts = buildVisionOptions!(input);
+      const analysisResult = await callAIVision(
+        [{ role: 'user', content: userPrompt }],
+        personality,
+        resolvedModelId,
+        `\n\n${systemPrompt}\n\n`,
+        { reasoning: reasoningEnabled, temperature: 0.7, ...visionOpts },
+      );
 
-    const conversationId = await persistConversation(
-      input, userId, resolvedModelId, reasoningEnabled, analysisResult, null, promptContext, client,
-    );
-    if (persistRecord) {
-      await persistRecord(input, userId, conversationId, promptContext);
+      if (!analysisResult?.trim()) {
+        await refundCreditsOrLog(userId, creditAmount, `${tag} vision-empty-result`);
+        return jsonError(emptyResultMessage, 500, { success: false });
+      }
+
+      const conversationId = await persistConversation(
+        input, userId, resolvedModelId, reasoningEnabled, analysisResult, null, promptContext, client,
+      );
+      if (persistRecord) {
+        await persistRecord(input, userId, conversationId, promptContext);
+      }
+
+      return jsonOk({
+        success: true,
+        data: { analysis: analysisResult, conversationId },
+      });
+    } catch (err) {
+      await refundCreditsOrLog(userId, creditAmount, `${tag} vision-call`);
+      console.error(`[${tag}] 视觉分析失败:`, err);
+      
+      const isPersistenceError = err instanceof AIAnalysisConversationPersistenceError;
+      if (isPersistenceError) {
+        return jsonError('保存结果失败,请稍后重试', 500, { success: false });
+      }
+      
+      return jsonError(extractAIErrorMessage(err), 500, {
+        success: false,
+        _debug_error: process.env.NODE_ENV === 'development'
+          ? { type: err?.constructor?.name, message: err instanceof Error ? err.message : String(err) }
+          : undefined,
+      });
     }
-
-    return jsonOk({
-      success: true,
-      data: { analysis: analysisResult, conversationId },
-    });
   }
 
   // ── Stream ──
