@@ -6,7 +6,7 @@
  */
 
 import { createClient, type Session, type SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseAnonKey, getSupabaseAuthAdminKey, getSupabaseUrl } from '@/lib/supabase-env';
+import { getSupabaseAnonKey, getSupabaseAuthAdminKey, getSupabaseServiceRoleKey, getSupabaseUrl } from '@/lib/supabase-env';
 import { configureGlobalProxy } from '@/lib/proxy-config';
 
 // 在创建任何客户端之前配置代理
@@ -107,13 +107,16 @@ async function getSystemAccessToken(): Promise<string | null> {
 
 /**
  * 获取服务端 Supabase 客户端（系统管理员会话）
- * 使用单例避免重复构建；token 由 accessToken 回调按需获取。
+ * 使用单例避免重复构建；优先使用 service_role key 绕过 RLS。
  */
 export function getSystemAdminClient(): SupabaseClient {
     if (serviceClient) return serviceClient;
 
     const url = getSupabaseUrl();
-    const anonKey = getSupabaseAnonKey();
+    const serviceRoleKey = getSupabaseServiceRoleKey();
+    
+    // 优先使用 service_role key（可以绕过 RLS）
+    const apiKey = serviceRoleKey || getSupabaseAnonKey();
 
     // 尝试创建带代理的 fetch 选项
     let fetchOptions: Record<string, unknown> | undefined;
@@ -127,19 +130,8 @@ export function getSystemAdminClient(): SupabaseClient {
         // 代理模块不可用，使用默认配置
     }
 
-    serviceClient = createClient(url, anonKey, {
+    serviceClient = createClient(url, apiKey, {
         auth: { persistSession: false, autoRefreshToken: false },
-        accessToken: async () => {
-            const token = await getSystemAccessToken();
-            if (!token && !hasWarnedMissingSystemSession && !IS_NODE_TEST_RUNTIME) {
-                hasWarnedMissingSystemSession = true;
-                const warning = SYSTEM_ADMIN_SESSION_REQUIRED
-                    ? `[supabase-server] ${MISSING_SYSTEM_ADMIN_CREDENTIALS_ERROR}`
-                    : '[supabase-server] Missing system admin session config, privileged queries may fail with RLS';
-                console.warn(warning);
-            }
-            return token;
-        },
         ...fetchOptions,
     });
 
