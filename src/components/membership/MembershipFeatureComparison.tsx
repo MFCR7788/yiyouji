@@ -1,7 +1,6 @@
 'use client';
 
 import { Check, X } from 'lucide-react';
-import { pricingPlans, type PricingPlan } from '@/lib/user/membership';
 
 const FeatureRow = ({ feature, free, plus, pro }: {
     feature: string;
