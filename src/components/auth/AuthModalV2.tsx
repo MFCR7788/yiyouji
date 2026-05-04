@@ -110,12 +110,12 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 }
             }
 
-            // 登录成功后跳转到八字排盘页面
-            router.push('/bazi');
+            // 登录成功后跳转到我的页面
+            router.push('/settings/profile');
         } catch (error) {
             console.error('Failed to check user profile:', error);
-            // 出错时也尝试跳转到八字排盘页面
-            router.push('/bazi');
+            // 出错时也尝试跳转到我的页面
+            router.push('/settings/profile');
         }
     }, [onClose, onSuccess, router]);
 
