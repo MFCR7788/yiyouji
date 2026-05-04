@@ -133,7 +133,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
                 // 直接检查用户信息，不依赖 getUser()
                 if (!userData.user_metadata?.nickname) {
                     onClose();
-                    openSettingsCenter('profile');
+                    // 直接跳转到账户设置页面，不使用hash
+                    router.push('/settings/profile');
                     return;
                 }
                 
@@ -150,7 +151,8 @@ export function AuthModal({ isOpen, onClose }: AuthModalProps) {
 
                 if (profileData && !profileData.nickname) {
                     onClose();
-                    openSettingsCenter('profile');
+                    // 直接跳转到账户设置页面，不使用hash
+                    router.push('/settings/profile');
                     return;
                 }
             }

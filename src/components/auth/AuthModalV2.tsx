@@ -90,7 +90,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
             if (process.env.NODE_ENV === 'development' && userData) {
                 const userDataTyped = userData as { user_metadata?: { nickname?: string } };
                 if (!userDataTyped.user_metadata?.nickname) {
-                    openSettingsCenter('profile');
+                    // 直接跳转到账户设置页面，不使用hash
+                    router.push('/settings/profile');
                     return;
                 }
 
@@ -105,7 +106,8 @@ export function AuthModal({ isOpen, onClose, onSuccess }: AuthModalProps) {
                 const profileData = await response.json();
 
                 if (profileData && !profileData.nickname) {
-                    openSettingsCenter('profile');
+                    // 直接跳转到账户设置页面，不使用hash
+                    router.push('/settings/profile');
                     return;
                 }
             }
