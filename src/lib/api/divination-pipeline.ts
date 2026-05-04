@@ -43,7 +43,6 @@ import type { AIPersonality } from '@/types';
 import type { ChartType } from '@/lib/visualization/chart-types';
 import { buildVisualizationOutputContractPrompt } from '@/lib/visualization/prompt';
 import type { ChartTextDetailLevel } from '@/lib/divination/detail-level';
-import type { ModelTier } from '@/lib/ai/ai-access';
 
 /**
  * 计算需要扣减的积分数量
