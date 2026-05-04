@@ -15,6 +15,7 @@ import { SmartPillarsInput } from '@/components/bazi/form/SmartPillarsInput';
 import { TimeInputModal } from '@/components/bazi/form/TimeInputModal';
 import { PlaceInputModal } from '@/components/bazi/form/PlaceInputModal';
 import { YEAR_OPTIONS, MONTH_OPTIONS, LUNAR_MONTH_NAMES } from '@/components/bazi/form/options';
+import { SolarTimeInfoBar } from '@/components/bazi/result/SolarTimeInfoBar';
 import { LunarYear } from 'lunar-javascript';
 import { getDayCount } from '@/lib/date-utils';
 
@@ -272,6 +273,13 @@ export function BaziForm({
                     </div>
                     <ChevronRight className="w-4 h-4 md:w-5 md:h-5 text-foreground/30" />
                 </button>
+
+                {/* 真太阳时信息栏 - 位于出生地点和开始排盘按钮之间 */}
+                <SolarTimeInfoBar
+                    mode="input"
+                    formData={formData}
+                    showAutoSaveToggle={false}
+                />
 
                 {/* 提交按钮 */}
                 <button
