@@ -120,6 +120,13 @@ jobs:
             echo "KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4"
             echo "KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank"
             echo "VECTOR_SEARCH_ENABLED=false"
+            echo "WECHAT_PAY_MCHID=${{ secrets.WECHAT_PAY_MCHID }}"
+            echo "WECHAT_PAY_APPID=${{ secrets.WECHAT_PAY_APPID }}"
+            echo "WECHAT_PAY_API_V3_KEY=${{ secrets.WECHAT_PAY_API_V3_KEY }}"
+            echo "WECHAT_PAY_MCH_SERIAL_NO=${{ secrets.WECHAT_PAY_MCH_SERIAL_NO }}"
+            echo "WECHAT_PAY_NOTIFY_URL=${{ secrets.WECHAT_PAY_NOTIFY_URL }}"
+            echo "WECHAT_PAY_H5_DOMAIN=${{ secrets.WECHAT_PAY_H5_DOMAIN }}"
+            echo "${{ secrets.WECHAT_PAY_PRIVATE_KEY }}" >> "$ENV_FILE"
             } > "$ENV_FILE"
 
             echo "=== 安装生产依赖 ==="
