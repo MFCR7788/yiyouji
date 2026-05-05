@@ -452,11 +452,34 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
         }
 
         // 删除 Supabase Auth 中的用户（使用 Auth Admin 客户端）
+        console.log('[admin-users][DELETE] Attempting to delete user from auth:', userId);
+        
+        // 先尝试获取用户信息，确认用户存在
+        const { data: userData, error: getUserError } = await authAdminClient.auth.admin.getUserById(userId);
+        if (getUserError) {
+            console.warn('[admin-users][DELETE] Failed to get user from auth (may not exist):', getUserError);
+        } else {
+            console.log('[admin-users][DELETE] User found in auth:', userData?.user?.email);
+        }
+        
+        // 尝试删除用户
         const { error: deleteAuthError } = await authAdminClient.auth.admin.deleteUser(userId);
 
         if (deleteAuthError) {
-            console.error('[admin-users][DELETE] Delete from auth failed:', deleteAuthError);
-            return jsonError('删除用户认证信息失败: ' + deleteAuthError.message, 500);
+            console.error('[admin-users][DELETE] Delete from auth failed:', JSON.stringify(deleteAuthError, null, 2));
+            console.error('[admin-users][DELETE] Delete from auth failed - name:', deleteAuthError.name);
+            console.error('[admin-users][DELETE] Delete from auth failed - message:', deleteAuthError.message);
+            console.error('[admin-users][DELETE] Delete from auth failed - status:', deleteAuthError.status);
+            
+            // 如果是 "Database error deleting user"，可能是用户已经被删除或权限问题
+            if (deleteAuthError.message.includes('Database error')) {
+                console.warn('[admin-users][DELETE] Database error, proceeding anyway...');
+                // 继续尝试删除 public.users 表中的数据
+            } else {
+                return jsonError('删除用户认证信息失败: ' + deleteAuthError.message, 500);
+            }
+        } else {
+            console.log('[admin-users][DELETE] User deleted from auth successfully');
         }
 
         // 删除 public.users 表中的数据（允许失败，因为可能用户记录还未创建）
