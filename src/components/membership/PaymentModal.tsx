@@ -40,7 +40,6 @@ export function PaymentModal({
       setErrorMessage('二维码生成失败，请稍后重试');
       setStatus('error');
     }
-    setPolling(false);
     pollCountRef.current = 0;
   }, [codeUrl]);
 
@@ -52,19 +51,23 @@ export function PaymentModal({
       pollingIntervalRef.current = null;
     }
 
-    initializeState();
+    setTimeout(() => {
+      setPolling(false);
+      initializeState();
+    }, 0);
   }, [isOpen, orderId, initializeState]);
 
   useEffect(() => {
     if (!isOpen || !orderId || status !== 'pending') return;
 
-    setPolling(true);
+    setTimeout(() => {
+      setPolling(true);
+    }, 0);
 
     pollingIntervalRef.current = setInterval(async () => {
       try {
         pollCountRef.current += 1;
 
-        // 超时保护：5分钟未支付则标记过期
         if (pollCountRef.current > 150) {
           setStatus('expired');
           setPolling(false);

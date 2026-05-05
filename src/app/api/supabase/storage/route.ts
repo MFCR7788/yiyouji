@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createRequestSupabaseClient, getServiceRoleClient, jsonError, jsonOk, requireUserContext } from '@/lib/api-utils';
+import { createRequestSupabaseClient, getSystemAdminClient, jsonError, jsonOk, requireUserContext } from '@/lib/api-utils';
 
 const ALLOWED_BUCKETS = new Set(['avatars']);
 const MAX_AVATAR_FILE_BYTES = 2 * 1024 * 1024;
@@ -94,8 +94,8 @@ export async function POST(request: NextRequest) {
 
   const upsert = parseUpsert(formData.get('upsert'));
 
-  const serviceClient = getServiceRoleClient();
-  const storageClient = serviceClient?.storage;
+  const serviceClient = getSystemAdminClient();
+  const storageClient = serviceClient.storage;
   
   if (!storageClient) {
     console.error('[Storage API] Storage client is undefined');

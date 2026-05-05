@@ -4,7 +4,7 @@ import { cookies } from 'next/headers';
 import { NextResponse, type NextRequest } from 'next/server';
 import type { User } from '@supabase/supabase-js';
 import { getAuthAdminClient as getPrivilegedAuthClient, getSystemAdminClient as getPrivilegedSystemAdminClient } from '@/lib/supabase-server';
-import { getSupabaseAnonKey, getSupabaseServiceRoleKey, getSupabaseUrl } from '@/lib/supabase-env';
+import { getSupabaseAnonKey, getSupabaseUrl } from '@/lib/supabase-env';
 import { IS_DEV_MODE } from '@/lib/dev-mode';
 import { createDevSupabaseClient } from '@/lib/local-database';
 import {
@@ -422,28 +422,6 @@ export function getSystemAdminClient(): SupabaseClient {
 
 export function getAuthAdminClient() {
     return getPrivilegedAuthClient();
-}
-
-let serviceRoleClient: SupabaseClient | null = null;
-
-export function getServiceRoleClient(): SupabaseClient | null {
-    if (serviceRoleClient) return serviceRoleClient;
-
-    const serviceRoleKey = getSupabaseServiceRoleKey();
-    if (!serviceRoleKey) {
-        console.warn('[api-utils] SUPABASE_SERVICE_ROLE_KEY not configured, storage operations may fail');
-        return null;
-    }
-
-    serviceRoleClient = createClient(getSupabaseUrl(), serviceRoleKey, {
-        auth: {
-            persistSession: false,
-            autoRefreshToken: false,
-            detectSessionInUrl: false,
-        },
-    });
-
-    return serviceRoleClient;
 }
 
 export function createAnonClient() {
