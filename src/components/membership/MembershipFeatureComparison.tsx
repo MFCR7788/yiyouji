@@ -9,8 +9,8 @@ const FeatureRow = ({ feature, free, plus, pro }: {
     pro: string | boolean;
 }) => (
     <tr className="border-b border-[#ebe8e2]">
-        <td className="py-3 text-sm text-[#37352f]/80 font-medium">{feature}</td>
-        <td className="py-3 text-center">
+        <td className="py-3 pl-8 pr-5 text-sm text-[#37352f]/80 font-medium" style={{ paddingLeft: '2rem' }}>{feature}</td>
+        <td className="py-3 px-4 text-center">
             {typeof free === 'string' ? (
                 <span className="text-sm text-[#37352f]/60">{free}</span>
             ) : free ? (
@@ -19,7 +19,7 @@ const FeatureRow = ({ feature, free, plus, pro }: {
                 <X className="mx-auto h-4 w-4 text-[#37352f]/30" />
             )}
         </td>
-        <td className="py-3 text-center">
+        <td className="py-3 px-4 text-center">
             {typeof plus === 'string' ? (
                 <span className="text-sm text-[#37352f]/60">{plus}</span>
             ) : plus ? (
@@ -28,7 +28,7 @@ const FeatureRow = ({ feature, free, plus, pro }: {
                 <X className="mx-auto h-4 w-4 text-[#37352f]/30" />
             )}
         </td>
-        <td className="py-3 text-center">
+        <td className="py-3 px-4 text-center">
             {typeof pro === 'string' ? (
                 <span className="text-sm text-[#37352f]/60">{pro}</span>
             ) : pro ? (
@@ -81,6 +81,12 @@ export function MembershipFeatureComparison() {
                                 free="10"
                                 plus="500"
                                 pro="1000"
+                            />
+                            <FeatureRow 
+                                feature="充值会员赠送积分"
+                                free="-"
+                                plus="+200积分"
+                                pro="+500积分"
                             />
                         </FeatureSection>
                         <FeatureSection title="AI 模型">
