@@ -148,8 +148,6 @@ function FortuneRadarInner({
 
   const hasPreviousScores = previousScores && Object.keys(previousScores).length > 0;
 
-  const radarHeight = compact ? RADAR_HEIGHT_COMPACT : RADAR_HEIGHT_DESKTOP;
-
   if (dimensionKeys.length === 0) {
     return <ChartEmpty message="暂无运势评分数据" />;
   }
