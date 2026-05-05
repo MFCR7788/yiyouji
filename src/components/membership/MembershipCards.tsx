@@ -30,6 +30,7 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
         codeUrl?: string;
         planName: string;
         price: number;
+        paymentConfigured?: boolean;
     } | null>(null);
     const { showToast } = useToast();
 
@@ -61,6 +62,7 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
                     codeUrl: data.data.codeUrl,
                     planName: data.data.plan.name,
                     price: data.data.plan.price,
+                    paymentConfigured: data.data.paymentConfigured ?? true,
                 });
                 setShowPaymentModal(true);
                 showToast('success', data.data?.message || '订单已创建');
@@ -191,6 +193,7 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
                     codeUrl={paymentData.codeUrl}
                     planName={paymentData.planName}
                     price={paymentData.price}
+                    paymentConfigured={paymentData.paymentConfigured}
                     onPaymentSuccess={handlePaymentSuccess}
                 />
             )}
