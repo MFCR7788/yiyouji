@@ -15,10 +15,6 @@ export function ProfileSummaryCard({
 
     const summaryItems = [
         {
-            label: '日主',
-            value: canonicalChart.基本信息.日主,
-        },
-        {
             label: '出生时间',
             value: `${meta.birthDate} ${timeText}`,
         },
@@ -30,13 +26,19 @@ export function ProfileSummaryCard({
 
     return (
         <div className="bg-background border border-border rounded-xl px-2.5 sm:px-4 md:px-6 py-2.5 sm:py-4 md:py-5 mb-3 sm:mb-4 md:mb-6 w-full max-w-full box-border">
-            {/* 用户名和性别 - 响应式布局 */}
-            <div className="flex flex-col xs:flex-row items-start xs:items-center gap-2 sm:gap-3 mb-2.5 sm:mb-3 w-full">
+            {/* 用户名、性别、日主、日主值 - 同一水平行显示 */}
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 md:gap-4 mb-2.5 sm:mb-3 w-full">
                 <h1 className="text-xl sm:text-2xl md:text-3xl font-semibold tracking-tight break-words text-foreground flex-shrink min-w-0">
                     {meta.name}
                 </h1>
                 <span className={`px-2 sm:px-2.5 py-0.5 text-[11px] sm:text-[12px] font-bold rounded-md uppercase tracking-[0.15em] sm:tracking-[0.18em] ${meta.gender === 'male' ? 'text-blue-600/80 bg-blue-50' : 'text-pink-600/80 bg-pink-50'} flex-shrink-0`}>
                     {meta.gender === 'male' ? '男' : '女'}
+                </span>
+                <span className="text-[10px] sm:text-[11px] font-bold uppercase tracking-[0.15em] sm:tracking-[0.18em] text-foreground/30 shrink-0 hidden sm:inline-block">
+                    日主
+                </span>
+                <span className="text-lg sm:text-xl md:text-2xl font-bold text-foreground/90 shrink-0">
+                    {canonicalChart.基本信息.日主}
                 </span>
             </div>
 
