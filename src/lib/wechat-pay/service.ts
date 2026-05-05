@@ -103,6 +103,14 @@ export async function createPaymentOrder(
 
     try {
       const client = new WechatPayClient(payConfig)
+      console.log('[Payment] 调用微信支付 Native 下单接口:', {
+        planId,
+        outTradeNo,
+        amount: plan.price * 100,
+        notifyUrl: payConfig.notifyUrl,
+        hasClientIp: !!clientIp,
+      })
+
       const { codeUrl } = await client.createNativePay({
         description: getPlanDescription(planId),
         outTradeNo,
@@ -118,6 +126,8 @@ export async function createPaymentOrder(
           : undefined,
       })
 
+      console.log('[Payment] 微信支付下单成功:', { orderId: order.id, hasCodeUrl: !!codeUrl })
+
       return {
         orderId: order.id,
         codeUrl,
@@ -127,22 +137,37 @@ export async function createPaymentOrder(
         },
       }
     } catch (wechatError) {
-      console.error('[Payment] WeChat Pay API error:', wechatError)
-      
       const errorMsg = wechatError instanceof Error ? wechatError.message : String(wechatError)
-      
-      if (errorMsg.includes('401') || errorMsg.includes('403')) {
-        throw new Error('WechatPay: 认证失败，请检查商户证书配置')
+      const statusCode = (wechatError as any)?.statusCode
+      const wechatPayCode = (wechatError as any)?.wechatPayCode
+
+      console.error('[Payment] WeChat Pay API 调用失败:', {
+        error: errorMsg,
+        statusCode,
+        wechatPayCode,
+        stack: wechatError instanceof Error ? wechatError.stack : undefined,
+        config: {
+          mchid: payConfig.mchid,
+          appid: payConfig.appid,
+          mchSerialNo: payConfig.mchSerialNo,
+          notifyUrl: payConfig.notifyUrl,
+          hasPrivateKey: !!payConfig.privateKey,
+          privateKeyLength: payConfig.privateKey?.length,
+        },
+      })
+
+      if (statusCode === 401 || statusCode === 403 || wechatPayCode === 'SIGN_ERROR' || wechatPayCode === 'NO_AUTH') {
+        throw new Error(`WechatPay: 认证失败 [${wechatPayCode || statusCode}]，请检查商户证书或私钥配置`)
       }
-      
-      if (errorMsg.includes('400') || errorMsg.includes('INVALID_REQUEST')) {
-        throw new Error('WechatPay: 请求参数错误')
+
+      if (statusCode === 400 || wechatPayCode?.startsWith('INVALID_') || wechatPayCode === 'PARAM_ERROR') {
+        throw new Error(`WechatPay: 请求参数错误 [${wechatPayCode || statusCode}]`)
       }
-      
-      if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('ECONNREFUSED')) {
-        throw new Error('WechatPay: 网络连接失败，无法连接微信支付服务')
+
+      if (errorMsg.includes('网络连接失败') || errorMsg.includes('fetch') || errorMsg.includes('ECONNREFUSED') || errorMsg.includes('ETIMEDOUT')) {
+        throw new Error('WechatPay: 网络连接失败，无法连接微信支付服务器，请检查网络或防火墙设置')
       }
-      
+
       throw new Error(`WechatPay: ${errorMsg}`)
     }
   } catch (dbError) {

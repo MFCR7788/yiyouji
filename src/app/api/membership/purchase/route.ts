@@ -76,31 +76,45 @@ export async function POST(request: NextRequest) {
                 },
             });
         } catch (serviceError) {
-            console.error('[membership/purchase] Service error:', serviceError);
-            
+            console.error('[membership/purchase] Service error:', {
+                error: serviceError instanceof Error ? serviceError.message : serviceError,
+                stack: serviceError instanceof Error ? serviceError.stack : undefined,
+                cause: (serviceError as any)?.cause,
+            });
+
             const errorMessage = serviceError instanceof Error ? serviceError.message : String(serviceError);
-            
+            const isDev = process.env.NODE_ENV === 'development';
+
             if (errorMessage === 'Invalid plan') {
                 return jsonError('套餐配置错误，请稍后重试', 400, { success: false });
             }
-            
+
             if (errorMessage === 'Create order failed') {
-                return jsonError('创建订单失败，请稍后重试', 500, { 
-                    success: false, 
-                    code: 'ORDER_CREATE_FAILED' 
+                return jsonError('创建订单失败，请稍后重试', 500, {
+                    success: false,
+                    code: 'ORDER_CREATE_FAILED',
+                    ...(isDev && { debugInfo: errorMessage }),
                 });
             }
-            
+
             if (errorMessage.includes('WechatPay')) {
-                return jsonError('支付服务暂时不可用，请稍后重试或联系管理员', 503, { 
-                    success: false, 
-                    code: 'PAYMENT_SERVICE_ERROR' 
+                const userMessage = errorMessage.includes('认证失败')
+                    ? '支付服务配置错误，请联系管理员'
+                    : errorMessage.includes('网络连接失败')
+                      ? '支付服务暂时不可用，请稍后重试'
+                      : '支付服务暂时不可用，请稍后重试或联系管理员';
+
+                return jsonError(userMessage, 503, {
+                    success: false,
+                    code: 'PAYMENT_SERVICE_ERROR',
+                    ...(isDev && { debugInfo: errorMessage }),
                 });
             }
-            
-            return jsonError(`订单处理失败：${errorMessage}`, 500, { 
-                success: false, 
-                code: 'UNKNOWN_ERROR' 
+
+            return jsonError(`订单处理失败：${errorMessage}`, 500, {
+                success: false,
+                code: 'UNKNOWN_ERROR',
+                ...(isDev && { debugInfo: errorMessage }),
             });
         }
     } catch (error) {

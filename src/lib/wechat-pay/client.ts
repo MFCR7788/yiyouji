@@ -62,25 +62,80 @@ export class WechatPayClient {
         : undefined,
     })
 
+    console.log('[WechatPay] 创建 Native 支付订单:', {
+      url,
+      appid: this.config.appid,
+      mchid: this.config.mchid,
+      outTradeNo: params.outTradeNo,
+      amount: params.amount.total,
+      hasPrivateKey: !!this.config.privateKey,
+      privateKeyLength: this.config.privateKey?.length,
+      mchSerialNo: this.config.mchSerialNo,
+    })
+
     const authorization = this.buildAuthorization('POST', '/v3/pay/transactions/native', body)
 
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authorization,
-        'Accept': 'application/json',
-      },
-      body,
-    })
+    let response: Response
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authorization,
+          'Accept': 'application/json',
+        },
+        body,
+      })
+    } catch (networkError) {
+      console.error('[WechatPay] 网络请求失败:', {
+        error: networkError instanceof Error ? networkError.message : networkError,
+        url,
+        message: networkError instanceof Error ? networkError.stack : undefined,
+      })
+      throw new Error(`微信支付网络连接失败: ${networkError instanceof Error ? networkError.message : '未知网络错误'}`)
+    }
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('[WechatPay] Create native pay failed:', response.status, errorText)
-      throw new Error(`WechatPay request failed: ${response.status}`)
+      let errorMessage = `微信支付API调用失败 (HTTP ${response.status})`
+
+      try {
+        const errorJson = JSON.parse(errorText)
+        if (errorJson.code) {
+          errorMessage += ` [${errorJson.code}]: ${errorJson.message || '无详细信息'}`
+        }
+        if (errorJson.detail) {
+          errorMessage += `\n详情: ${errorJson.detail}`
+        }
+      } catch {
+        errorMessage += ` - ${errorText.slice(0, 500)}`
+      }
+
+      console.error('[WechatPay] Create native pay failed:', {
+        status: response.status,
+        errorText: errorText.slice(0, 1000),
+        errorMessage,
+        config: {
+          mchid: this.config.mchid,
+          appid: this.config.appid,
+          mchSerialNo: this.config.mchSerialNo,
+          notifyUrl: this.config.notifyUrl,
+        },
+      })
+
+      const enhancedError = new Error(errorMessage)
+      ;(enhancedError as any).statusCode = response.status
+      ;(enhancedError as any).wechatPayCode = (() => { try { return JSON.parse(errorText).code } catch { return undefined } })()
+
+      throw enhancedError
     }
 
     const data = await response.json()
+    console.log('[WechatPay] Native 支付订单创建成功:', {
+      codeUrl: data.code_url?.slice(0, 50) + '...',
+      outTradeNo: params.outTradeNo,
+    })
+
     return {
       codeUrl: data.code_url,
     }
