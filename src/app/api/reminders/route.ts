@@ -79,37 +79,46 @@ export async function POST(request: NextRequest) {
             return jsonError('更新失败', 500, { success: false });
         }
 
-        // 如果启用了提醒，安排对应类型的提醒
-        let scheduled = 0;
+        // 异步安排提醒任务（不阻塞响应）
+        // 使用 fire-and-forget 模式，即使安排失败也不影响订阅设置已保存的事实
         if (enabled) {
-            if (reminderType === 'solar_term') {
-                scheduled = await scheduleUpcomingSolarTermReminders(user.id);
-            } else if (reminderType === 'fortune' || reminderType === 'key_date') {
-                // 获取用户的八字命盘
-                const { data: chartData } = await db
-                    .from('bazi_charts')
-                    .select('gender, birth_date, birth_time, birth_place, longitude, calendar_type, is_leap_month')
-                    .eq('user_id', user.id)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .maybeSingle();
+            void (async () => {
+                try {
+                    if (reminderType === 'solar_term') {
+                        await scheduleUpcomingSolarTermReminders(user.id);
+                    } else if (reminderType === 'fortune' || reminderType === 'key_date') {
+                        const { data: chartData } = await db
+                            .from('bazi_charts')
+                            .select('gender, birth_date, birth_time, birth_place, longitude, calendar_type, is_leap_month')
+                            .eq('user_id', user.id)
+                            .order('created_at', { ascending: false })
+                            .limit(1)
+                            .maybeSingle();
 
-                if (chartData) {
-                    const baziOutput = calculateBaziOutputFromStoredFields(chartData);
-                    if (baziOutput) {
-                        if (reminderType === 'fortune') {
-                            scheduled = await scheduleUpcomingFortuneReminders(user.id, baziOutput);
-                        } else {
-                            scheduled = await scheduleKeyDateReminders(user.id, baziOutput);
+                        if (chartData) {
+                            const baziOutput = calculateBaziOutputFromStoredFields(chartData);
+                            if (baziOutput) {
+                                if (reminderType === 'fortune') {
+                                    await scheduleUpcomingFortuneReminders(user.id, baziOutput);
+                                } else {
+                                    await scheduleKeyDateReminders(user.id, baziOutput);
+                                }
+                            }
                         }
                     }
+                } catch (scheduleError) {
+                    console.error('[reminders API] 安排提醒任务失败（非阻塞）:', {
+                        userId: user.id,
+                        reminderType,
+                        error: scheduleError instanceof Error ? scheduleError.message : scheduleError,
+                    });
                 }
-            }
+            })();
         }
 
         return jsonOk({
             success: true,
-            data: { scheduled },
+            data: { scheduled: enabled ? -1 : 0 },  // -1 表示异步安排中
         });
     } catch (error) {
         console.error('[reminders API] 更新错误:', error);
