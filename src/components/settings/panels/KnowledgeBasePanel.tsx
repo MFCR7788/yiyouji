@@ -341,8 +341,48 @@ export default function KnowledgeBasePanel() {
             setNewDescription('');
             await loadKnowledgeBases();
             showToast('success', '知识库创建成功');
-        } catch (createError) {
-            setCreateError(createError instanceof Error ? createError.message : '创建知识库失败');
+        } catch (createError: unknown) {
+            // 增强错误处理：提取详细信息
+            let errorMessage = '创建知识库失败';
+            
+            if (createError instanceof Error) {
+                errorMessage = createError.message;
+                
+                // 检查是否是 API 返回的带 debug_info 的错误
+                const errorWithDebug = createError as Error & { 
+                    debug_info?: Record<string, unknown>;
+                    code?: string;
+                    status?: number;
+                };
+                
+                if (errorWithDebug.debug_info) {
+                    console.error('[KnowledgeBasePanel] 详细调试信息:', errorWithDebug.debug_info);
+                    
+                    // 根据不同的错误代码提供更友好的提示
+                    if (errorWithDebug.debug_info.error_code === '42883') {
+                        errorMessage += '\n\n💡 提示：数据库函数未创建，请联系管理员执行迁移';
+                    } else if (errorWithDebug.debug_info.error_code === '42501') {
+                        errorMessage += '\n\n⚠️ 提示：数据库权限不足，请联系管理员检查 RLS 策略';
+                    }
+                    
+                    // 在开发环境显示更多信息
+                    if (process.env.NODE_ENV === 'development') {
+                        errorMessage += `\n\n[调试信息] ${JSON.stringify(errorWithDebug.debug_info, null, 2)}`;
+                    }
+                }
+            } else if (typeof createError === 'object' && createError !== null) {
+                // 尝试从对象中提取错误信息
+                const errorObj = createError as Record<string, unknown>;
+                errorMessage = (errorObj.message as string) || 
+                              (errorObj.error as string) || 
+                              JSON.stringify(errorObj);
+            }
+            
+            console.error('[KnowledgeBasePanel] 创建知识库失败:', createError);
+            setCreateError(errorMessage);
+            
+            // 显示 Toast 通知（简要版）
+            showToast('error', '知识库创建失败，请查看下方详细错误信息');
         } finally {
             setCreating(false);
         }
