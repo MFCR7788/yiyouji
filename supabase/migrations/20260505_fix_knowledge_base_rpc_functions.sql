@@ -1,5 +1,10 @@
--- 知识库创建和管理相关的 RPC 函数
--- 修复知识库创建失败问题
+-- =============================================
+-- 知识库修复脚本 - 修正版（兼容 PostgreSQL 语法）
+-- 
+-- 修复说明：
+-- - 移除了不支持的 "RETURNING INTO ARRAY" 语法
+-- - 改用 PostgreSQL 标准的数组操作方式
+-- =============================================
 
 -- 1. 创建带数量限制的知识库创建函数
 CREATE OR REPLACE FUNCTION public.create_knowledge_base_with_limit(
@@ -20,18 +25,12 @@ DECLARE
 BEGIN
     -- 验证用户 ID
     IF p_user_id IS NULL THEN
-        RETURN jsonb_build_object(
-            'status', 'error',
-            'message', '用户 ID 不能为空'
-        );
+        RETURN jsonb_build_object('status', 'error', 'message', '用户 ID 不能为空');
     END IF;
 
     -- 验证名称
     IF p_name IS NULL OR trim(p_name) = '' THEN
-        RETURN jsonb_build_object(
-            'status', 'error',
-            'message', '知识库名称不能为空'
-        );
+        RETURN jsonb_build_object('status', 'error', 'message', '知识库名称不能为空');
     END IF;
 
     -- 验证权重值
@@ -40,9 +39,7 @@ BEGIN
     END IF;
 
     -- 检查当前知识库数量
-    SELECT COUNT(*) INTO v_current_count
-    FROM knowledge_bases
-    WHERE user_id = p_user_id;
+    SELECT COUNT(*) INTO v_current_count FROM knowledge_bases WHERE user_id = p_user_id;
 
     -- 检查是否超过限制
     IF v_current_count >= p_limit THEN
@@ -72,7 +69,7 @@ REVOKE ALL ON FUNCTION public.create_knowledge_base_with_limit(UUID, TEXT, TEXT,
 GRANT EXECUTE ON FUNCTION public.create_knowledge_base_with_limit(UUID, TEXT, TEXT, TEXT, INT) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.create_knowledge_base_with_limit(UUID, TEXT, TEXT, TEXT, INT) TO service_role;
 
--- 2. 创建替换/插入知识条目的函数
+-- 2. 创建替换/插入知识条目的函数（修正版）
 CREATE OR REPLACE FUNCTION public.kb_replace_source_entries(
     p_kb_id UUID,
     p_source_type TEXT,
@@ -92,48 +89,48 @@ DECLARE
     v_content TEXT;
     v_metadata JSONB;
     v_inserted_count INT DEFAULT 0;
-    v_existing_ids UUID[];
+    v_deleted_count INT DEFAULT 0;
 BEGIN
     -- 验证参数
-    IF p_kb_id IS NULL THEN
-        RAISE EXCEPTION 'kb_id 不能为空';
+    IF p_kb_id IS NULL THEN 
+        RAISE EXCEPTION 'kb_id 不能为空'; 
     END IF;
 
-    IF p_source_type IS NULL OR trim(p_source_type) = '' THEN
-        RAISE EXCEPTION 'source_type 不能为空';
+    IF p_source_type IS NULL OR trim(p_source_type) = '' THEN 
+        RAISE EXCEPTION 'source_type 不能为空'; 
     END IF;
 
-    IF p_source_id IS NULL OR trim(p_source_id) = '' THEN
-        RAISE EXCEPTION 'source_id 不能为空';
+    IF p_source_id IS NULL OR trim(p_source_id) = '' THEN 
+        RAISE EXCEPTION 'source_id 不能为空'; 
     END IF;
 
-    IF p_entries IS NULL OR jsonb_array_length(p_entries) = 0 THEN
-        RETURN 0;
+    IF p_entries IS NULL OR jsonb_array_length(p_entries) = 0 THEN 
+        RETURN 0; 
     END IF;
 
     -- 检查知识库是否存在且属于该用户（如果提供了 user_id）
     IF p_user_id IS NOT NULL THEN
-        PERFORM 1 FROM knowledge_bases
-        WHERE id = p_kb_id AND user_id = p_user_id;
-        IF NOT FOUND THEN
-            RAISE EXCEPTION '知识库不存在或无权限';
+        PERFORM 1 FROM knowledge_bases WHERE id = p_kb_id AND user_id = p_user_id;
+        IF NOT FOUND THEN 
+            RAISE EXCEPTION '知识库不存在或无权限'; 
         END IF;
     ELSE
         PERFORM 1 FROM knowledge_bases WHERE id = p_kb_id;
-        IF NOT FOUND THEN
-            RAISE EXCEPTION '知识库不存在';
+        IF NOT FOUND THEN 
+            RAISE EXCEPTION '知识库不存在'; 
         END IF;
     END IF;
 
-    -- 删除旧的条目（同一来源）
+    -- 删除旧的条目（同一来源）- 修正：使用标准语法
     DELETE FROM knowledge_entries
     WHERE kb_id = p_kb_id
       AND source_type = p_source_type
-      AND source_id = p_source_id
-    RETURNING id INTO ARRAY v_existing_ids;
+      AND source_id = p_source_id;
 
-    -- 如果需要归档，记录到 archived_sources 表
-    IF p_archive AND array_length(v_existing_ids, 1) > 0 THEN
+    GET DIAGNOSTICS v_deleted_count = ROW_COUNT;
+
+    -- 如果需要归档，记录到 archived_sources 表（仅当确实删除了条目时）
+    IF p_archive AND v_deleted_count > 0 THEN
         INSERT INTO archived_sources (user_id, source_type, source_id, kb_id)
         SELECT p_user_id, p_source_type, p_source_id, p_kb_id
         WHERE NOT EXISTS (
@@ -172,6 +169,13 @@ REVOKE ALL ON FUNCTION public.kb_replace_source_entries(UUID, TEXT, TEXT, JSONB,
 GRANT EXECUTE ON FUNCTION public.kb_replace_source_entries(UUID, TEXT, TEXT, JSONB, BOOLEAN, UUID) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.kb_replace_source_entries(UUID, TEXT, TEXT, JSONB, BOOLEAN, UUID) TO service_role;
 
--- 添加注释
-COMMENT ON FUNCTION public.create_knowledge_base_with_limit IS '创建知识库并检查数量限制，返回 JSONB 结果';
-COMMENT ON FUNCTION public.kb_replace_source_entries IS '替换指定来源的知识条目，支持归档功能';
+-- 3. 验证函数是否创建成功
+SELECT 
+    routine_name as "函数名",
+    routine_type as "类型",
+    security_type as "安全类型",
+    data_type as "返回类型"
+FROM information_schema.routines
+WHERE routine_name IN ('create_knowledge_base_with_limit', 'kb_replace_source_entries')
+  AND routine_schema = 'public'
+ORDER BY routine_name;
