@@ -261,7 +261,16 @@ export function UserManagementPanel() {
             if (selectedUserId === userId) {
                 backToList();
             }
-            void loadUsers(currentPage);
+            
+            if (type === 'delete') {
+                if (users.length === 1 && currentPage > 1) {
+                    void loadUsers(currentPage - 1);
+                } else {
+                    void loadUsers(currentPage);
+                }
+            } else {
+                void loadUsers(currentPage);
+            }
         } catch (err) {
             showToast('error', err instanceof Error ? err.message : '操作失败');
         }
