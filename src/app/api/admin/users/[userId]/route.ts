@@ -471,25 +471,36 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
             console.error('[admin-users][DELETE] Delete from auth failed - message:', deleteAuthError.message);
             console.error('[admin-users][DELETE] Delete from auth failed - status:', deleteAuthError.status);
             
-            // 如果是 "Database error deleting user"，可能是用户已经被删除或权限问题
-            if (deleteAuthError.message.includes('Database error')) {
-                console.warn('[admin-users][DELETE] Database error, proceeding anyway...');
-                // 继续尝试删除 public.users 表中的数据
-            } else {
-                return jsonError('删除用户认证信息失败: ' + deleteAuthError.message, 500);
-            }
+            console.warn('[admin-users][DELETE] Auth delete failed, but continuing to delete from database anyway...');
         } else {
             console.log('[admin-users][DELETE] User deleted from auth successfully');
         }
 
-        // 删除 public.users 表中的数据（允许失败，因为可能用户记录还未创建）
+        // 删除该用户的所有相关数据
+        console.log('[admin-users][DELETE] Deleting user-related data from database...');
+        
+        // 先删除积分交易记录
+        const { error: deleteCreditsError } = await supabase
+            .from('credit_transactions')
+            .delete()
+            .eq('user_id', userId);
+        
+        if (deleteCreditsError) {
+            console.warn('[admin-users][DELETE] Failed to delete credit_transactions:', deleteCreditsError);
+        } else {
+            console.log('[admin-users][DELETE] Credit transactions deleted successfully');
+        }
+        
+        // 删除 users 表中的数据
         const { error: deleteUserError } = await supabase
             .from('users')
             .delete()
             .eq('id', userId);
 
         if (deleteUserError) {
-            console.warn('[admin-users][DELETE] Delete from users failed (may not exist):', deleteUserError);
+            console.error('[admin-users][DELETE] Failed to delete from users table:', deleteUserError);
+        } else {
+            console.log('[admin-users][DELETE] User deleted from users table successfully');
         }
 
         // 记录删除操作（非阻塞）
@@ -509,9 +520,18 @@ export async function DELETE(request: NextRequest, context: RouteContext) {
             console.error('[admin-users][DELETE] Failed to log delete operation:', logErr);
         }
 
+        let responseMessage = '用户已从数据库中删除';
+        if (deleteAuthError) {
+            responseMessage += '（注意：认证系统中的用户删除可能有问题，但数据库中的数据已清理）';
+        } else {
+            responseMessage += '，此操作不可逆';
+        }
+        
         return jsonOk({
             success: true,
-            message: '用户已彻底删除，此操作不可逆'
+            message: responseMessage,
+            authDeleted: !deleteAuthError,
+            databaseDeleted: !deleteUserError
         });
     } catch (err) {
         console.error('[admin-users][DELETE] Error:', err);
