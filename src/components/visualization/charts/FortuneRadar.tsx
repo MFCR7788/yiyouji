@@ -7,7 +7,7 @@
  */
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useChartEntrance, CHART_ENTRANCE_BASE, CHART_ENTRANCE_ACTIVE } from '@/components/visualization/shared/useChartEntrance';
 import ChartEmpty from '@/components/visualization/shared/ChartEmpty';
 import {
@@ -100,6 +100,17 @@ function FortuneRadarInner({
   selectedDimensions,
 }: FortuneRadarProps) {
   const { ref, entered } = useChartEntrance();
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const { scores, previousScores, overallScore, overallLabel, topAdvice, period } = data.data;
 
   // Determine which dimensions to show
@@ -161,12 +172,12 @@ function FortuneRadarInner({
 
       {/* Radar Chart with Center Score */}
       <div className="relative w-full max-w-full overflow-hidden">
-        <ResponsiveContainer width="100%" height={radarHeight}>
+        <ResponsiveContainer width="100%" height={compact ? RADAR_HEIGHT_COMPACT : (isMobile ? 260 : RADAR_HEIGHT_DESKTOP)}>
           <RadarChart
             data={radarData}
             cx="50%"
             cy="50%"
-            outerRadius={compact ? '65%' : '70%'}
+            outerRadius={isMobile ? '60%' : compact ? '65%' : '70%'}
           >
             <PolarGrid
               stroke="var(--color-border)"
