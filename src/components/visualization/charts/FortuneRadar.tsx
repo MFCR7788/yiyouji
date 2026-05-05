@@ -153,7 +153,7 @@ function FortuneRadarInner({
   }
 
   return (
-    <div ref={ref} className={`space-y-4 w-full max-w-full ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''}`}>
+    <div ref={ref} className={`space-y-4 w-full max-w-full ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''}`} style={{ minHeight: '250px' }}>
       {/* Title */}
       {!compact && (data.title || data.subtitle) && (
         <div>
@@ -168,9 +168,9 @@ function FortuneRadarInner({
         </div>
       )}
 
-      {/* Radar Chart with Center Score */}
-      <div className="relative w-full max-w-full overflow-hidden">
-        <ResponsiveContainer width="100%" height={compact ? RADAR_HEIGHT_COMPACT : (isMobile ? 260 : RADAR_HEIGHT_DESKTOP)}>
+      {/* Radar Chart with Center Score - 响应式容器 */}
+      <div className="relative w-full max-w-full overflow-hidden" style={{ minHeight: compact ? '220px' : (isMobile ? '260px' : '300px') }}>
+        <ResponsiveContainer width="100%" height={compact ? RADAR_HEIGHT_COMPACT : (isMobile ? 260 : RADAR_HEIGHT_DESKTOP)} debounce={100}>
           <RadarChart
             data={radarData}
             cx="50%"

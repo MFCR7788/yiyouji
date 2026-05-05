@@ -82,13 +82,17 @@ interface DonutProps {
 
 function DonutChart({ elements, favorableElement, interactions }: DonutProps) {
   const segments = useMemo(() => {
-    const total = ELEMENT_ORDER.reduce((s, k) => s + elements[k].strength, 0) || 1;
+    const safeElements = (key: WuxingElement): { strength: number; level: string; stars: string[] } => 
+      elements?.[key] ?? { strength: 0, level: '平', stars: [] };
+    
+    const total = ELEMENT_ORDER.reduce((s, k) => s + safeElements(k).strength, 0) || 1;
     const usable = 360 - GAP_DEG * ELEMENT_ORDER.length;
 
     const result: Array<{ key: WuxingElement; startDeg: number; endDeg: number; midDeg: number; pct: number }> = [];
     let cursor = 0;
     for (const key of ELEMENT_ORDER) {
-      const pct = elements[key].strength / total;
+      const elData = safeElements(key);
+      const pct = elData.strength / total;
       const sweep = Math.max(pct * usable, 4);
       const startDeg = cursor + GAP_DEG;
       const endDeg = startDeg + sweep;
@@ -112,7 +116,7 @@ function DonutChart({ elements, favorableElement, interactions }: DonutProps) {
   );
 
   return (
-    <svg viewBox="0 0 300 300" className="w-full h-auto max-w-[280px] sm:max-w-[300px] md:max-w-[320px] mx-auto" aria-label="五行能量环形图">
+    <svg viewBox="0 0 300 300" className="w-full h-auto max-w-[280px] sm:max-w-[320px] md:max-w-[360px] lg:max-w-[400px] mx-auto" style={{ maxWidth: '100%', height: 'auto' }} aria-label="五行能量环形图" preserveAspectRatio="xMidYMid meet">
       <defs>
         {/* Golden glow filter for favorable element */}
         <filter id="wuxing-glow" x="-20%" y="-20%" width="140%" height="140%">
@@ -254,26 +258,28 @@ function WuxingEnergyChartInner({ data, compact = false }: WuxingEnergyChartProp
   }
 
   return (
-    <div ref={ref} className={`space-y-4 sm:space-y-5 ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''} w-full max-w-full`}>
-      {/* Donut */}
-      <div className="w-full flex justify-center px-2 sm:px-0">
-        <DonutChart
-          elements={elements}
-          favorableElement={favorableElement}
-          interactions={interactions}
-        />
+    <div ref={ref} className={`space-y-4 sm:space-y-5 ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''} w-full max-w-full overflow-hidden`} style={{ minHeight: '200px' }}>
+      {/* Donut - 自适应容器 */}
+      <div className="w-full flex justify-center px-2 sm:px-3 md:px-4" style={{ position: 'relative', width: '100%' }}>
+        <div style={{ width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+          <DonutChart
+            elements={elements}
+            favorableElement={favorableElement}
+            interactions={interactions}
+          />
+        </div>
       </div>
 
-      {/* Strength bars */}
-      <div className="space-y-2.5 sm:space-y-3">
+      {/* Strength bars - 响应式布局 */}
+      <div className="space-y-2.5 sm:space-y-3 w-full max-w-full">
         {ELEMENT_ORDER.map((key) => {
-          const el = elements[key];
+          const el = elements?.[key] ?? { strength: 0, level: '平', stars: [] };
           const isFavorable = key === favorableElement;
           const isUnfavorable = key === unfavorableElement;
           return (
             <div
               key={key}
-              className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap pl-[6px] sm:pl-2"
+              className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap pl-[6px] sm:pl-2 w-full max-w-full"
               style={{
                 borderLeft: isFavorable
                   ? '3px solid #D4AF37'
@@ -287,13 +293,13 @@ function WuxingEnergyChartInner({ data, compact = false }: WuxingEnergyChartProp
                 {ELEMENT_EMOJI[key]}<span className="hidden sm:inline">{ELEMENT_CN[key]}</span>
               </span>
 
-              {/* Bar */}
-              <div className="flex-1 min-w-0">
+              {/* Bar - 自适应容器宽度 */}
+              <div className="flex-1 min-w-0 w-auto">
                 <ScoreBar value={el.strength} color={WUXING_COLORS[key]} height={8} showLabel={false} />
               </div>
 
               {/* Score */}
-              <span className="text-xs tabular-nums w-7 sm:w-8 text-right text-foreground-secondary">
+              <span className="text-xs tabular-nums w-7 sm:w-8 text-right text-foreground-secondary shrink-0">
                 {el.strength}
               </span>
 
