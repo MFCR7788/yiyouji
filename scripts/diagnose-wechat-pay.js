@@ -13,6 +13,46 @@
 
 const crypto = require('crypto');
 const https = require('https');
+const fs = require('fs');
+const path = require('path');
+
+function loadEnv() {
+  const envFiles = ['.env.local', '.env'];
+  let loaded = false;
+  
+  for (const envFile of envFiles) {
+    const filePath = path.join(__dirname, '..', envFile);
+    if (fs.existsSync(filePath)) {
+      console.log(`📁 加载环境变量文件: ${filePath}`);
+      const content = fs.readFileSync(filePath, 'utf8');
+      const lines = content.split('\n');
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (trimmed && !trimmed.startsWith('#')) {
+          const equalsIndex = trimmed.indexOf('=');
+          if (equalsIndex > 0) {
+            const key = trimmed.substring(0, equalsIndex).trim();
+            let value = trimmed.substring(equalsIndex + 1).trim();
+            
+            if (value.startsWith('"') && value.endsWith('"')) {
+              value = value.slice(1, -1).replace(/\\n/g, '\n');
+            } else {
+              value = value.replace(/\\n/g, '\n');
+            }
+            
+            process.env[key] = value;
+          }
+        }
+      }
+      loaded = true;
+      break;
+    }
+  }
+  
+  if (!loaded) {
+    console.log('⚠️  未找到 .env.local 或 .env 文件');
+  }
+}
 
 const REQUIRED_VARS = [
   'WECHAT_PAY_MCHID',
@@ -247,6 +287,9 @@ async function main() {
   console.log('║       WeChat Pay Configuration Diagnostics            ║');
   console.log('╚══════════════════════════════════════════════════════╝');
   console.log('');
+
+  // 加载环境变量
+  loadEnv();
 
   // 1. 检查环境变量
   const { missing, present } = checkEnvVars();
