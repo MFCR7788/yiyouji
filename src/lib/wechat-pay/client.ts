@@ -36,7 +36,23 @@ export class WechatPayClient {
   }
 
   private sign(message: string): string {
-    const privateKey = this.config.privateKey.replace(/\\n/g, '\n')
+    let privateKey = this.config.privateKey
+    
+    // 处理多种换行符格式
+    // 1. 字面量的 \n (两个字符：反斜杠+n) -> 替换为真正的换行符
+    // 2. 真正的换行符 -> 保持不变
+    // 3. Windows 的 \r\n -> 转换为 \n
+    privateKey = privateKey.replace(/\\n/g, '\n')
+    privateKey = privateKey.replace(/\r\n/g, '\n')
+    
+    console.log('[WechatPay] sign() 私钥格式检查:', {
+      originalLength: this.config.privateKey.length,
+      processedLength: privateKey.length,
+      startsWithPem: privateKey.startsWith('-----BEGIN PRIVATE KEY-----'),
+      containsNewlines: privateKey.includes('\n'),
+      firstLinePreview: privateKey.split('\n')[0]?.substring(0, 50),
+    })
+    
     const sign = crypto.createSign('SHA256')
     sign.update(message)
     sign.end()
@@ -192,7 +208,21 @@ export function getWechatPayConfig(): WechatPayConfig | null {
   const notifyUrl = process.env.WECHAT_PAY_NOTIFY_URL
   const h5Domain = process.env.WECHAT_PAY_H5_DOMAIN
 
+  console.log('[WechatPay] getWechatPayConfig() 环境变量检查:', {
+    hasMchid: !!mchid,
+    hasAppid: !!appid,
+    hasApiV3Key: !!apiV3Key,
+    hasMchSerialNo: !!mchSerialNo,
+    hasPrivateKey: !!privateKey,
+    hasNotifyUrl: !!notifyUrl,
+    privateKeyLength: privateKey?.length,
+    privateKeyPreview: privateKey?.substring(0, 50),
+    privateKeyContainsNewlines: privateKey?.includes('\n'),
+    privateKeyContainsBackslashN: privateKey?.includes('\\n'),
+  })
+
   if (!mchid || !appid || !apiV3Key || !mchSerialNo || !privateKey || !notifyUrl) {
+    console.warn('[WechatPay] getWechatPayConfig() 返回 null - 缺少必要的配置')
     return null
   }
 
