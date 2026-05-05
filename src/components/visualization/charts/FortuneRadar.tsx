@@ -50,11 +50,6 @@ interface RadarDataPoint {
   fullMark: number;
 }
 
-// ===== Constants =====
-
-const RADAR_HEIGHT_DESKTOP = 300;
-const RADAR_HEIGHT_COMPACT = 220;
-
 // ===== Custom Angle Axis Tick =====
 
 function CustomAngleAxisTick({
