@@ -5,7 +5,7 @@
  */
 
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
-import { getSupabaseAnonKey, getSupabaseAuthAdminKey, getSupabaseServiceRoleKey, getSupabaseUrl } from '@/lib/supabase-env';
+import { getSupabaseAnonKey, getSupabaseServiceRoleKey, getSupabaseUrl } from '@/lib/supabase-env';
 import { configureGlobalProxy } from '@/lib/proxy-config';
 
 configureGlobalProxy();
