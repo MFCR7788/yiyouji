@@ -338,9 +338,20 @@ export async function POST(request: NextRequest) {
 
         // 新注册用户自动赠送 100 积分
         if (type === 'register' && signInData?.session?.user?.id) {
+            const newUserId = signInData.session.user.id;
             try {
+                // 首先确保 users 表中有该用户的记录
+                const { ensureUserRecordRow } = await import(`@/lib/user/profile-record`);
+                const ensured = await ensureUserRecordRow(supabase, signInData.session.user);
+                if (!ensured.ok) {
+                    console.error('[SMS Verify API] 创建用户记录失败:', ensured.error);
+                } else {
+                    console.info('[SMS Verify API] 用户记录已确保存在');
+                }
+
+                // 增加 100 积分
                 const { error: creditError } = await supabase.rpc('increment_ai_chat_count', {
-                    user_id: signInData.session.user.id,
+                    user_id: newUserId,
                     amount: 100
                 });
                 if (creditError) {
@@ -350,7 +361,7 @@ export async function POST(request: NextRequest) {
                 }
 
                 const { logRegistrationBonus } = await import('@/lib/user/credit-transactions');
-                await logRegistrationBonus(signInData.session.user.id, 100);
+                await logRegistrationBonus(newUserId, 100);
             } catch (e) {
                 console.error('[SMS Verify API] 赠送积分异常:', e);
             }
