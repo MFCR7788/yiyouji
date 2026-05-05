@@ -97,10 +97,6 @@ export default function ChartRenderer({ data, compact = false, className = '' }:
     );
   }
 
-  const handleRetry = () => {
-    setRetryCount(prev => prev + 1);
-  };
-
   const resetKey = `${normalizedData.chartType}-${JSON.stringify(normalizedData).slice(0, 100)}-${retryCount}`;
 
   return (
