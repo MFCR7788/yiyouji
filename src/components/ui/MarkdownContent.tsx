@@ -54,8 +54,10 @@ const staticComponents: Partial<Components> = {
     ),
     hr: () => <hr className="my-6 border-border" />,
     table: ({ children }) => (
-        <div className="my-4 overflow-x-auto">
-            <table className="w-full border-collapse text-sm">{children}</table>
+        <div className="my-4 overflow-x-auto -mx-3 sm:mx-0 px-3 sm:px-0">
+            <div className="min-w-[320px] sm:min-w-0">
+                <table className="w-full border-collapse text-xs sm:text-sm">{children}</table>
+            </div>
         </div>
     ),
     thead: ({ children }) => (
@@ -64,10 +66,10 @@ const staticComponents: Partial<Components> = {
     tbody: ({ children }) => <tbody className="divide-y divide-border">{children}</tbody>,
     tr: ({ children }) => <tr className="hover:bg-background-secondary/30">{children}</tr>,
     th: ({ children }) => (
-        <th className="px-3 py-2 text-left font-semibold text-foreground">{children}</th>
+        <th className="px-1.5 sm:px-3 py-1.5 sm:py-2 text-left font-semibold text-foreground whitespace-nowrap text-xs sm:text-sm">{children}</th>
     ),
     td: ({ children }) => (
-        <td className="px-3 py-2 text-foreground-secondary">{children}</td>
+        <td className="px-1.5 sm:px-3 py-1.5 sm:py-2 text-foreground-secondary text-xs sm:text-sm break-words">{children}</td>
     ),
     strong: ({ children }) => (
         <strong className="font-semibold text-foreground">{children}</strong>
@@ -84,16 +86,30 @@ const staticComponents: Partial<Components> = {
             try {
                 const chartData = JSON.parse(String(children).trim()) as ChartData;
                 return (
-                    <div className="my-4 max-w-full overflow-x-auto">
-                        <Suspense fallback={<div className="py-4 text-center text-sm text-foreground-secondary">加载图表...</div>}>
+                    <div className="my-4 max-w-full overflow-hidden">
+                        <Suspense fallback={
+                            <div className="flex flex-col items-center justify-center py-8 sm:py-12 min-h-[200px] bg-background-secondary/30 rounded-xl">
+                                <div className="w-8 h-8 sm:w-10 sm:h-10 border-2 border-[#1f9d6d] border-t-transparent rounded-full animate-spin mb-3"></div>
+                                <p className="text-xs sm:text-sm text-foreground-secondary">正在加载图表...</p>
+                            </div>
+                        }>
                             <ChartRenderer data={chartData} />
                         </Suspense>
                     </div>
                 );
-            } catch {
+            } catch (parseError) {
+                console.error('[MarkdownContent] 图表数据解析失败:', parseError);
                 return (
-                    <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-500">
-                        图表数据解析失败
+                    <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 sm:p-6 my-4">
+                        <div className="flex items-start gap-3">
+                            <div className="w-5 h-5 rounded-full bg-red-500/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                                <span className="text-red-500 text-xs">!</span>
+                            </div>
+                            <div>
+                                <p className="text-xs sm:text-sm font-medium text-red-600 mb-1">图表数据解析失败</p>
+                                <p className="text-xs text-red-400">数据格式错误，无法渲染图表</p>
+                            </div>
+                        </div>
                     </div>
                 );
             }

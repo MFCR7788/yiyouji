@@ -170,8 +170,8 @@ export function ProfessionalTable({
     const columnCount = fortuneColumns.length + columns.length;
 
     return (
-        <div className="overflow-x-auto w-full">
-            <table className="min-w-max table-fixed border-collapse text-base sm:text-lg">
+        <div className="overflow-x-auto overflow-y-hidden w-full -mx-[calc(100vw-100%)/2] sm:mx-0 px-[calc(100vw-100%)/2] sm:px-0 rounded-lg">
+            <table className="min-w-[600px] sm:min-w-full table-fixed border-collapse text-xs sm:text-base md:text-lg">
                 <colgroup>
                     <col className="w-14 sm:w-16 md:w-20" />
                     {Array.from({ length: columnCount }).map((_, idx) => (
