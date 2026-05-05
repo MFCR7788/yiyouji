@@ -222,7 +222,7 @@ jobs:
 
             echo ""
             echo "=== 6️⃣ 创建 .env.local 文件 ==="
-            ENV_FILE="$APP_DIR/.env.local"
+            ENV_FILE=".env.local"
             
             cat > "$ENV_FILE" << 'ENVEOF'
             NODE_ENV=production
