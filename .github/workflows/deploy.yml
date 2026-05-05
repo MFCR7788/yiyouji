@@ -224,54 +224,53 @@ jobs:
             echo "=== 6️⃣ 创建 .env.local 文件 ==="
             ENV_FILE=".env.local"
             
-            cat > "$ENV_FILE" << 'ENVEOF'
-            NODE_ENV=production
-            USE_LOCAL_DB=false
-            
-            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
-            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
-            SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
-            SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-            SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}
-            SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}
-            SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}
-            
-            INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}
-            CRON_SECRET=${{ secrets.CRON_SECRET }}
-            
-            DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
-            DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}
-            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-            VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}
-            
-            ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}
-            ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}
-            ALIYUN_SMS_SIGN_NAME=魔法超人
-            ALIYUN_SMS_TEMPLATE_CODE=SMS_505945199
-            ALIYUN_SMS_REGION_ID=cn-hangzhou
-            
-            DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}
-            DIFY_API_URL=${{ secrets.DIFY_API_URL }}
-            AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}
-            
-            MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}
-            MCP_HOST=0.0.0.0
-            MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun,yiyouji.zjsifan.com
-            MCP_TRUST_PROXY=true
-            
-            KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4
-            KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank
-            VECTOR_SEARCH_ENABLED=false
-            
-            WECHAT_PAY_MCHID=${{ secrets.WECHAT_PAY_MCHID }}
-            WECHAT_PAY_APPID=${{ secrets.WECHAT_PAY_APPID }}
-            WECHAT_PAY_API_V3_KEY=${{ secrets.WECHAT_PAY_API_V3_KEY }}
-            WECHAT_PAY_MCH_SERIAL_NO=${{ secrets.WECHAT_PAY_MCH_SERIAL_NO }}
-            WECHAT_PAY_NOTIFY_URL=https://yiyouji.zjsifan.com/api/membership/pay/callback
-            WECHAT_PAY_H5_DOMAIN=yiyouji.zjsifan.com
-            
-            WEB_PORT=3000
-            ENVEOF
+            # 使用 echo 命令逐个写入环境变量，确保 GitHub Actions 表达式被正确解析
+            echo "NODE_ENV=production" > "$ENV_FILE"
+            echo "USE_LOCAL_DB=false" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> "$ENV_FILE"
+            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> "$ENV_FILE"
+            echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}" >> "$ENV_FILE"
+            echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> "$ENV_FILE"
+            echo "SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}" >> "$ENV_FILE"
+            echo "SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}" >> "$ENV_FILE"
+            echo "SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}" >> "$ENV_FILE"
+            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> "$ENV_FILE"
+            echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}" >> "$ENV_FILE"
+            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> "$ENV_FILE"
+            echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}" >> "$ENV_FILE"
+            echo "ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}" >> "$ENV_FILE"
+            echo "ALIYUN_SMS_SIGN_NAME=魔法超人" >> "$ENV_FILE"
+            echo "ALIYUN_SMS_TEMPLATE_CODE=SMS_505945199" >> "$ENV_FILE"
+            echo "ALIYUN_SMS_REGION_ID=cn-hangzhou" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}" >> "$ENV_FILE"
+            echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}" >> "$ENV_FILE"
+            echo "AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}" >> "$ENV_FILE"
+            echo "MCP_HOST=0.0.0.0" >> "$ENV_FILE"
+            echo "MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun,yiyouji.zjsifan.com" >> "$ENV_FILE"
+            echo "MCP_TRUST_PROXY=true" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4" >> "$ENV_FILE"
+            echo "KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank" >> "$ENV_FILE"
+            echo "VECTOR_SEARCH_ENABLED=false" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "WECHAT_PAY_MCHID=${{ secrets.WECHAT_PAY_MCHID }}" >> "$ENV_FILE"
+            echo "WECHAT_PAY_APPID=${{ secrets.WECHAT_PAY_APPID }}" >> "$ENV_FILE"
+            echo "WECHAT_PAY_API_V3_KEY=${{ secrets.WECHAT_PAY_API_V3_KEY }}" >> "$ENV_FILE"
+            echo "WECHAT_PAY_MCH_SERIAL_NO=${{ secrets.WECHAT_PAY_MCH_SERIAL_NO }}" >> "$ENV_FILE"
+            echo "WECHAT_PAY_NOTIFY_URL=https://yiyouji.zjsifan.com/api/membership/pay/callback" >> "$ENV_FILE"
+            echo "WECHAT_PAY_H5_DOMAIN=yiyouji.zjsifan.com" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "WEB_PORT=3000" >> "$ENV_FILE"
             
             # 追加多行变量
             echo "" >> "$ENV_FILE"
