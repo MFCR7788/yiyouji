@@ -1,6 +1,6 @@
 'use client';
 
-import { lazy, Suspense, Component, type ReactNode, useMemo, useState } from 'react';
+import { lazy, Suspense, Component, type ReactNode, useMemo } from 'react';
 import type { ChartData, ChartType } from '@/lib/visualization/chart-types';
 import { normalizeChartData } from '@/lib/visualization/chart-data-extract';
 
@@ -85,7 +85,6 @@ class ChartErrorBoundary extends Component<{ children: ReactNode; resetKey: unkn
 
 export default function ChartRenderer({ data, compact = false, className = '' }: ChartRendererProps) {
   const normalizedData = useMemo(() => normalizeChartData(data), [data]);
-  const [retryCount, setRetryCount] = useState(0);
   const ChartComponent = chartComponents[normalizedData.chartType as ChartType];
 
   if (!ChartComponent) {
@@ -97,7 +96,7 @@ export default function ChartRenderer({ data, compact = false, className = '' }:
     );
   }
 
-  const resetKey = `${normalizedData.chartType}-${JSON.stringify(normalizedData).slice(0, 100)}-${retryCount}`;
+  const resetKey = `${normalizedData.chartType}-${JSON.stringify(normalizedData).slice(0, 100)}`;
 
   return (
     <div className={`w-full max-w-full overflow-hidden ${className}`}>
