@@ -279,7 +279,11 @@ jobs:
             echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
             echo "# 微信支付私钥" >> "$ENV_FILE"
-            echo "WECHAT_PAY_PRIVATE_KEY=\"${{ secrets.WECHAT_PRIVATE_KEY }}\"" >> "$ENV_FILE"
+            
+            # 使用 heredoc 处理多行私钥，避免 echo 命令处理换行符问题
+            cat >> "$ENV_FILE" << 'EOF_WECHAT_KEY'
+WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PRIVATE_KEY }}"
+EOF_WECHAT_KEY
             
             echo "✅ .env.local 文件创建完成"
 
