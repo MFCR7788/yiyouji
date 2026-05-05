@@ -81,14 +81,30 @@ interface DonutProps {
 }
 
 function DonutChart({ elements, favorableElement, interactions }: DonutProps) {
+  const safeElements = useMemo(() => {
+    const defaults: Record<WuxingElement, { strength: number; level: string; stars: string[] }> = {
+      water: { strength: 0, level: '弱', stars: [] },
+      fire: { strength: 0, level: '弱', stars: [] },
+      earth: { strength: 0, level: '弱', stars: [] },
+      metal: { strength: 0, level: '弱', stars: [] },
+      wood: { strength: 0, level: '弱', stars: [] },
+    };
+    for (const key of ELEMENT_ORDER) {
+      if (elements?.[key]) {
+        defaults[key] = elements[key];
+      }
+    }
+    return defaults;
+  }, [elements]);
+
   const segments = useMemo(() => {
-    const total = ELEMENT_ORDER.reduce((s, k) => s + elements[k].strength, 0) || 1;
+    const total = ELEMENT_ORDER.reduce((s, k) => s + (safeElements[k]?.strength ?? 0), 0) || 1;
     const usable = 360 - GAP_DEG * ELEMENT_ORDER.length;
 
     const result: Array<{ key: WuxingElement; startDeg: number; endDeg: number; midDeg: number; pct: number }> = [];
     let cursor = 0;
     for (const key of ELEMENT_ORDER) {
-      const pct = elements[key].strength / total;
+      const pct = (safeElements[key]?.strength ?? 0) / total;
       const sweep = Math.max(pct * usable, 4);
       const startDeg = cursor + GAP_DEG;
       const endDeg = startDeg + sweep;
@@ -97,7 +113,7 @@ function DonutChart({ elements, favorableElement, interactions }: DonutProps) {
       result.push({ key, startDeg, endDeg, midDeg, pct });
     }
     return result;
-  }, [elements]);
+  }, [safeElements]);
 
   // Build a lookup from element key to midpoint angle for ke lines
   const midAngles = useMemo(() => {
@@ -249,7 +265,24 @@ function WuxingEnergyChartInner({ data, compact = false }: WuxingEnergyChartProp
   const { ref, entered } = useChartEntrance();
   const { elements, favorableElement, unfavorableElement, advice, interactions } = data.data;
 
-  if (!elements) {
+  const safeElements = useMemo(() => {
+    if (!elements) return null;
+    const defaults: Record<WuxingElement, { strength: number; level: string; stars: string[] }> = {
+      water: { strength: 0, level: '弱', stars: [] },
+      fire: { strength: 0, level: '弱', stars: [] },
+      earth: { strength: 0, level: '弱', stars: [] },
+      metal: { strength: 0, level: '弱', stars: [] },
+      wood: { strength: 0, level: '弱', stars: [] },
+    };
+    for (const key of ELEMENT_ORDER) {
+      if (elements[key]) {
+        defaults[key] = elements[key];
+      }
+    }
+    return defaults;
+  }, [elements]);
+
+  if (!safeElements) {
     return <ChartEmpty message="暂无五行能量数据" />;
   }
 
@@ -258,7 +291,7 @@ function WuxingEnergyChartInner({ data, compact = false }: WuxingEnergyChartProp
       {/* Donut */}
       <div className="w-full flex justify-center px-2 sm:px-0">
         <DonutChart
-          elements={elements}
+          elements={safeElements}
           favorableElement={favorableElement}
           interactions={interactions}
         />
@@ -267,7 +300,7 @@ function WuxingEnergyChartInner({ data, compact = false }: WuxingEnergyChartProp
       {/* Strength bars */}
       <div className="space-y-2.5 sm:space-y-3">
         {ELEMENT_ORDER.map((key) => {
-          const el = elements[key];
+          const el = safeElements[key];
           const isFavorable = key === favorableElement;
           const isUnfavorable = key === unfavorableElement;
           return (
