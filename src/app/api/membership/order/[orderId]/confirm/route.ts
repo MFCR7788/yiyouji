@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import { jsonError, jsonOk, requireUserContext } from '@/lib/api-utils';
 import { getSystemAdminClient } from '@/lib/supabase-server';
-import { handlePaymentSuccess } from '@/lib/wechat-pay/service';
 import { planIdToMembership } from '@/lib/user/membership';
 import type { PlanId } from '@/lib/user/membership';
 
