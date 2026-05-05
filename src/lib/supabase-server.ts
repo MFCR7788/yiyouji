@@ -49,12 +49,12 @@ export function getSystemAdminClient(): SupabaseClient {
 export function getAuthAdminClient(): SupabaseClient | null {
     if (authAdminClient) return authAdminClient;
 
-    const adminKey = getSupabaseAuthAdminKey();
-    if (!adminKey) {
+    const serviceRoleKey = getSupabaseServiceRoleKey();
+    if (!serviceRoleKey) {
         return null;
     }
 
-    authAdminClient = createClient(getSupabaseUrl(), adminKey, {
+    authAdminClient = createClient(getSupabaseUrl(), serviceRoleKey, {
         auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
     });
 
