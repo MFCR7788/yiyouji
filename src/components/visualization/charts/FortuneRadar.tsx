@@ -50,6 +50,11 @@ interface RadarDataPoint {
   fullMark: number;
 }
 
+// ===== Constants =====
+
+const RADAR_HEIGHT_DESKTOP = 300;
+const RADAR_HEIGHT_COMPACT = 220;
+
 // ===== Custom Angle Axis Tick =====
 
 function CustomAngleAxisTick({
@@ -78,7 +83,7 @@ function CustomAngleAxisTick({
         textAnchor="middle"
         dominantBaseline="central"
         fill={color}
-        fontSize={10}
+        fontSize={11}
         fontWeight={500}
       >
         {label}
@@ -148,12 +153,12 @@ function FortuneRadarInner({
   }
 
   return (
-    <div ref={ref} className={`space-y-3 sm:space-y-4 w-full ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''}`}>
+    <div ref={ref} className={`space-y-4 w-full max-w-full ${CHART_ENTRANCE_BASE} ${entered ? CHART_ENTRANCE_ACTIVE : ''}`}>
       {/* Title */}
       {!compact && (data.title || data.subtitle) && (
         <div>
           {data.title && (
-            <h3 className="text-base sm:text-lg font-bold text-[var(--color-foreground)]">{data.title}</h3>
+            <h3 className="text-base font-bold text-[var(--color-foreground)]">{data.title}</h3>
           )}
           {data.subtitle && (
             <p className="text-xs text-[var(--color-foreground-secondary)] mt-0.5">
@@ -164,13 +169,13 @@ function FortuneRadarInner({
       )}
 
       {/* Radar Chart with Center Score */}
-      <div className="relative w-full max-w-[340px] sm:max-w-[400px] lg:max-w-[500px] mx-auto overflow-hidden rounded-xl bg-[var(--color-background)] border border-[var(--color-border)]/50 p-2 sm:p-3">
-        <ResponsiveContainer width="100%" height={compact ? 200 : (isMobile ? 240 : 300)}>
+      <div className="relative w-full max-w-full overflow-hidden">
+        <ResponsiveContainer width="100%" height={compact ? RADAR_HEIGHT_COMPACT : (isMobile ? 260 : RADAR_HEIGHT_DESKTOP)}>
           <RadarChart
             data={radarData}
             cx="50%"
             cy="50%"
-            outerRadius={isMobile ? '58%' : compact ? '62%' : '68%'}
+            outerRadius={isMobile ? '60%' : compact ? '65%' : '70%'}
           >
             <PolarGrid
               stroke="var(--color-border)"
@@ -187,7 +192,7 @@ function FortuneRadarInner({
             <PolarRadiusAxis
               angle={90}
               domain={[0, 100]}
-              tick={{ fontSize: isMobile ? 8 : 9, fill: 'var(--color-foreground-tertiary)' }}
+              tick={{ fontSize: 9, fill: 'var(--color-foreground-tertiary)' }}
               tickCount={5}
               axisLine={false}
             />
@@ -231,14 +236,14 @@ function FortuneRadarInner({
         {/* Center overall score overlay */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="text-center">
-            <div className={`font-bold ${isMobile ? 'text-2xl' : 'text-3xl'}`} style={{ color: getScoreColor(overallScore) }}>
+            <div className="text-3xl font-bold" style={{ color: getScoreColor(overallScore) }}>
               <AnimatedNumber value={overallScore} />
             </div>
-            <div className={`text-[var(--color-foreground-secondary)] mt-0.5 ${isMobile ? 'text-[10px]' : 'text-xs'}`}>
+            <div className="text-xs text-[var(--color-foreground-secondary)] mt-0.5">
               {overallLabel}
             </div>
             {period && (
-              <div className={`text-[var(--color-foreground-tertiary)] mt-0.5 ${isMobile ? 'text-[9px]' : 'text-[10px]'}`}>
+              <div className="text-[10px] text-[var(--color-foreground-tertiary)] mt-0.5">
                 {period}
               </div>
             )}
@@ -247,7 +252,7 @@ function FortuneRadarInner({
       </div>
 
       {/* Score Bars Grid */}
-      <div className={`grid gap-2 sm:gap-2.5 w-full ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
+      <div className={`grid gap-2.5 w-full max-w-full ${compact ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
         {getDimensionsByKeys(dimensionKeys).map((dimConfig) => {
           const scoreEntry = scores[dimConfig.key];
           if (!scoreEntry) return null;
@@ -255,12 +260,12 @@ function FortuneRadarInner({
           return (
             <div
               key={dimConfig.key}
-              className="flex items-center gap-1.5 sm:gap-2 bg-[var(--color-background-secondary)]/40 rounded-lg px-2 py-1.5 sm:px-2.5 sm:py-2"
+              className="flex items-center gap-2 bg-[var(--color-background-secondary)]/40 rounded-lg px-2.5 py-2"
             >
               {/* Dimension icon + label */}
-              <div className="flex items-center gap-1 sm:gap-1.5 min-w-[70px] sm:min-w-[80px] shrink-0">
-                <span className={`text-sm sm:text-base`}>{dimConfig.icon}</span>
-                <span className={`text-xs font-medium text-[var(--color-foreground)] ${isMobile ? 'text-[11px]' : ''}`}>
+              <div className="flex items-center gap-1.5 min-w-[80px] shrink-0">
+                <span className="text-sm">{dimConfig.icon}</span>
+                <span className="text-xs font-medium text-[var(--color-foreground)]">
                   {dimConfig.label}
                 </span>
               </div>

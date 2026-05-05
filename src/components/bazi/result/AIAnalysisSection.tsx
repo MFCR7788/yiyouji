@@ -11,7 +11,7 @@
 'use client';
 
 import { useState, useEffect, type ReactNode } from 'react';
-import { RefreshCw, Copy, Check, Trash2 } from 'lucide-react';
+import { RefreshCw, Copy, Check } from 'lucide-react';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { AIAnalysisLock } from '@/components/bazi/result/AIAnalysisLock';
 import { MarkdownContent } from '@/components/ui/MarkdownContent';
@@ -181,14 +181,6 @@ export function AIAnalysisSection({
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handleClear = () => {
-        setAnalysis('');
-        setAnalysisReasoning(null);
-        setIsUnlocked(false);
-        streaming.reset();
-        showToast('info', '已清除分析内容');
-    };
-
     const placeholder = (
         <div className="p-3 sm:p-4 md:p-6 space-y-4 min-h-[280px] w-full max-w-full">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-full">
@@ -248,14 +240,6 @@ export function AIAnalysisSection({
                     {analysis && !loading && (
                         <button onClick={handleCopy} className="p-2 rounded-lg hover:bg-foreground/5 transition-colors flex-shrink-0" title="复制">
                             {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4 text-foreground/50" />}
-                        </button>
-                    )}
-                    {analysis && !loading && (
-                        <button onClick={handleClear} disabled={loading}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground/5 hover:bg-red-500/10 hover:text-red-500 transition-colors text-sm disabled:opacity-50 whitespace-nowrap flex-shrink-0"
-                            title="清除分析内容">
-                            <Trash2 className="w-4 h-4" />
-                            清除
                         </button>
                     )}
                     <button onClick={startAnalysis} disabled={loading}
