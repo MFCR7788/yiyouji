@@ -278,7 +278,7 @@ jobs:
             echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
             echo "# 微信支付私钥" >> "$ENV_FILE"
-            echo "WECHAT_PRIVATE_KEY=\"${{ secrets.WECHAT_PRIVATE_KEY }}\"" >> "$ENV_FILE"
+            echo "WECHAT_PAY_PRIVATE_KEY=\"${{ secrets.WECHAT_PRIVATE_KEY }}\"" >> "$ENV_FILE"
             
             echo "✅ .env.local 文件创建完成"
 
