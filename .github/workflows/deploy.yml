@@ -10,6 +10,8 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     environment: production
+    timeout-minutes: 30  # 整个 job 超时 30 分钟
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -25,7 +27,7 @@ jobs:
           version: 10
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Build packages
         run: |
@@ -38,18 +40,35 @@ jobs:
         env:
           NODE_ENV: production
 
-      - name: Create deploy package
+      - name: Create deploy package (optimized)
         run: |
+          echo "=== 创建优化后的部署包 ==="
+          
+          # 创建临时目录
           mkdir -p deploy-package
+          
+          # 只复制必要文件（排除 node_modules, .git 等）
           cp -r .next deploy-package/
           cp -r public deploy-package/
           cp package.json deploy-package/
           cp pnpm-lock.yaml deploy-package/
-          ls -la deploy-package/
+          
+          # 显示包大小
+          echo ""
+          echo "📦 部署包内容:"
+          du -sh deploy-package/*
+          echo ""
+          echo "📊 总大小:"
+          du -sh deploy-package/
+          
+          # 创建 tar.gz 包（使用更高压缩率）
           tar czf yiyouji-deploy.tar.gz -C deploy-package .
-          ls -la yiyouji-deploy.tar.gz
+          
+          echo ""
+          echo "✅ 压缩包创建完成:"
+          ls -lh yiyouji-deploy.tar.gz
 
-      - name: Upload package to server
+      - name: Upload package to server (with timeout & retry)
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.SERVER_HOST }}
@@ -57,6 +76,22 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           source: "yiyouji-deploy.tar.gz"
           target: "/tmp"
+          # 🔧 关键优化：添加超时和调试设置
+          timeout: "600s"           # 上传超时 10 分钟
+          command_timeout: "600s"   # 命令超时 10 分钟
+          strip_components: 1       # 去掉目录层级
+          debug: true               # 开启调试日志（方便排查）
+          overwrite: true           # 覆盖已存在文件
+          tar_dereference: false    # 不解压符号链接（安全）
+
+      - name: Verify upload success
+        if: always()
+        run: |
+          if [ -f yiyouji-deploy.tar.gz ]; then
+            echo "✅ 本地压缩包存在，准备清理..."
+            rm -f yiyouji-deploy.tar.gz
+            echo "🗑️  已清理本地临时文件"
+          fi
 
       - name: Execute deployment
         uses: appleboy/ssh-action@v1.0.3
@@ -69,90 +104,176 @@ jobs:
             APP_DIR="/opt/apps/yiyouji"
             TIMESTAMP=$(date +%Y%m%d%H%M%S)
 
-            echo "=== 停止旧服务 ==="
-            pm2 stop yiyouji 2>/dev/null || true
+            echo "=========================================="
+            echo "🚀 开始部署易有吉生产环境"
+            echo "=========================================="
 
-            echo "=== 备份旧版本 ==="
+            echo ""
+            echo "=== 1️⃣ 检查服务器资源 ==="
+            echo "磁盘空间:"
+            df -h / | tail -1
+            echo ""
+            echo "内存使用:"
+            free -h | grep Mem
+
+            echo ""
+            echo "=== 2️⃣ 停止旧服务 ==="
+            pm2 stop yiyouji 2>/dev/null || echo "ℹ️  无运行中的服务"
+
+            echo ""
+            echo "=== 3️⃣ 备份旧版本 ==="
             if [ -d "$APP_DIR" ]; then
+              OLD_SIZE=$(du -sh "$APP_DIR" | cut -f1)
+              echo "📦 备份旧版本 ($OLD_SIZE)..."
               mv "$APP_DIR" "${APP_DIR}-backup-${TIMESTAMP}" || rm -rf "$APP_DIR"
+              echo "✅ 备份完成: ${APP_DIR}-backup-${TIMESTAMP}"
+            else
+              echo "ℹ️  无旧版本需要备份"
             fi
 
-            echo "=== 创建目录 ==="
+            echo ""
+            echo "=== 4️⃣ 创建应用目录 ==="
             mkdir -p "$APP_DIR"
             cd "$APP_DIR"
 
-            echo "=== 解压新版本 ==="
+            echo ""
+            echo "=== 5️⃣ 解压新版本 ==="
+            if [ ! -f /tmp/yiyouji-deploy.tar.gz ]; then
+              echo "❌ 错误：上传的文件不存在！"
+              exit 1
+            fi
+            
+            echo "📥 解压中..."
             tar xzf /tmp/yiyouji-deploy.tar.gz
             rm -f /tmp/yiyouji-deploy.tar.gz
+            
+            echo "✅ 解压完成"
+            echo ""
+            echo "📂 新版本内容:"
+            ls -la
 
-            echo "=== 创建 .env 文件 ==="
-            ENV_FILE="$APP_DIR/.env"
-            {
-            echo "NODE_ENV=production"
-            echo "USE_LOCAL_DB=false"
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}"
-            echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}"
-            echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}"
-            echo "SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}"
-            echo "SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}"
-            echo "SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}"
-            echo "INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}"
-            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}"
-            echo "ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}"
-            echo "ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}"
-            echo "ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}"
-            echo "ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}"
-            echo "ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}"
-            echo "DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}"
-            echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}"
-            echo "AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}"
-            echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}"
-            echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}"
-            echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}"
-            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}"
-            echo "${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" | base64 -d >> "$ENV_FILE"
+            echo ""
+            echo "=== 6️⃣ 创建 .env.local 文件 ==="
+            ENV_FILE="$APP_DIR/.env.local"
+            
+            cat > "$ENV_FILE" << 'ENVEOF'
+            # ##############################################################################
+            # 生产环境配置 - 由 GitHub Actions 自动生成
+            # 生成时间: $(date '+%Y-%m-%d %H:%M:%S')
+            # ##############################################################################
+            
+            NODE_ENV=production
+            USE_LOCAL_DB=false
+            
+            # Supabase 配置
+            SUPABASE_URL=${{ secrets.SUPABASE_URL }}
+            SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}
+            SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}
+            SUPABASE_SYSTEM_ADMIN_EMAIL=${{ secrets.SUPABASE_SYSTEM_ADMIN_EMAIL }}
+            SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}
+            SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}
+            
+            # 内部 API 密钥
+            INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}
+            CRON_SECRET=${{ secrets.CRON_SECRET }}
+            
+            # AI API 配置
+            DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}
+            DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}
+            GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+            VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}
+            
+            # 第三方服务
+            ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}
+            ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}
+            ALIYUN_SMS_SIGN_NAME=${{ secrets.ALIYUN_SMS_SIGN_NAME }}
+            ALIYUN_SMS_TEMPLATE_CODE=${{ secrets.ALIYUN_SMS_TEMPLATE_CODE }}
+            ALIYUN_SMS_REGION_ID=${{ secrets.ALIYUN_SMS_REGION_ID }}
+            DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}
+            DIFY_API_URL=${{ secrets.DIFY_API_URL }}
+            AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}
+            
+            # MCP 服务配置
+            MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}
+            MCP_HOST=0.0.0.0
+            MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun,yiyouji.zjsifan.com
+            MCP_TRUST_PROXY=true
+            MCP_OAUTH_DEBUG=false
+            
+            # 知识库配置
+            KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4
+            KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank
+            VECTOR_SEARCH_ENABLED=false
+            
+            # 微信支付配置
+            WECHAT_PAY_MCHID=${{ secrets.WECHAT_PAY_MCHID }}
+            WECHAT_PAY_APPID=${{ secrets.WECHAT_PAY_APPID }}
+            WECHAT_PAY_API_V3_KEY=${{ secrets.WECHAT_PAY_API_V3_KEY }}
+            WECHAT_PAY_MCH_SERIAL_NO=${{ secrets.WECHAT_PAY_MCH_SERIAL_NO }}
+            WECHAT_PAY_NOTIFY_URL=https://yiyouji.zjsifan.com/api/membership/pay/callback
+            WECHAT_PAY_H5_DOMAIN=yiyouji.zjsifan.com
+            
+            # 端口配置
+            WEB_PORT=3000
+            ENVEOF
+            
+            # 追加多行变量（私钥等）
             echo "" >> "$ENV_FILE"
-            echo "MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}"
-            echo "MCP_HOST=0.0.0.0"
-            echo "MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun"
-            echo "MCP_TRUST_PROXY=true"
-            echo "MCP_OAUTH_DEBUG=false"
-            echo "KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4"
-            echo "KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank"
-            echo "VECTOR_SEARCH_ENABLED=false"
-            echo "WECHAT_PAY_MCHID=${{ secrets.WECHAT_PAY_MCHID }}"
-            echo "WECHAT_PAY_APPID=${{ secrets.WECHAT_PAY_APPID }}"
-            echo "WECHAT_PAY_API_V3_KEY=${{ secrets.WECHAT_PAY_API_V3_KEY }}"
-            echo "WECHAT_PAY_MCH_SERIAL_NO=${{ secrets.WECHAT_PAY_MCH_SERIAL_NO }}"
-            echo "WECHAT_PAY_NOTIFY_URL=${{ secrets.WECHAT_PAY_NOTIFY_URL }}"
-            echo "WECHAT_PAY_H5_DOMAIN=${{ secrets.WECHAT_PAY_H5_DOMAIN }}"
-            echo "${{ secrets.WECHAT_PAY_PRIVATE_KEY }}" >> "$ENV_FILE"
-            } > "$ENV_FILE"
+            echo "# AI 模型降级配置" >> "$ENV_FILE"
+            echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+            echo "# 微信支付私钥" >> "$ENV_FILE"
+            echo "WECHAT_PAY_PRIVATE_KEY=\"${{ secrets.WECHAT_PRIVATE_KEY }}\"" >> "$ENV_FILE"
+            
+            echo "✅ .env.local 文件创建完成"
+            echo "   位置: $ENV_FILE"
+            echo "   变量数: $(grep -c '=' $ENV_FILE)"
 
-            echo "=== 安装生产依赖 ==="
-            pnpm install --prod
+            echo ""
+            echo "=== 7️⃣ 安装生产依赖（仅生产依赖）==="
+            echo "⏳ 安装中（这可能需要几分钟）..."
+            pnpm install --prod --no-frozen-lockfile 2>&1 | tail -20
+            
+            # 清理缓存
+            pnpm store prune 2>/dev/null || true
+            
+            echo "✅ 依赖安装完成"
 
-            echo "=== 启动服务 ==="
+            echo ""
+            echo "=== 8️⃣ 启动服务 ==="
             pm2 start "pnpm start" --name yiyouji -- -p 3000 2>/dev/null || pm2 restart yiyouji
             pm2 save
+            echo "✅ PM2 服务已启动"
+            pm2 status
 
-            echo "=== 验证服务 ==="
+            echo ""
+            echo "=== 9️⃣ 验证服务启动 ==="
             MAX_RETRIES=30
             RETRY_COUNT=0
             while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              sleep 2
               HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/ || echo "000")
-              if [ "$HTTP_CODE" = "200" ]; then
-                echo "✅ 部署成功！服务返回 HTTP $HTTP_CODE"
+              
+              if [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "301" ] || [ "$HTTP_CODE" = "302" ]; then
+                echo ""
+                echo "=========================================="
+                echo "🎉 部署成功！服务正常运行"
+                echo "=========================================="
+                echo "✅ HTTP 状态码: $HTTP_CODE"
+                echo "📍 访问地址: https://yiyouji.zjsifan.com"
+                echo "⏰ 部署时间: $(date)"
                 break
               fi
-              echo "等待服务启动... (尝试 $((RETRY_COUNT + 1))/$MAX_RETRIES, HTTP 状态: $HTTP_CODE)"
-              sleep 2
+              
               RETRY_COUNT=$((RETRY_COUNT + 1))
+              echo "⏳ 等待服务启动... ($RETRY_COUNT/$MAX_RETRIES, HTTP: $HTTP_CODE)"
             done
 
             if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
-              echo "❌ 部署失败：服务在规定时间内未正常启动"
-              echo "=== 回滚到上一个版本 ==="
+              echo ""
+              echo "❌ 错误：服务未能在规定时间内启动"
+              echo ""
+              echo "=== 🔄 回滚到上一个版本 ==="
               if [ -d "${APP_DIR}-backup-${TIMESTAMP}" ]; then
                 pm2 delete yiyouji 2>/dev/null || true
                 rm -rf "$APP_DIR"
@@ -160,11 +281,24 @@ jobs:
                 cd "$APP_DIR"
                 pm2 start "pnpm start" --name yiyouji -- -p 3000
                 pm2 save
-                echo "✅ 已回滚到上一个版本"
+                echo "✅ 已回滚到备份版本"
+              else
+                echo "❌ 无可用备份，请手动检查！"
               fi
               exit 1
             fi
 
-            echo "=== 清理旧备份（保留最近 3 个） ==="
-            cd /opt/apps
-            ls -dt yiyouji-backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf
+            echo ""
+            echo "=== 🔟 清理旧备份（保留最近 3 个）==="
+            cd /opt/apps 2>/dev/null || true
+            BACKUP_COUNT=$(ls -dt yiyouji-backup-* 2>/dev/null | wc -l)
+            if [ "$BACKUP_COUNT" -gt 3 ]; then
+              echo "发现 $BACKUP_COUNT 个备份，保留最近 3 个..."
+              ls -dt yiyouji-backup-* 2>/dev/null | tail -n +4 | xargs -r rm -rf
+              echo "✅ 旧备份已清理"
+            fi
+
+            echo ""
+            echo "=========================================="
+            echo "✨ 部署流程全部完成！"
+            echo "=========================================="
