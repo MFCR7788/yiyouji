@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { CheckCircle, XCircle, Loader2, AlertTriangle, CreditCard } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/components/ui/Toast';
 
 interface PaymentModalProps {
@@ -11,11 +11,10 @@ interface PaymentModalProps {
   orderId: string;
   planName: string;
   price: number;
-  paymentConfigured?: boolean;
   onPaymentSuccess?: () => void;
 }
 
-type PaymentStatus = 'pending' | 'success' | 'error' | 'loading' | 'manual-confirm';
+type PaymentStatus = 'pending' | 'success' | 'error' | 'loading' | 'expired';
 
 export function PaymentModal({
   isOpen,
@@ -24,7 +23,6 @@ export function PaymentModal({
   orderId,
   planName,
   price,
-  paymentConfigured = true,
   onPaymentSuccess,
 }: PaymentModalProps) {
   const [status, setStatus] = useState<PaymentStatus>('loading');
@@ -32,28 +30,22 @@ export function PaymentModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const { showToast } = useToast();
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const pollCountRef = useRef(0);
 
   const initializeState = useCallback(() => {
     if (codeUrl) {
-      // 有动态二维码（微信支付API已配置）
       setErrorMessage(null);
       setStatus('pending');
-    } else if (!paymentConfigured) {
-      // 无动态二维码且未配置支付 → 使用静态收款码或手动确认模式
-      setErrorMessage(null);
-      setStatus('manual-confirm');
     } else {
-      // 其他错误情况
-      setErrorMessage('支付服务暂时不可用，请稍后重试');
+      setErrorMessage('二维码生成失败，请稍后重试');
       setStatus('error');
     }
     setPolling(false);
-  }, [codeUrl, paymentConfigured]);
+    pollCountRef.current = 0;
+  }, [codeUrl]);
 
   useEffect(() => {
-    if (!isOpen || !orderId) {
-      return;
-    }
+    if (!isOpen || !orderId) return;
 
     if (pollingIntervalRef.current) {
       clearInterval(pollingIntervalRef.current);
@@ -64,14 +56,25 @@ export function PaymentModal({
   }, [isOpen, orderId, initializeState]);
 
   useEffect(() => {
-    if (!isOpen || !orderId || status !== 'pending') {
-      return;
-    }
+    if (!isOpen || !orderId || status !== 'pending') return;
 
     setPolling(true);
 
     pollingIntervalRef.current = setInterval(async () => {
       try {
+        pollCountRef.current += 1;
+
+        // 超时保护：5分钟未支付则标记过期
+        if (pollCountRef.current > 150) {
+          setStatus('expired');
+          setPolling(false);
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          return;
+        }
+
         const res = await fetch(`/api/membership/order/${orderId}/status`);
         const data = await res.json();
 
@@ -86,9 +89,14 @@ export function PaymentModal({
             }
             showToast('success', '支付成功！');
             onPaymentSuccess?.();
+          } else if (orderStatus === 'closed' || orderStatus === 'cancelled') {
+            setStatus('expired');
+            setPolling(false);
+            if (pollingIntervalRef.current) {
+              clearInterval(pollingIntervalRef.current);
+              pollingIntervalRef.current = null;
+            }
           }
-        } else {
-          console.warn('[Payment] Poll returned error:', data.error);
         }
       } catch (e) {
         console.error('[Payment] Poll error:', e);
@@ -112,24 +120,9 @@ export function PaymentModal({
     };
   }, []);
 
-  const handleManualConfirm = async () => {
-    try {
-      const res = await fetch(`/api/membership/order/${orderId}/confirm`, {
-        method: 'POST',
-      });
-      const data = await res.json();
-
-      if (data.success && data.data.confirmed) {
-        setStatus('success');
-        showToast('success', '支付确认成功！');
-        onPaymentSuccess?.();
-      } else {
-        showToast('error', data.error || '确认失败，请联系管理员');
-      }
-    } catch (e) {
-      console.error('[Payment] Manual confirm error:', e);
-      showToast('error', '网络错误，请稍后重试');
-    }
+  const handleRetry = () => {
+    setStatus('loading');
+    onClose();
   };
 
   if (!isOpen) return null;
@@ -159,26 +152,50 @@ export function PaymentModal({
           </div>
         ) : status === 'error' ? (
           <div className="text-center py-8">
-            <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
-            <h3 className="text-xl font-bold text-gray-800 mb-2">支付暂时不可用</h3>
-            <p className="text-gray-600 mb-6">{errorMessage}</p>
+            <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2">支付失败</h3>
+            <p className="text-gray-600 mb-6">{errorMessage || '支付服务暂时不可用，请稍后重试'}</p>
+            <button
+              onClick={handleRetry}
+              className="w-full bg-[#1f9d6d] text-white py-3 rounded-lg font-medium hover:bg-[#178a5d] transition-colors mb-3"
+            >
+              重新购买
+            </button>
             <button
               onClick={onClose}
               className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
-              关闭
+              返回
+            </button>
+          </div>
+        ) : status === 'expired' ? (
+          <div className="text-center py-8">
+            <AlertTriangle className="w-16 h-16 text-yellow-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-800 mb-2">订单已过期</h3>
+            <p className="text-gray-600 mb-6">支付超时，订单已自动关闭，请重新发起购买</p>
+            <button
+              onClick={handleRetry}
+              className="w-full bg-[#1f9d6d] text-white py-3 rounded-lg font-medium hover:bg-[#178a5d] transition-colors mb-3"
+            >
+              重新购买
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full border border-gray-300 text-gray-700 py-3 rounded-lg font-medium hover:bg-gray-50 transition-colors"
+            >
+              返回
             </button>
           </div>
         ) : status === 'loading' ? (
           <div className="text-center py-8">
             <Loader2 className="w-12 h-12 text-[#1f9d6d] mx-auto mb-4 animate-spin" />
             <h3 className="text-lg font-semibold text-gray-800 mb-2">正在准备支付...</h3>
-            <p className="text-gray-500 text-sm">请稍候，正在创建订单</p>
+            <p className="text-gray-500 text-sm">请稍候，正在生成微信支付二维码</p>
           </div>
-        ) : status === 'manual-confirm' ? (
-          /* 手动支付/静态收款码模式 */
+        ) : (
+          /* pending - 微信支付二维码模式 */
           <div className="text-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">扫码付款</h3>
+            <h3 className="text-xl font-bold text-gray-800 mb-2">微信扫码支付</h3>
             <p className="text-gray-600 mb-4">
               开通 {planName}
             </p>
@@ -187,83 +204,31 @@ export function PaymentModal({
               ¥{price.toFixed(2)}
             </div>
 
-            {/* 静态收款码区域 */}
-            <div className="flex justify-center mb-6">
-              <div className="bg-white p-4 border-2 border-[#1f9d6d] rounded-xl shadow-lg">
-                <StaticQRCode size={220} />
+            {codeUrl ? (
+              <div className="flex justify-center mb-4">
+                <div className="bg-white p-4 border-2 border-[#07C160] rounded-xl shadow-md">
+                  <QRCode value={codeUrl} size={220} />
+                </div>
               </div>
-            </div>
+            ) : null}
 
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-6">
-              <p className="text-xs text-blue-700 leading-relaxed">
-                请使用<strong>微信</strong>或<strong>支付宝</strong>扫描上方二维码完成付款。
-                付款完成后，请点击下方按钮确认。
+            {polling && (
+              <div className="flex items-center justify-center text-[#07C160] mb-4">
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                <span className="text-sm font-medium">等待微信支付...</span>
+              </div>
+            )}
+
+            <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 mb-4">
+              <p className="text-xs text-green-700 leading-relaxed">
+                请使用<strong>微信扫一扫</strong>扫描上方二维码完成付款。
+                支付成功后页面将自动跳转。
               </p>
             </div>
 
-            {/* 确认按钮 */}
-            <button
-              onClick={handleManualConfirm}
-              className="w-full bg-[#1f9d6d] text-white py-3 rounded-lg font-medium hover:bg-[#178a5d] transition-colors flex items-center justify-center gap-2 mb-3"
-            >
-              <CreditCard className="w-5 h-5" />
-              我已完成付款
-            </button>
-
-            <button
-              onClick={() => {
-                showToast('info', `订单号：${orderId}\n您可以稍后在"我的订单"中查看`);
-                onClose();
-              }}
-              className="w-full text-sm text-gray-500 underline hover:text-gray-700 transition-colors"
-            >
-              稍后支付
-            </button>
-          </div>
-        ) : (
-          /* 自动轮询模式（微信支付API） */
-          <div className="text-center">
-            <h3 className="text-xl font-bold text-gray-800 mb-2">请扫码支付</h3>
-            <p className="text-gray-600 mb-6">
-              开通 {planName}
+            <p className="text-xs text-gray-400">
+              订单号：{orderId.slice(0, 8)}...
             </p>
-
-            <div className="text-3xl font-bold text-[#1f9d6d] mb-6">
-              ¥{price.toFixed(2)}
-            </div>
-
-            {codeUrl ? (
-              <div className="flex justify-center mb-6">
-                <div className="bg-white p-4 border rounded-lg shadow-sm">
-                  <QRCode value={codeUrl} size={200} />
-                </div>
-              </div>
-            ) : (
-              <div className="bg-gray-100 p-6 rounded-lg mb-6">
-                <p className="text-gray-600">二维码生成失败，请联系管理员</p>
-              </div>
-            )}
-
-            {polling && (
-              <div className="flex items-center justify-center text-gray-500 mb-4">
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                <span className="text-sm">等待支付...</span>
-              </div>
-            )}
-
-            <p className="text-sm text-gray-400">
-              使用微信扫描上方二维码完成支付
-            </p>
-
-            <button
-              onClick={() => {
-                showToast('info', '订单已创建，您可以稍后在我的订单中查看');
-                onClose();
-              }}
-              className="mt-4 w-full text-sm text-gray-500 underline hover:text-gray-700 transition-colors"
-            >
-              稍后支付
-            </button>
           </div>
         )}
       </div>
@@ -279,49 +244,6 @@ function QRCode({ value, size }: { value: string; size: number }) {
       className="rounded"
       width={size}
       height={size}
-    />
-  );
-}
-
-function StaticQRCode({ size }: { size: number }) {
-  /*
-   * 静态收款码组件
-   *
-   * 使用说明：
-   * 1. 将你的微信/支付宝收款码图片放到 public/images/payment-qr.png（或 .svg）
-   * 2. 或者在环境变量 NEXT_PUBLIC_PAYMENT_QR_URL 中设置图片URL
-   * 3. 如果都没有配置，会显示占位符提示
-   */
-
-  const qrImageUrl = process.env.NEXT_PUBLIC_PAYMENT_QR_URL || '/images/payment-qr.svg';
-
-  return (
-    <img
-      src={qrImageUrl}
-      alt="收款二维码"
-      className="rounded"
-      width={size}
-      height={size}
-      onError={(e) => {
-        // 图片加载失败时显示占位符
-        const target = e.target as HTMLImageElement;
-        target.style.display = 'none';
-        const parent = target.parentElement;
-        if (parent && !parent.querySelector('.qr-placeholder')) {
-          const placeholder = document.createElement('div');
-          placeholder.className = 'qr-placeholder flex flex-col items-center justify-center bg-gray-100 rounded';
-          placeholder.style.width = `${size}px`;
-          placeholder.style.height = `${size}px`;
-          placeholder.innerHTML = `
-            <svg class="w-12 h-12 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"/>
-            </svg>
-            <span class="text-xs text-gray-500">暂无收款码</span>
-            <span class="text-xs text-gray-400 mt-1">请联系管理员配置</span>
-          `;
-          parent.appendChild(placeholder);
-        }
-      }}
     />
   );
 }
