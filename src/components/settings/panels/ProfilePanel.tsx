@@ -528,6 +528,36 @@ export default function ProfilePanel() {
                   {displayPhone || '未绑定'}
                 </div>
               </div>
+
+              <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">用户等级</p>
+                </div>
+                <div className="rounded-md bg-background-secondary/50 px-3 py-2 text-sm">
+                  <span className={currentPlan === 'free' ? 'text-foreground/50' : currentPlan === 'plus' ? 'text-blue-600' : 'text-purple-600'}>
+                    {currentPlan === 'free' ? '免费版' : currentPlan === 'plus' ? 'Plus会员' : 'Pro会员'}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex flex-col justify-between gap-4 p-4 py-2 sm:flex-row sm:items-center">
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">到期日期</p>
+                </div>
+                <div className="rounded-md bg-background-secondary/50 px-3 py-2 text-sm">
+                  {membership?.expiresAt ? (
+                    <span className="text-foreground/70">
+                      {new Date(membership.expiresAt).toLocaleDateString('zh-CN', { 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </span>
+                  ) : (
+                    <span className="text-foreground/50">终身免费</span>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
         </div>
