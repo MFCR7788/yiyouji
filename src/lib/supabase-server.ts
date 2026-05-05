@@ -19,13 +19,6 @@ export function getSystemAdminClient(): SupabaseClient {
     const url = getSupabaseUrl();
     const serviceRoleKey = getSupabaseServiceRoleKey();
     
-    const systemAdminEmail = process.env.SUPABASE_SYSTEM_ADMIN_EMAIL;
-    const systemAdminPassword = process.env.SUPABASE_SYSTEM_ADMIN_PASSWORD;
-    
-    if (process.env.NODE_ENV === 'production' && (!systemAdminEmail || !systemAdminPassword)) {
-        throw new Error('Missing SUPABASE_SYSTEM_ADMIN_EMAIL or SUPABASE_SYSTEM_ADMIN_PASSWORD');
-    }
-
     const apiKey = serviceRoleKey || getSupabaseAnonKey();
 
     let fetchOptions: Record<string, unknown> | undefined;
