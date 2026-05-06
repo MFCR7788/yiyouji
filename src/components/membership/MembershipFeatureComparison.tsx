@@ -9,7 +9,7 @@ const FeatureRow = ({ feature, free, plus, pro }: {
     pro: string | boolean;
 }) => (
     <tr className="border-b border-[#ebe8e2]">
-        <td className="py-3 pl-8 pr-5 text-sm text-[#37352f]/80 font-medium" style={{ paddingLeft: '2rem' }}>{feature}</td>
+        <td className="py-3 pl-8 pr-5 text-sm text-[#37352f]/80 font-medium" style={{ paddingLeft: '2.5rem' }}>{feature}</td>
         <td className="py-3 px-4 text-center">
             {typeof free === 'string' ? (
                 <span className="text-sm text-[#37352f]/60">{free}</span>
@@ -76,9 +76,9 @@ export function MembershipFeatureComparison() {
                                 plus="+10积分"
                                 pro="+10积分"
                             />
-                            <FeatureRow 
-                                feature="积分上限"
-                                free="10"
+                            <FeatureRow
+                                feature="赠送积分"
+                                free="0"
                                 plus="500"
                                 pro="1000"
                             />

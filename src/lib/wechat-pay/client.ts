@@ -1,4 +1,5 @@
 import crypto from 'crypto'
+import { env } from 'process'
 import type {
   WechatPayConfig,
   CreateNativePayRequest,
@@ -20,6 +21,19 @@ export class WechatPayClient {
 
   constructor(config: WechatPayConfig) {
     this.config = config
+  }
+
+  private createFetchOptions(): RequestInit {
+    const originalProxy = env.ALL_PROXY || env.all_proxy || env.HTTP_PROXY || env.http_proxy || env.HTTPS_PROXY || env.https_proxy
+
+    if (originalProxy) {
+      console.log('[WechatPay] 检测到代理配置，将使用直连模式:', { proxy: originalProxy })
+    }
+
+    return {
+      // @ts-ignore - undici dispatcher 类型
+      dispatcher: new (require('undici').Dispatcher)(),
+    }
   }
 
   private buildAuthorization(method: string, url: string, body: string = ''): string {
@@ -94,6 +108,7 @@ export class WechatPayClient {
     let response: Response
     try {
       response = await fetch(url, {
+        ...this.createFetchOptions(),
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -162,6 +177,7 @@ export class WechatPayClient {
     const authorization = this.buildAuthorization('GET', `/v3/pay/transactions/out-trade-no/${outTradeNo}?mchid=${this.config.mchid}`)
 
     const response = await fetch(url, {
+      ...this.createFetchOptions(),
       method: 'GET',
       headers: {
         'Authorization': authorization,

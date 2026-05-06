@@ -98,17 +98,30 @@ export async function POST(request: NextRequest) {
             }
 
             if (errorMessage.includes('WechatPay')) {
-                const userMessage = errorMessage.includes('认证失败')
-                    ? '支付服务配置错误，请联系管理员'
-                    : errorMessage.includes('网络连接失败')
-                      ? '支付服务暂时不可用，请稍后重试'
-                      : '支付服务暂时不可用，请稍后重试或联系管理员';
+                let userMessage: string
+                let errorCode: string = 'PAYMENT_SERVICE_ERROR'
+
+                if (errorMessage.includes('认证失败') || errorMessage.includes('SIGN_ERROR') || errorMessage.includes('NO_AUTH')) {
+                    userMessage = '支付服务配置错误，请联系管理员'
+                    errorCode = 'PAYMENT_AUTH_ERROR'
+                } else if (errorMessage.includes('网络连接失败') || errorMessage.includes('ECONNREFUSED') || errorMessage.includes('ETIMEDOUT')) {
+                    userMessage = '网络连接异常，请检查网络设置或稍后重试'
+                    errorCode = 'PAYMENT_NETWORK_ERROR'
+                } else if (errorMessage.includes('代理') || errorMessage.includes('proxy') || errorMessage.includes('PROXY')) {
+                    userMessage = '代理服务器连接失败，请检查代理设置或联系管理员'
+                    errorCode = 'PAYMENT_PROXY_ERROR'
+                } else if (errorMessage.includes('参数错误') || errorMessage.includes('PARAM_ERROR') || errorMessage.includes('INVALID_')) {
+                    userMessage = '支付请求参数错误，请联系管理员'
+                    errorCode = 'PAYMENT_PARAM_ERROR'
+                } else {
+                    userMessage = '支付服务暂时不可用，请稍后重试或联系管理员'
+                }
 
                 return jsonError(userMessage, 503, {
                     success: false,
-                    code: 'PAYMENT_SERVICE_ERROR',
+                    code: errorCode,
                     ...(isDev && { debugInfo: errorMessage }),
-                });
+                })
             }
 
             return jsonError(`订单处理失败：${errorMessage}`, 500, {

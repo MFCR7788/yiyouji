@@ -157,7 +157,18 @@ export function PaymentModal({
           <div className="text-center py-8">
             <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
             <h3 className="text-xl font-bold text-gray-800 mb-2">支付失败</h3>
-            <p className="text-gray-600 mb-6">{errorMessage || '支付服务暂时不可用，请稍后重试'}</p>
+            <p className="text-gray-600 mb-4">{errorMessage || '支付服务暂时不可用，请稍后重试或联系管理员'}</p>
+            <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 mb-6">
+              <p className="text-xs text-red-700 leading-relaxed">
+                可能的原因：
+              </p>
+              <ul className="text-xs text-red-600 mt-2 space-y-1 list-disc list-inside">
+                <li>网络连接不稳定</li>
+                <li>代理服务器未运行（如使用了代理）</li>
+                <li>支付服务配置问题</li>
+                <li>微信支付服务暂时维护</li>
+              </ul>
+            </div>
             <button
               onClick={handleRetry}
               className="w-full bg-[#1f9d6d] text-white py-3 rounded-lg font-medium hover:bg-[#178a5d] transition-colors mb-3"
