@@ -223,11 +223,24 @@ jobs:
             echo ""
             echo "=== 6️⃣ 创建 .env.local 文件 ==="
             ENV_FILE=".env.local"
-            
+
             # 使用 echo 命令逐个写入环境变量，确保 GitHub Actions 表达式被正确解析
             echo "NODE_ENV=production" > "$ENV_FILE"
             echo "USE_LOCAL_DB=false" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== ⭐ 代理配置（关键！）====================
+            echo "# 代理配置 - 生产环境不使用代理" >> "$ENV_FILE"
+            echo "ALL_PROXY=" >> "$ENV_FILE"
+            echo "all_proxy=" >> "$ENV_FILE"
+            echo "HTTP_PROXY=" >> "$ENV_FILE"
+            echo "http_proxy=" >> "$ENV_FILE"
+            echo "HTTPS_PROXY=" >> "$ENV_FILE"
+            echo "https_proxy=" >> "$ENV_FILE"
+            echo "NO_PROXY=localhost,127.0.0.1,::1,*.weixin.qq.com,*.qq.com,*.supabase.co" >> "$ENV_FILE"
+            echo "" >> "$ENV_FILE"
+
+            # ==================== Supabase 配置 ====================
             echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> "$ENV_FILE"
             echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> "$ENV_FILE"
             echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}" >> "$ENV_FILE"
@@ -236,14 +249,20 @@ jobs:
             echo "SUPABASE_SYSTEM_ADMIN_PASSWORD=${{ secrets.SUPABASE_SYSTEM_ADMIN_PASSWORD }}" >> "$ENV_FILE"
             echo "SUPABASE_DB_URL=${{ secrets.SUPABASE_DB_URL }}" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== 内部 API 密钥 ====================
             echo "INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}" >> "$ENV_FILE"
             echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== AI API 配置 ====================
             echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> "$ENV_FILE"
             echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}" >> "$ENV_FILE"
             echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> "$ENV_FILE"
             echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== 第三方服务配置 ====================
             echo "ALIYUN_SMS_ACCESS_KEY_ID=${{ secrets.ALIYUN_SMS_ACCESS_KEY_ID }}" >> "$ENV_FILE"
             echo "ALIYUN_SMS_ACCESS_KEY_SECRET=${{ secrets.ALIYUN_SMS_ACCESS_KEY_SECRET }}" >> "$ENV_FILE"
             echo "ALIYUN_SMS_SIGN_NAME=魔法超人" >> "$ENV_FILE"
@@ -254,15 +273,22 @@ jobs:
             echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}" >> "$ENV_FILE"
             echo "AMAP_WEB_SERVICE_KEY=${{ secrets.AMAP_WEB_SERVICE_KEY }}" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== MCP 服务配置 ====================
             echo "MCP_JWT_SECRET=${{ secrets.MCP_JWT_SECRET }}" >> "$ENV_FILE"
             echo "MCP_HOST=0.0.0.0" >> "$ENV_FILE"
             echo "MCP_ALLOWED_ORIGINS=https://www.mingai.fun,https://mingai.fun,yiyouji.zjsifan.com" >> "$ENV_FILE"
             echo "MCP_TRUST_PROXY=true" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== 知识库配置 ====================
             echo "KNOWLEDGE_BASE_EMBEDDING_MODEL_ID=text-embedding-v4" >> "$ENV_FILE"
             echo "KNOWLEDGE_BASE_RERANK_MODEL_ID=qwen3-rerank" >> "$ENV_FILE"
             echo "VECTOR_SEARCH_ENABLED=false" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== ⭐ 微信支付配置（核心功能）====================
+            echo "# 微信支付 - 基础配置" >> "$ENV_FILE"
             echo "WECHAT_PAY_MCHID=1624143377" >> "$ENV_FILE"
             echo "WECHAT_PAY_APPID=wx314d6d3cfbd33e79" >> "$ENV_FILE"
             echo "WECHAT_PAY_API_V3_KEY=SmallFish7788Admin03072298887777" >> "$ENV_FILE"
@@ -270,23 +296,36 @@ jobs:
             echo "WECHAT_PAY_NOTIFY_URL=https://yiyouji.zjsifan.com/api/membership/pay/callback" >> "$ENV_FILE"
             echo "WECHAT_PAY_H5_DOMAIN=yiyouji.zjsifan.com" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
+
+            # ==================== 微信支付私钥（最关键！）====================
+            echo "# 微信支付私钥 - 从 GitHub Secrets 读取" >> "$ENV_FILE"
+
+            # 方法 1：优先使用 WECHAT_PRIVATE_KEY Secret
+            if [ -n "${{ secrets.WECHAT_PRIVATE_KEY }}" ]; then
+                echo 'WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PRIVATE_KEY }}"' >> "$ENV_FILE"
+                echo "✅ 微信支付私钥已从 WECHAT_PRIVATE_KEY Secret 配置"
+            # 方法 2：备用方案 - 使用 WECHAT_PAY_PRIVATE_KEY Secret
+            elif [ -n "${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}" ]; then
+                echo 'WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}"' >> "$ENV_FILE"
+                echo "✅ 微信支付私钥已从 WECHAT_PAY_PRIVATE_KEY_FULL Secret 配置"
+            else
+                echo "⚠️  警告：未检测到微信支付私钥！" >> "$ENV_FILE"
+                echo "⚠️  请在 GitHub Settings > Secrets > Actions 中添加：" >> "$ENV_FILE"
+                echo "   - WECHAT_PRIVATE_KEY 或 WECHAT_PAY_PRIVATE_KEY_FULL" >> "$ENV_FILE"
+                echo "⚠️  微信支付功能将不可用！" >> "$ENV_FILE"
+                echo "" >> "$ENV_FILE"
+                echo "WECHAT_PAY_PRIVATE_KEY=" >> "$ENV_FILE"
+            fi
+
+            echo "" >> "$ENV_FILE"
+
+            # ==================== 其他配置 ====================
             echo "WEB_PORT=3000" >> "$ENV_FILE"
-            
-            # 追加多行变量
             echo "" >> "$ENV_FILE"
             echo "# AI 模型降级配置" >> "$ENV_FILE"
             echo "MINGAI_FALLBACK_MODELS_JSON=${{ secrets.MINGAI_FALLBACK_MODELS_JSON }}" >> "$ENV_FILE"
-            echo "" >> "$ENV_FILE"
-            echo "# 微信支付私钥" >> "$ENV_FILE"
-            
-            # 添加微信支付私钥 - 优先从 GitHub Secrets 读取
-            if [ -n "${{ secrets.WECHAT_PRIVATE_KEY }}" ]; then
-                echo "WECHAT_PAY_PRIVATE_KEY=${{ secrets.WECHAT_PRIVATE_KEY }}" >> "$ENV_FILE"
-                echo "✅ 微信支付私钥已从 GitHub Secrets 配置"
-            else
-                echo "⚠️ WECHAT_PRIVATE_KEY 未配置在 GitHub Secrets 中，微信支付功能将不可用"
-            fi
-            
+
+            echo ""
             echo "✅ .env.local 文件创建完成"
 
             echo ""
