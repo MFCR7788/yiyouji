@@ -11,7 +11,7 @@
 'use client';
 
 import { useState, useEffect, type ReactNode } from 'react';
-import { RefreshCw, Copy, Check } from 'lucide-react';
+import { RefreshCw, Copy, Check, Trash2 } from 'lucide-react';
 import { SoundWaveLoader } from '@/components/ui/SoundWaveLoader';
 import { AIAnalysisLock } from '@/components/bazi/result/AIAnalysisLock';
 import { MarkdownContent } from '@/components/ui/MarkdownContent';
@@ -181,6 +181,13 @@ export function AIAnalysisSection({
         setTimeout(() => setCopied(false), 2000);
     };
 
+    const handleClear = () => {
+        setAnalysis('');
+        setAnalysisReasoning(null);
+        setIsUnlocked(false);
+        showToast('success', '分析结果已清除');
+    };
+
     const placeholder = (
         <div className="p-3 sm:p-4 md:p-6 space-y-4 min-h-[280px] w-full max-w-full">
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full max-w-full">
@@ -247,6 +254,13 @@ export function AIAnalysisSection({
                         {loading ? <SoundWaveLoader variant="inline" /> : <RefreshCw className="w-4 h-4" />}
                         {loading ? '分析中...' : '重新分析'}
                     </button>
+                    {analysis && !loading && (
+                        <button onClick={handleClear}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground/5 hover:bg-foreground/10 transition-colors text-sm whitespace-nowrap">
+                            <Trash2 className="w-4 h-4" />
+                            清除
+                        </button>
+                    )}
                 </div>
             </div>
             <div className="p-3 sm:p-4 md:p-6 prose prose-sm sm:prose-base dark:prose-invert max-w-full min-h-[200px] w-full overflow-hidden box-border">

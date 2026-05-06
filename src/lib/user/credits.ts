@@ -183,7 +183,7 @@ async function runCreditDecrement(userId: string, amount = 1): Promise<
     
     try {
         const { data, error } = await supabase
-            .rpc('decrement_ai_chat_count', { user_id: userId });
+            .rpc('decrement_ai_chat_count', { user_id: userId, amount: amount });
 
         if (error) {
             console.error('[credits] RPC decrement failed:', error.message, error.code, error.hint);
@@ -191,6 +191,7 @@ async function runCreditDecrement(userId: string, amount = 1): Promise<
         }
 
         if (typeof data === 'number') {
+            console.log(`[credits] RPC decrement successful: userId=${userId.substring(0, 8)}..., amount=${amount}, remaining=${data}`);
             return {
                 status: 'ok',
                 remaining: data,
@@ -239,6 +240,7 @@ async function runCreditDecrementDirect(
         }
 
         if (data && typeof data.ai_chat_count === 'number') {
+            console.log(`[credits] Direct decrement successful: userId=${userId.substring(0, 8)}..., amount=${amount}, remaining=${data.ai_chat_count}`);
             return {
                 status: 'ok',
                 remaining: data.ai_chat_count,
