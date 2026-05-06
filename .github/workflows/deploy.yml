@@ -320,10 +320,10 @@ jobs:
                 echo "✅ 微信支付配置已从服务器保留"
             # 方法 2：其次尝试从 GitHub Secrets 读取
             elif [ -n "${{ secrets.WECHAT_PRIVATE_KEY }}" ]; then
-                echo 'WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PRIVATE_KEY }}"' >> "$ENV_FILE"
+                printf 'WECHAT_PAY_PRIVATE_KEY="%s"\n' "${{ secrets.WECHAT_PRIVATE_KEY }}" >> "$ENV_FILE"
                 echo "✅ 微信支付私钥已从 WECHAT_PRIVATE_KEY Secret 配置"
             elif [ -n "${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}" ]; then
-                echo 'WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}"' >> "$ENV_FILE"
+                printf 'WECHAT_PAY_PRIVATE_KEY="%s"\n' "${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}" >> "$ENV_FILE"
                 echo "✅ 微信支付私钥已从 WECHAT_PAY_PRIVATE_KEY_FULL Secret 配置"
             else
                 echo "⚠️  警告：未检测到微信支付私钥！" >> "$ENV_FILE"
