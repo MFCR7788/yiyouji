@@ -223,6 +223,20 @@ jobs:
             echo ""
             echo "=== 6️⃣ 创建 .env.local 文件 ==="
             ENV_FILE=".env.local"
+            
+            # ⭐ 关键修改：保留服务器上已有的微信支付配置
+            # 如果服务器上已有 .env 文件，先备份并提取微信支付配置
+            WECHAT_CONFIG=""
+            if [ -f "$ENV_FILE" ]; then
+                echo "ℹ️  检测到已存在 $ENV_FILE，将保留微信支付配置"
+                cp "$ENV_FILE" "${ENV_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+                
+                # 提取微信支付相关配置（以 WECHAT_PAY_ 开头的行）
+                WECHAT_CONFIG=$(grep -E "^WECHAT_PAY_" "$ENV_FILE" 2>/dev/null)
+                if [ -n "$WECHAT_CONFIG" ]; then
+                    echo "✅ 已检测到微信支付配置，将保留"
+                fi
+            fi
 
             # 使用 echo 命令逐个写入环境变量，确保 GitHub Actions 表达式被正确解析
             echo "NODE_ENV=production" > "$ENV_FILE"
@@ -297,21 +311,22 @@ jobs:
             echo "WECHAT_PAY_H5_DOMAIN=yiyouji.zjsifan.com" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
 
-            # ==================== 微信支付私钥（最关键！）====================
-            echo "# 微信支付私钥 - 从 GitHub Secrets 读取" >> "$ENV_FILE"
-
-            # 方法 1：优先使用 WECHAT_PRIVATE_KEY Secret
-            if [ -n "${{ secrets.WECHAT_PRIVATE_KEY }}" ]; then
+            # ==================== ⭐ 微信支付私钥（优先从服务器保留配置读取）====================
+            echo "# 微信支付私钥" >> "$ENV_FILE"
+            
+            # 方法 1：优先使用服务器上已有的配置（用户直接设置在服务器上）
+            if [ -n "$WECHAT_CONFIG" ]; then
+                echo "$WECHAT_CONFIG" >> "$ENV_FILE"
+                echo "✅ 微信支付配置已从服务器保留"
+            # 方法 2：其次尝试从 GitHub Secrets 读取
+            elif [ -n "${{ secrets.WECHAT_PRIVATE_KEY }}" ]; then
                 echo 'WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PRIVATE_KEY }}"' >> "$ENV_FILE"
                 echo "✅ 微信支付私钥已从 WECHAT_PRIVATE_KEY Secret 配置"
-            # 方法 2：备用方案 - 使用 WECHAT_PAY_PRIVATE_KEY Secret
             elif [ -n "${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}" ]; then
                 echo 'WECHAT_PAY_PRIVATE_KEY="${{ secrets.WECHAT_PAY_PRIVATE_KEY_FULL }}"' >> "$ENV_FILE"
                 echo "✅ 微信支付私钥已从 WECHAT_PAY_PRIVATE_KEY_FULL Secret 配置"
             else
                 echo "⚠️  警告：未检测到微信支付私钥！" >> "$ENV_FILE"
-                echo "⚠️  请在 GitHub Settings > Secrets > Actions 中添加：" >> "$ENV_FILE"
-                echo "   - WECHAT_PRIVATE_KEY 或 WECHAT_PAY_PRIVATE_KEY_FULL" >> "$ENV_FILE"
                 echo "⚠️  微信支付功能将不可用！" >> "$ENV_FILE"
                 echo "" >> "$ENV_FILE"
                 echo "WECHAT_PAY_PRIVATE_KEY=" >> "$ENV_FILE"
