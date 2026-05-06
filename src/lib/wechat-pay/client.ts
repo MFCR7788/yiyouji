@@ -30,10 +30,7 @@ export class WechatPayClient {
       console.log('[WechatPay] 检测到代理配置，将使用直连模式:', { proxy: originalProxy })
     }
 
-    return {
-      // @ts-ignore - undici dispatcher 类型
-      dispatcher: new (require('undici').Dispatcher)(),
-    }
+    return {}
   }
 
   private buildAuthorization(method: string, url: string, body: string = ''): string {
