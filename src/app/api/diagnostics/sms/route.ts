@@ -33,7 +33,7 @@ export async function GET() {
             );
 
             const startTime = Date.now();
-            const { data, error } = await testClient.from('users').select('count', { count: 'exact', head: true });
+            const { error } = await testClient.from('users').select('count', { count: 'exact', head: true });
             const elapsed = Date.now() - startTime;
 
             diagnostics.supabase = {
