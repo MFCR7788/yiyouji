@@ -182,12 +182,36 @@ async function runCreditDecrement(userId: string, amount = 1): Promise<
     const supabase = getSystemAdminClient();
     
     try {
-        const { data, error } = await supabase
+        let { data, error } = await supabase
             .rpc('decrement_ai_chat_count', { user_id: userId, amount: amount });
 
         if (error) {
-            console.error('[credits] RPC decrement failed:', error.message, error.code, error.hint);
-            return await runCreditDecrementDirect(userId, amount, `RPC: ${error.message}`);
+            console.warn('[credits] RPC decrement with amount failed, trying legacy version:', error.message);
+            
+            // 回退到旧版本（只接受 user_id 参数，固定扣减1积分）
+            if (amount === 1) {
+                const legacyResult = await supabase
+                    .rpc('decrement_ai_chat_count', { user_id: userId });
+                
+                if (legacyResult.error) {
+                    console.error('[credits] Legacy RPC decrement failed:', legacyResult.error.message);
+                    return await runCreditDecrementDirect(userId, amount, `Legacy RPC: ${legacyResult.error.message}`);
+                }
+                
+                if (typeof legacyResult.data === 'number') {
+                    console.log(`[credits] Legacy RPC decrement successful: userId=${userId.substring(0, 8)}..., amount=1, remaining=${legacyResult.data}`);
+                    return {
+                        status: 'ok',
+                        remaining: legacyResult.data,
+                    };
+                }
+                
+                return { status: 'no_change' };
+            }
+            
+            // amount > 1 时，旧版本不支持，直接使用直接更新方式
+            console.warn('[credits] amount > 1 but legacy RPC only supports 1, falling back to direct');
+            return await runCreditDecrementDirect(userId, amount, `RPC version mismatch: amount=${amount}`);
         }
 
         if (typeof data === 'number') {
