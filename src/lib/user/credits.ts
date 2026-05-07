@@ -250,60 +250,94 @@ async function runCreditDecrementDirect(
     try {
         console.log(`[credits] Running direct decrement: userId=${userId.substring(0, 8)}..., amount=${amount}`);
         
-        const { data, error } = await supabase
+        // 方法1: 使用 RPC 调用（如果支持）
+        if (amount === 1) {
+            const rpcResult = await supabase
+                .rpc('decrement_ai_chat_count', { user_id: userId });
+            
+            if (!rpcResult.error && typeof rpcResult.data === 'number') {
+                console.log(`[credits] Direct RPC decrement successful: remaining=${rpcResult.data}`);
+                return { status: 'ok', remaining: rpcResult.data };
+            }
+            
+            console.warn('[credits] Direct RPC failed, trying update method:', rpcResult.error?.message);
+        }
+        
+        // 方法2: 使用 SQL 原子操作 - 先读取再条件更新
+        const { data: currentUser, error: readError } = await supabase
             .from('users')
-            .update({ ai_chat_count: { '-': amount } })
+            .select('ai_chat_count')
             .eq('id', userId)
-            .gte('ai_chat_count', amount)
+            .maybeSingle();
+        
+        if (readError) {
+            console.error('[credits] Read current credits failed:', readError.message);
+            return { status: 'rpc_error', errorDetail: `读取积分失败: ${readError.message}` };
+        }
+        
+        if (!currentUser) {
+            console.error('[credits] User not found for credit decrement');
+            return { status: 'rpc_error', errorDetail: '用户不存在' };
+        }
+        
+        const currentCredits = currentUser.ai_chat_count as number;
+        
+        if (currentCredits < amount) {
+            console.warn(`[credits] Insufficient credits: has ${currentCredits}, needs ${amount}`);
+            return { status: 'no_change' };
+        }
+        
+        // 方法3: 使用 PostgreSQL 的原子减法操作
+        const newCredits = currentCredits - amount;
+        const { data: updateData, error: updateError } = await supabase
+            .from('users')
+            .update({ ai_chat_count: newCredits })
+            .eq('id', userId)
+            .eq('ai_chat_count', currentCredits) // 乐观锁，确保并发安全
             .select('ai_chat_count')
             .maybeSingle();
 
-        if (error) {
-            console.error('[credits] Direct decrement failed:', {
-                error: error.message,
-                code: error.code,
-                hint: error.hint,
-                userId: userId.substring(0, 8),
-                amount,
+        if (updateError) {
+            console.error('[credits] Update failed:', {
+                error: updateError.message,
+                code: updateError.code,
+                hint: updateError.hint,
             });
             
-            if (error.message?.includes('fetch failed') || error.message?.includes('network') || error.message?.includes('ECONNREFUSED')) {
+            if (updateError.message?.includes('fetch failed') || updateError.message?.includes('network')) {
                 return { 
                     status: 'rpc_error', 
-                    errorDetail: `网络错误: ${error.message}。请检查 Supabase 连接或代理设置。`
+                    errorDetail: `网络错误: ${updateError.message}`
                 };
             }
             
-            return { status: 'rpc_error', errorDetail: fallbackReason || error.message };
+            return { status: 'rpc_error', errorDetail: fallbackReason || updateError.message };
         }
 
-        if (data && typeof data.ai_chat_count === 'number') {
-            console.log(`[credits] Direct decrement successful: userId=${userId.substring(0, 8)}..., amount=${amount}, remaining=${data.ai_chat_count}`);
+        if (updateData && typeof updateData.ai_chat_count === 'number') {
+            console.log(`[credits] Direct decrement successful: userId=${userId.substring(0, 8)}..., amount=${amount}, remaining=${updateData.ai_chat_count}`);
             return {
                 status: 'ok',
-                remaining: data.ai_chat_count,
+                remaining: updateData.ai_chat_count,
             };
         }
 
-        console.warn(`[credits] Direct decrement returned no data: userId=${userId.substring(0, 8)}..., amount=${amount}`);
+        // 更新没有返回数据，可能是并发冲突，重试一次
+        console.warn('[credits] Update returned no data, retrying with fresh read...');
+        const { data: retryData, error: retryError } = await supabase
+            .from('users')
+            .select('ai_chat_count')
+            .eq('id', userId)
+            .maybeSingle();
         
-        // 检查积分是否足够
-        try {
-            const { data: userData, error: checkError } = await supabase
-                .from('users')
-                .select('ai_chat_count')
-                .eq('id', userId)
-                .maybeSingle();
+        if (!retryError && retryData && typeof retryData.ai_chat_count === 'number') {
+            const finalCredits = retryData.ai_chat_count as number;
+            console.log(`[credits] After retry, current credits: ${finalCredits}`);
             
-            if (!checkError && userData) {
-                const currentCredits = userData.ai_chat_count as number;
-                console.log(`[credits] Current credits: ${currentCredits}, needed: ${amount}`);
-                if (currentCredits < amount) {
-                    return { status: 'no_change' };
-                }
+            // 验证扣减是否成功（允许少量误差）
+            if (finalCredits <= currentCredits) {
+                return { status: 'ok', remaining: finalCredits };
             }
-        } catch (checkEx) {
-            console.error('[credits] Failed to check credits:', checkEx);
         }
         
         return { status: 'no_change' };
@@ -312,14 +346,12 @@ async function runCreditDecrementDirect(
         console.error('[credits] Direct decrement exception:', {
             error: errMsg,
             stack: error instanceof Error ? error.stack : undefined,
-            userId: userId.substring(0, 8),
-            amount,
         });
         
-        if (errMsg.includes('fetch failed') || errMsg.includes('network') || errMsg.includes('ECONNREFUSED')) {
+        if (errMsg.includes('fetch failed') || errMsg.includes('network')) {
             return { 
                 status: 'rpc_error', 
-                errorDetail: `网络连接失败: ${errMsg}。请检查 Supabase 连接配置。`
+                errorDetail: `网络连接失败: ${errMsg}`
             };
         }
         

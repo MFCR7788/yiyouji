@@ -77,8 +77,8 @@ export function MembershipFeatureComparison() {
                                 pro="+10积分"
                             />
                             <FeatureRow
-                                feature="赠送积分"
-                                free="0"
+                                feature="积分上限"
+                                free="100"
                                 plus="500"
                                 pro="1000"
                             />
