@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
 
         const anonClient = createAnonClient();
         const email = `user_${phone}@mingai.fun`;
-        const nickname = localResult.nickname || '命理爱好者';
+        const nickname = '命理爱好者';
 
         const { data: signInData, error: signInError } = await anonClient.auth.signInWithPassword({
             email,
