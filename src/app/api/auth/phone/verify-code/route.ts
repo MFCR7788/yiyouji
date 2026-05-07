@@ -383,9 +383,28 @@ export async function POST(request: NextRequest) {
         console.log('[SMS Verify API] 发送响应');
         return response;
     } catch (error) {
-        console.error('[SMS Verify API] Error:', error);
+        console.error('[SMS Verify API] 未捕获异常:', error);
+        const err = error as Error;
+        const errorMessage = err?.message || '未知错误';
+        const errorStack = err?.stack || '';
+        
+        console.error('[SMS Verify API] 异常详情:', {
+            message: errorMessage,
+            stack: errorStack
+        });
+        
+        let userMessage = '验证失败，请稍后重试';
+        
+        if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('ECONNREFUSED')) {
+            userMessage = '网络连接异常，请检查网络后重试';
+        } else if (errorMessage.includes('timeout') || errorMessage.includes('TIMEDOUT')) {
+            userMessage = '请求超时，请稍后重试';
+        } else if (errorMessage.includes('Supabase') || errorMessage.includes('supabase')) {
+            userMessage = '服务暂时不可用，请稍后重试';
+        }
+        
         return NextResponse.json(
-            { success: false, message: '验证失败，请稍后重试' },
+            { success: false, message: userMessage },
             { status: 500 }
         );
     }
