@@ -91,12 +91,14 @@ export function MembershipFeatureComparison() {
                                 feature="每日签到积分"
                                 free="+10积分"
                                 plus="+10积分"
+                                plus_6m="+10积分"
                                 pro="+10积分"
                             />
                             <FeatureRow
                                 feature="积分上限"
                                 free="10"
                                 plus="200"
+                                plus_6m="500"
                                 pro="1200"
                             />
                             <FeatureRow 
@@ -112,24 +114,28 @@ export function MembershipFeatureComparison() {
                                 feature="基础 AI 模型"
                                 free={true}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="Plus 专属模型"
                                 free={false}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="Pro 专属模型"
                                 free={false}
                                 plus={false}
+                                plus_6m={false}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="推理模式（思考）"
                                 free={false}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                         </FeatureSection>
@@ -138,24 +144,28 @@ export function MembershipFeatureComparison() {
                                 feature="基础命盘排盘"
                                 free={true}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="每日/月运势预览"
                                 free={true}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="塔罗、六爻、MBTI 解读"
                                 free={true}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="全部 AI 分析功能"
                                 free={false}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                         </FeatureSection>
@@ -164,18 +174,21 @@ export function MembershipFeatureComparison() {
                                 feature="知识库基础搜索"
                                 free={false}
                                 plus={true}
+                                plus_6m={true}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="知识库向量搜索"
                                 free={false}
                                 plus={false}
+                                plus_6m={false}
                                 pro={true}
                             />
                             <FeatureRow 
                                 feature="知识库智能重排序"
                                 free={false}
                                 plus={false}
+                                plus_6m={false}
                                 pro={true}
                             />
                         </FeatureSection>
@@ -184,12 +197,14 @@ export function MembershipFeatureComparison() {
                                 feature="月均价格"
                                 free="¥0"
                                 plus="¥28"
+                                plus_6m="¥28"
                                 pro="¥21.5"
                             />
                             <FeatureRow 
                                 feature="优惠周期"
                                 free="永久"
-                                plus="6个月"
+                                plus="3个月"
+                                plus_6m="6个月"
                                 pro="12个月"
                             />
                         </FeatureSection>
