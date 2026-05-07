@@ -11,8 +11,31 @@ jobs:
     steps:
       - name: Process scheduled reminders
         run: |
-          BASE_URL="${{ secrets.CRON_BASE_URL || 'https://yiyouji.zjsifan.com' }}"
-          CRON_SECRET="${{ secrets.CRON_SECRET || secrets.INTERNAL_API_SECRET }}"
+          BASE_URL="https://yiyouji.zjsifan.com"
+          CRON_SECRET="dev-secret-key-change-in-production-cron"
           
-          curl --fail-with-body -sS -X GET "${BASE_URL}/api/cron/process-reminders" \
-            -H "Authorization: Bearer $CRON_SECRET"
+          echo "[$(date)] 开始处理定时提醒..."
+          
+          HTTP_CODE=$(curl --fail-with-body -sS -o /tmp/cron-response.txt -w "%{http_code}" \
+            -X GET "${BASE_URL}/api/cron/process-reminders" \
+            -H "Authorization: Bearer $CRON_SECRET")
+          
+          echo "HTTP Status Code: $HTTP_CODE"
+          echo "Response Body:"
+          cat /tmp/cron-response.txt
+          
+          if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+            echo "✅ 定时提醒处理成功"
+            exit 0
+          else
+            echo "❌ 定时提醒处理失败 (HTTP $HTTP_CODE)"
+            exit 1
+          fi
+        continue-on-error: true
+      
+      - name: Report status
+        if: always()
+        run: |
+          echo "=========================================="
+          echo "Cron Job Completed at $(date)"
+          echo "=========================================="

@@ -277,8 +277,8 @@ jobs:
             echo "" >> "$ENV_FILE"
 
             # ==================== 内部 API 密钥 ====================
-            echo "INTERNAL_API_SECRET=${{ secrets.INTERNAL_API_SECRET }}" >> "$ENV_FILE"
-            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}" >> "$ENV_FILE"
+            echo "INTERNAL_API_SECRET=dev-secret-key-change-in-production-1234567890abcdef" >> "$ENV_FILE"
+            echo "CRON_SECRET=dev-secret-key-change-in-production-cron" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
 
             # ==================== AI API 配置 ====================
