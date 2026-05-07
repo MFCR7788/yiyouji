@@ -242,6 +242,8 @@ async function runCreditDecrementDirect(
     const supabase = getSystemAdminClient();
     
     try {
+        console.log(`[credits] Running direct decrement: userId=${userId.substring(0, 8)}..., amount=${amount}`);
+        
         const { data, error } = await supabase
             .from('users')
             .update({ ai_chat_count: { '-': amount } })
@@ -251,7 +253,13 @@ async function runCreditDecrementDirect(
             .maybeSingle();
 
         if (error) {
-            console.error('[credits] Direct decrement failed:', error.message, error.code);
+            console.error('[credits] Direct decrement failed:', {
+                error: error.message,
+                code: error.code,
+                hint: error.hint,
+                userId: userId.substring(0, 8),
+                amount,
+            });
             
             if (error.message?.includes('fetch failed') || error.message?.includes('network') || error.message?.includes('ECONNREFUSED')) {
                 return { 
@@ -271,10 +279,36 @@ async function runCreditDecrementDirect(
             };
         }
 
+        console.warn(`[credits] Direct decrement returned no data: userId=${userId.substring(0, 8)}..., amount=${amount}`);
+        
+        // 检查积分是否足够
+        try {
+            const { data: userData, error: checkError } = await supabase
+                .from('users')
+                .select('ai_chat_count')
+                .eq('id', userId)
+                .maybeSingle();
+            
+            if (!checkError && userData) {
+                const currentCredits = userData.ai_chat_count as number;
+                console.log(`[credits] Current credits: ${currentCredits}, needed: ${amount}`);
+                if (currentCredits < amount) {
+                    return { status: 'no_change' };
+                }
+            }
+        } catch (checkEx) {
+            console.error('[credits] Failed to check credits:', checkEx);
+        }
+        
         return { status: 'no_change' };
     } catch (error) {
         const errMsg = error instanceof Error ? error.message : String(error);
-        console.error('[credits] Direct decrement exception:', errMsg);
+        console.error('[credits] Direct decrement exception:', {
+            error: errMsg,
+            stack: error instanceof Error ? error.stack : undefined,
+            userId: userId.substring(0, 8),
+            amount,
+        });
         
         if (errMsg.includes('fetch failed') || errMsg.includes('network') || errMsg.includes('ECONNREFUSED')) {
             return { 
