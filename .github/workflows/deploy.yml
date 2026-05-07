@@ -326,8 +326,7 @@ jobs:
 
             # ==================== ⭐ 微信支付私钥 ====================
             echo "# 微信支付私钥" >> "$ENV_FILE"
-            cat << 'EOF' >> "$ENV_FILE"
-WECHAT_PAY_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
+            WECHAT_KEY="-----BEGIN PRIVATE KEY-----
 MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDHC32bPlhtiGkM
 AqST4AJeN58bpfIVnsc1xVfZxy7Sv0aLBmXmEPltlDyk/BIvE2pYr2+7nMfOS8Is
 X1pxuEoUkhHlAwIHhMNCrwO4Zhs+GhHWmFoKBTqyafNmD5RNU3g/hDx5+C0FBWBt
@@ -355,7 +354,7 @@ YWNfSLuZr6dkuQ4WpQNAv8/+Vdo944XHRYQ6wYXm7gvU5CVR9iVj9mvCKbGJpdmd
 TM1q4uD+eRLr7XDDn/qLcy1rBMv1+IqJw+YPw+VTtyRY5pZiydtMPl2prgjngch3
 6uAhF7hEbl8nkHommSqcjA+LoQ==
 -----END PRIVATE KEY-----"
-EOF
+            echo "WECHAT_PAY_PRIVATE_KEY=\"${WECHAT_KEY}\"" >> "$ENV_FILE"
             echo "✅ 微信支付私钥已配置"
 
             # ==================== 其他配置 ====================
