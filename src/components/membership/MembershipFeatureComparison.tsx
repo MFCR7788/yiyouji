@@ -196,7 +196,7 @@ export function MembershipFeatureComparison() {
                             <FeatureRow 
                                 feature="月均价格"
                                 free="¥0"
-                                plus="¥28"
+                                plus="¥33"
                                 plus_6m="¥28"
                                 pro="¥21.5"
                             />
