@@ -267,7 +267,7 @@ jobs:
             echo "" >> "$ENV_FILE"
 
             # ==================== Supabase 配置 ====================
-            echo "SUPABASE_URL=${{ secrets.SUPABASE_URL }}" >> "$ENV_FILE"
+            echo "SUPABASE_URL=https://uwnzzxvibrhirhflbdvg.supabase.co" >> "$ENV_FILE"
             echo "SUPABASE_ANON_KEY=${{ secrets.SUPABASE_ANON_KEY }}" >> "$ENV_FILE"
             echo "SUPABASE_SECRET_KEY=${{ secrets.SUPABASE_SECRET_KEY }}" >> "$ENV_FILE"
             echo "SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" >> "$ENV_FILE"
