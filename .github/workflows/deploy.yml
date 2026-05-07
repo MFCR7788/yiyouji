@@ -294,6 +294,7 @@ jobs:
             echo "ALIYUN_SMS_SIGN_NAME=魔法超人" >> "$ENV_FILE"
             echo "ALIYUN_SMS_TEMPLATE_CODE=SMS_505945199" >> "$ENV_FILE"
             echo "ALIYUN_SMS_REGION_ID=cn-hangzhou" >> "$ENV_FILE"
+            echo "SMS_VERIFICATION_SECRET=yiyouji-sms-verification-secret-key-2026-production" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
             echo "DIFY_API_KEY=${{ secrets.DIFY_API_KEY }}" >> "$ENV_FILE"
             echo "DIFY_API_URL=${{ secrets.DIFY_API_URL }}" >> "$ENV_FILE"
