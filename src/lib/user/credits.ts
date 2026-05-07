@@ -211,7 +211,13 @@ async function runCreditDecrement(userId: string, amount = 1): Promise<
             
             // amount > 1 时，旧版本不支持，直接使用直接更新方式
             console.warn('[credits] amount > 1 but legacy RPC only supports 1, falling back to direct');
-            return await runCreditDecrementDirect(userId, amount, `RPC version mismatch: amount=${amount}`);
+            const directResult = await runCreditDecrementDirect(userId, amount, `RPC version mismatch: amount=${amount}`);
+            
+            if (directResult.status === 'rpc_error') {
+                console.error(`[credits] Direct decrement also failed for amount=${amount}:`, directResult.errorDetail);
+            }
+            
+            return directResult;
         }
 
         if (typeof data === 'number') {
