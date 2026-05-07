@@ -223,18 +223,30 @@ jobs:
             echo ""
             echo "=== 6️⃣ 创建 .env.local 文件 ==="
             ENV_FILE=".env.local"
+            BACKUP_FILE="${ENV_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
             
             # ⭐ 关键修改：保留服务器上已有的微信支付配置
             # 如果服务器上已有 .env 文件，先备份并提取微信支付配置
-            WECHAT_CONFIG=""
+            WECHAT_PRIVATE_KEY_VALUE=""
             if [ -f "$ENV_FILE" ]; then
-                echo "ℹ️  检测到已存在 $ENV_FILE，将保留微信支付配置"
-                cp "$ENV_FILE" "${ENV_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+                echo "ℹ️  检测到已存在 $ENV_FILE，将备份并保留微信支付私钥"
+                cp "$ENV_FILE" "$BACKUP_FILE"
+                echo "✅ 已备份到 $BACKUP_FILE"
                 
-                # 提取微信支付相关配置（以 WECHAT_PAY_ 开头的行）
-                WECHAT_CONFIG=$(grep -E "^WECHAT_PAY_" "$ENV_FILE" 2>/dev/null)
-                if [ -n "$WECHAT_CONFIG" ]; then
-                    echo "✅ 已检测到微信支付配置，将保留"
+                # 提取微信支付私钥（处理多行私钥情况）
+                # 使用 awk 提取 WECHAT_PAY_PRIVATE_KEY 的值（包括多行）
+                WECHAT_PRIVATE_KEY_VALUE=$(awk '/^WECHAT_PAY_PRIVATE_KEY="/ {
+                    print $0;
+                    while (getline) {
+                        print $0;
+                        if ($0 ~ /"$/) exit;
+                    }
+                }' "$ENV_FILE")
+                
+                if [ -n "$WECHAT_PRIVATE_KEY_VALUE" ]; then
+                    echo "✅ 已检测到微信支付私钥配置，将保留"
+                else
+                    echo "ℹ️  未检测到微信支付私钥，将尝试从 GitHub Secrets 获取"
                 fi
             fi
 
@@ -315,9 +327,9 @@ jobs:
             echo "# 微信支付私钥" >> "$ENV_FILE"
             
             # 方法 1：优先使用服务器上已有的配置（用户直接设置在服务器上）
-            if [ -n "$WECHAT_CONFIG" ]; then
-                echo "$WECHAT_CONFIG" >> "$ENV_FILE"
-                echo "✅ 微信支付配置已从服务器保留"
+            if [ -n "$WECHAT_PRIVATE_KEY_VALUE" ]; then
+                echo "$WECHAT_PRIVATE_KEY_VALUE" >> "$ENV_FILE"
+                echo "✅ 微信支付私钥已从服务器保留配置"
             # 方法 2：其次尝试从 GitHub Secrets 读取
             elif [ -n "${{ secrets.WECHAT_PRIVATE_KEY }}" ]; then
                 printf 'WECHAT_PAY_PRIVATE_KEY="%s"\n' "${{ secrets.WECHAT_PRIVATE_KEY }}" >> "$ENV_FILE"
