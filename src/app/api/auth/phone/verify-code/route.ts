@@ -337,33 +337,78 @@ export async function POST(request: NextRequest) {
         console.info(`[SMS Verify API] 登录成功: ${phone}`);
 
         // 新注册用户自动赠送 100 积分
-        if (type === 'register' && signInData?.session?.user?.id) {
+        const isNewUser = type === 'register';
+        if (isNewUser && signInData?.session?.user?.id) {
             const newUserId = signInData.session.user.id;
             try {
-                // 首先确保 users 表中有该用户的记录
-                const { ensureUserRecordRow } = await import(`@/lib/user/profile-record`);
-                const ensured = await ensureUserRecordRow(supabase, signInData.session.user);
-                if (!ensured.ok) {
-                    console.error('[SMS Verify API] 创建用户记录失败:', ensured.error);
+                console.log(`[SMS Verify API] 开始为新用户 ${newUserId} 赠送积分`);
+                
+                // 1. 确保 users 表中有该用户的记录（初始积分为 0）
+                const { buildUserRecordSeed } = await import(`@/lib/user/profile-record`);
+                const userRecord = buildUserRecordSeed({ id: newUserId, user_metadata: { nickname: userNickname, phone } });
+                // 覆盖默认的 ai_chat_count: 1 为 0
+                (userRecord as Record<string, unknown>).ai_chat_count = 0;
+                
+                const { error: upsertError } = await supabase
+                    .from('users')
+                    .upsert(userRecord, { onConflict: 'id', ignoreDuplicates: true });
+                
+                if (upsertError) {
+                    console.error('[SMS Verify API] 创建/更新用户记录失败:', upsertError);
                 } else {
-                    console.info('[SMS Verify API] 用户记录已确保存在');
+                    console.info('[SMS Verify API] 用户记录已确保存在，初始积分为 0');
                 }
 
-                // 增加 100 积分
-                const { error: creditError } = await supabase.rpc('increment_ai_chat_count', {
-                    user_id: newUserId,
-                    amount: 100
-                });
-                if (creditError) {
-                    console.error('[SMS Verify API] 注册赠送积分失败:', creditError);
+                // 2. 使用直接更新方式增加 100 秒分（避免 RPC 兼容性问题）
+                const { data: currentData, error: readError } = await supabase
+                    .from('users')
+                    .select('ai_chat_count')
+                    .eq('id', newUserId)
+                    .maybeSingle();
+                
+                if (readError) {
+                    console.error('[SMS Verify API] 读取当前积分失败:', readError);
                 } else {
-                    console.info('[SMS Verify API] 新用户注册赠送 100 积分成功');
+                    const currentCredits = (currentData?.ai_chat_count as number) || 0;
+                    const targetCredits = currentCredits + 100;
+                    
+                    const { error: updateError } = await supabase
+                        .from('users')
+                        .update({ ai_chat_count: targetCredits })
+                        .eq('id', newUserId)
+                        .eq('ai_chat_count', currentCredits); // 乐观锁
+                    
+                    if (updateError) {
+                        console.error('[SMS Verify API] 注册赠送积分更新失败:', updateError);
+                        
+                        // 重试：不使用乐观锁
+                        const { error: retryError } = await supabase
+                            .from('users')
+                            .update({ ai_chat_count: targetCredits })
+                            .eq('id', newUserId);
+                        
+                        if (retryError) {
+                            console.error('[SMS Verify API] 注册赠送积分重试也失败:', retryError);
+                        } else {
+                            console.info(`[SMS Verify API] 新用户注册赠送 100 积分成功（重试），当前积分: ${targetCredits}`);
+                        }
+                    } else {
+                        console.info(`[SMS Verify API] 新用户注册赠送 100 积分成功，当前积分: ${targetCredits}`);
+                    }
                 }
 
-                const { logRegistrationBonus } = await import('@/lib/user/credit-transactions');
-                await logRegistrationBonus(newUserId, 100);
+                // 3. 记录积分交易日志
+                try {
+                    const { logRegistrationBonus } = await import('@/lib/user/credit-transactions');
+                    await logRegistrationBonus(newUserId, 100);
+                    console.info('[SMS Verify API] 注册赠送积分日志已记录');
+                } catch (logError) {
+                    console.error('[SMS Verify API] 记录注册赠送积分日志失败:', logError);
+                    // 日志失败不影响主流程
+                }
             } catch (e) {
                 console.error('[SMS Verify API] 赠送积分异常:', e);
+                // 积分赠送失败不影响登录流程
             }
         }
 
