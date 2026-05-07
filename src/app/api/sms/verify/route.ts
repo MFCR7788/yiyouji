@@ -2,11 +2,11 @@
  * 短信验证码验证路由
  *
  * 验证用户输入的验证码是否正确，并完成登录或注册
- * 使用本地验证码验证 + Supabase 密码登录
+ * 使用加密 Cookie 验证验证码 + Supabase 密码登录
  */
 import { NextRequest, NextResponse } from 'next/server';
 import type { Session } from '@supabase/supabase-js';
-import { verifyCode } from '@/lib/sms/verification-store';
+import { verifyCodeFromCookie, VERIFICATION_COOKIE_NAME } from '@/lib/sms/secure-verification';
 import { createAnonClient } from '@/lib/api-utils';
 import { setSessionCookies } from '@/lib/auth-session';
 
@@ -57,7 +57,8 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        const localResult = await verifyCode(phone, code);
+        const cookieValue = request.cookies.get(VERIFICATION_COOKIE_NAME)?.value;
+        const localResult = verifyCodeFromCookie(phone, code, cookieValue || '');
 
         if (!localResult.success) {
             return NextResponse.json(
