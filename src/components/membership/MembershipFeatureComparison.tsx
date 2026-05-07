@@ -2,11 +2,12 @@
 
 import { Check, X } from 'lucide-react';
 
-const FeatureRow = ({ feature, free, plus, pro }: {
+const FeatureRow = ({ feature, free, plus, plus_6m, pro }: {
     feature: string;
     free: string | boolean;
-    plus: string | boolean;
-    pro: string | boolean;
+    plus?: string | boolean;
+    plus_6m?: string | boolean;
+    pro?: string | boolean;
 }) => (
     <tr className="border-b border-[#ebe8e2]">
         <td className="py-3 pl-8 pr-5 text-sm text-[#37352f]/80 font-medium" style={{ paddingLeft: '2.5rem' }}>{feature}</td>
@@ -22,19 +23,34 @@ const FeatureRow = ({ feature, free, plus, pro }: {
         <td className="py-3 px-4 text-center">
             {typeof plus === 'string' ? (
                 <span className="text-sm text-[#37352f]/60">{plus}</span>
-            ) : plus ? (
+            ) : plus === true ? (
                 <Check className="mx-auto h-4 w-4 text-[#1f9d6d]" />
-            ) : (
+            ) : plus === false ? (
                 <X className="mx-auto h-4 w-4 text-[#37352f]/30" />
+            ) : (
+                <span className="text-sm text-[#37352f]/60">-</span>
+            )}
+        </td>
+        <td className="py-3 px-4 text-center">
+            {typeof plus_6m === 'string' ? (
+                <span className="text-sm font-medium text-[#e67e22]">{plus_6m}</span>
+            ) : plus_6m === true ? (
+                <Check className="mx-auto h-4 w-4 text-[#1f9d6d]" />
+            ) : plus_6m === false ? (
+                <X className="mx-auto h-4 w-4 text-[#37352f]/30" />
+            ) : (
+                <span className="text-sm text-[#37352f]/60">-</span>
             )}
         </td>
         <td className="py-3 px-4 text-center">
             {typeof pro === 'string' ? (
-                <span className="text-sm text-[#37352f]/60">{pro}</span>
-            ) : pro ? (
+                <span className="text-sm font-bold text-[#8b5cf6]">{pro}</span>
+            ) : pro === true ? (
                 <Check className="mx-auto h-4 w-4 text-[#1f9d6d]" />
-            ) : (
+            ) : pro === false ? (
                 <X className="mx-auto h-4 w-4 text-[#37352f]/30" />
+            ) : (
+                <span className="text-sm text-[#37352f]/60">-</span>
             )}
         </td>
     </tr>
@@ -43,7 +59,7 @@ const FeatureRow = ({ feature, free, plus, pro }: {
 const FeatureSection = ({ title, children }: { title: string; children: React.ReactNode }) => (
     <>
         <tr>
-            <td colSpan={4} className="py-4">
+            <td colSpan={5} className="py-4">
                 <h4 className="text-xs font-semibold text-[#37352f]/50 uppercase tracking-wider">{title}</h4>
             </td>
         </tr>
@@ -62,10 +78,11 @@ export function MembershipFeatureComparison() {
                 <table className="w-full">
                     <thead>
                         <tr className="border-b border-[#ebe8e2]">
-                            <th className="py-3 px-5 text-left text-xs font-semibold text-[#37352f]/70 w-[35%]">功能</th>
-                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#37352f]/70 w-[20%]">免费版</th>
-                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#37352f]/70 w-[20%]">Plus</th>
-                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#37352f]/70 w-[20%]">Pro</th>
+                            <th className="py-3 px-5 text-left text-xs font-semibold text-[#37352f]/70 w-[30%]">功能</th>
+                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#37352f]/70 w-[17%]">免费版</th>
+                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#37352f]/70 w-[17%]">Plus<br/><span className="text-[10px] font-normal">3个月</span></th>
+                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#e67e22] w-[18%]">Plus<br/><span className="text-[10px] font-normal text-[#e67e22]">6个月</span></th>
+                            <th className="py-3 px-4 text-center text-xs font-semibold text-[#8b5cf6] w-[18%]">Pro<br/><span className="text-[10px] font-normal text-[#8b5cf6]">1年</span></th>
                         </tr>
                     </thead>
                     <tbody className="px-5">
@@ -78,15 +95,16 @@ export function MembershipFeatureComparison() {
                             />
                             <FeatureRow
                                 feature="积分上限"
-                                free="100"
-                                plus="500"
-                                pro="1000"
+                                free="10"
+                                plus="200"
+                                pro="1200"
                             />
                             <FeatureRow 
-                                feature="充值会员赠送积分"
+                                feature="购买赠送积分"
                                 free="-"
                                 plus="+200积分"
-                                pro="+500积分"
+                                plus_6m="+500积分"
+                                pro="+1200积分"
                             />
                         </FeatureSection>
                         <FeatureSection title="AI 模型">

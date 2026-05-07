@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Crown, Sparkles, Zap } from 'lucide-react';
-import { pricingPlans, type PlanId, planIdToMembership } from '@/lib/user/membership';
+import { Check, Crown, Sparkles, Zap, Lock, ArrowUp } from 'lucide-react';
+import { pricingPlans, type PlanId, planIdToMembership, checkPlanAvailability } from '@/lib/user/membership';
 import { useSessionSafe } from '@/components/providers/ClientProviders';
 import { AuthModal } from '@/components/auth/AuthModalV2';
 import { useToast } from '@/components/ui/Toast';
@@ -35,9 +35,23 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
 
     const paidPlans = pricingPlans.filter(p => p.price > 0);
 
+    // 检查每个套餐的可用性
+    const currentMembershipType = currentType !== 'free' ? currentType as 'plus' | 'pro' | null : null;
+    const planAvailability = paidPlans.reduce((acc, plan) => {
+        acc[plan.id] = checkPlanAvailability(plan.id, currentMembershipType);
+        return acc;
+    }, {} as Record<string, ReturnType<typeof checkPlanAvailability>>);
+
     const handlePurchase = async (planId: PlanId) => {
         if (!user) {
             setShowAuthModal(true);
+            return;
+        }
+
+        // 检查套餐是否可用
+        const availability = checkPlanAvailability(planId, currentMembershipType);
+        if (!availability.available) {
+            showToast('warning', availability.reason || '该套餐不可用');
             return;
         }
 
@@ -94,16 +108,20 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
                         planIdToMembership(plan.id as PlanId) === currentType &&
                         currentType !== 'free';
                     const isLoading = purchasingPlan === plan.id;
+                    const availability = planAvailability[plan.id];
+                    const isDisabled = !availability?.available;
 
                     return (
                         <div
                             key={plan.id}
                             className={`relative overflow-hidden rounded-xl border transition-all duration-200 ${
-                                plan.popular
-                                    ? 'border-[#1f9d6d] bg-[#f0faf6] shadow-sm'
-                                    : isCurrentPlan
-                                      ? 'border-[#e7e2d9] bg-[#f7f6f3]'
-                                      : 'border-[#ebe8e2] bg-white hover:border-[#d5d0c7] hover:shadow-md'
+                                isDisabled
+                                    ? 'border-[#e7e2d9] bg-[#f7f6f3] opacity-60'
+                                    : plan.popular
+                                      ? 'border-[#1f9d6d] bg-[#f0faf6] shadow-sm'
+                                      : isCurrentPlan
+                                        ? 'border-[#e7e2d9] bg-[#f7f6f3]'
+                                        : 'border-[#ebe8e2] bg-white hover:border-[#d5d0c7] hover:shadow-md'
                             }`}
                         >
                             {plan.badge && (
@@ -120,38 +138,64 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
                                 </div>
                             )}
 
+                            {/* 禁用状态遮罩 */}
+                            {isDisabled && (
+                                <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 backdrop-blur-sm rounded-xl">
+                                    <div className="text-center px-4">
+                                        <Lock className="mx-auto h-6 w-6 text-[#37352f]/40 mb-2" />
+                                        <p className="text-xs font-medium text-[#37352f]/60">
+                                            {availability?.reason || '当前不可用'}
+                                        </p>
+                                        {availability?.canUpgrade && (
+                                            <p className="mt-1 flex items-center justify-center gap-1 text-[10px] text-[#1f9d6d]">
+                                                <ArrowUp className="h-3 w-3" />
+                                                可升级
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
                             <div className="p-5">
                                 <div className="mb-3 flex items-center gap-2">
                                     <div
                                         className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                                            plan.popular
-                                                ? 'bg-[#1f9d6d]/10 text-[#1f9d6d]'
-                                                : 'bg-[#f0f0ee] text-[#37352f]/60'
+                                            isDisabled
+                                                ? 'bg-[#f0f0ee] text-[#37352f]/30'
+                                                : plan.popular
+                                                  ? 'bg-[#1f9d6d]/10 text-[#1f9d6d]'
+                                                  : 'bg-[#f0f0ee] text-[#37352f]/60'
                                         }`}
                                     >
                                         {planIcons[plan.id]}
                                     </div>
                                     <div>
-                                        <h3 className="text-sm font-semibold text-[#37352f]">{plan.name}</h3>
-                                        <p className="text-xs text-[#37352f]/50">{plan.period}</p>
+                                        <h3 className={`text-sm font-semibold ${isDisabled ? 'text-[#37352f]/50' : 'text-[#37352f]'}`}>{plan.name}</h3>
+                                        <p className={`text-xs ${isDisabled ? 'text-[#37352f]/30' : 'text-[#37352f]/50'}`}>{plan.period}</p>
                                     </div>
                                 </div>
 
                                 <div className="mb-4">
                                     <div className="flex items-baseline gap-1">
-                                        <span className="text-2xl font-bold text-[#37352f]">¥{plan.price}</span>
+                                        <span className={`text-2xl font-bold ${isDisabled ? 'text-[#37352f]/40' : 'text-[#37352f]'}`}>¥{plan.price}</span>
                                         {plan.originalPrice && (
                                             <span className="text-xs text-[#37352f]/40 line-through">
                                                 ¥{plan.originalPrice}
                                             </span>
                                         )}
                                     </div>
+                                    {/* 显示积分奖励 */}
+                                    {(plan as any).creditReward > 0 && (
+                                        <p className={`mt-1 text-[10px] ${isDisabled ? 'text-[#37352f]/30' : 'text-[#1f9d6d]'}`}>
+                                            赠送 {(plan as any).creditReward} 积分
+                                        </p>
+                                    )}
                                 </div>
 
                                 <ul className="mb-5 space-y-2">
                                     {plan.features.slice(0, 4).map((feature) => (
-                                        <li key={feature} className="flex items-start gap-2 text-xs text-[#37352f]/70">
-                                            <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-[#1f9d6d]" />
+                                        <li key={feature} className={`flex items-start gap-2 text-xs ${isDisabled ? 'text-[#37352f]/30' : 'text-[#37352f]/70'}`}>
+                                            <Check className={`mt-0.5 h-3.5 w-3.5 shrink-0 ${isDisabled ? 'text-[#37352f]/20' : 'text-[#1f9d6d]'}`} />
                                             <span>{feature}</span>
                                         </li>
                                     ))}
@@ -160,20 +204,24 @@ export function MembershipCards({ currentType, onPurchaseSuccess }: MembershipCa
                                 <button
                                     type="button"
                                     onClick={() => handlePurchase(plan.id as PlanId)}
-                                    disabled={isCurrentPlan || isLoading}
+                                    disabled={isCurrentPlan || isDisabled || isLoading}
                                     className={`w-full rounded-lg py-2.5 text-sm font-medium transition-all duration-150 ${
-                                        isCurrentPlan
-                                            ? 'cursor-default border border-[#e7e2d9] bg-[#f1efeb] text-[#37352f]/40'
-                                            : plan.popular
-                                              ? 'bg-[#1f9d6d] text-white hover:bg-[#178a5d] active:bg-[#146f4b]'
-                                              : 'border border-[#e2ddd4] bg-[#37352f] text-white hover:bg-[#2a2826] active:bg-[#1f1e1c]'
+                                        isDisabled
+                                            ? 'cursor-not-allowed border border-[#e7e2d9] bg-[#f1efeb] text-[#37352f]/30'
+                                            : isCurrentPlan
+                                              ? 'cursor-default border border-[#e7e2d9] bg-[#f1efeb] text-[#37352f]/40'
+                                              : plan.popular
+                                                ? 'bg-[#1f9d6d] text-white hover:bg-[#178a5d] active:bg-[#146f4b]'
+                                                : 'border border-[#e2ddd4] bg-[#37352f] text-white hover:bg-[#2a2826] active:bg-[#1f1e1c]'
                                     }`}
                                 >
                                     {isLoading
                                         ? '处理中...'
-                                        : isCurrentPlan
-                                          ? '当前套餐'
-                                          : '立即开通'}
+                                        : isDisabled
+                                          ? '不可用'
+                                          : isCurrentPlan
+                                            ? '当前套餐'
+                                            : '立即开通'}
                                 </button>
                             </div>
                         </div>

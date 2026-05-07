@@ -90,6 +90,7 @@ export interface PricingPlan {
     popular?: boolean;
     badge?: string;
     creditLimit: number;
+    creditReward: number;
 }
 
 export const pricingPlans: PricingPlan[] = [
@@ -106,6 +107,7 @@ export const pricingPlans: PricingPlan[] = [
             '每日签到 +10 积分',
         ],
         creditLimit: 10,
+        creditReward: 0,
     },
     {
         id: 'plus',
@@ -117,13 +119,15 @@ export const pricingPlans: PricingPlan[] = [
         badge: '超值',
         features: [
             '全部免费版功能',
-            '积分上限提升至 500',
+            '赠送 200 积分',
+            '积分上限提升至 200',
             '更多 AI 模型支持',
             '全部 AI 分析功能',
             '知识库使用',
         ],
         popular: true,
-        creditLimit: 500,
+        creditLimit: 200,
+        creditReward: 200,
     },
     {
         id: 'plus_6m',
@@ -135,10 +139,13 @@ export const pricingPlans: PricingPlan[] = [
         badge: '推荐',
         features: [
             '全部 Plus 功能',
+            '赠送 500 积分',
+            '积分上限提升至 500',
             '每月均僅 ¥28',
             '更长时间享受会员权益',
         ],
         creditLimit: 500,
+        creditReward: 500,
     },
     {
         id: 'pro',
@@ -150,12 +157,14 @@ export const pricingPlans: PricingPlan[] = [
         badge: '最划算',
         features: [
             '全部 Plus 功能',
-            '积分上限提升至 1000',
+            '赠送 1200 积分',
+            '积分上限提升至 1200',
             '获取更高级模型支持',
             '更精确的知识库',
             '每月均僅 ¥21.5',
         ],
-        creditLimit: 1000,
+        creditLimit: 1200,
+        creditReward: 1200,
     },
 ];
 
@@ -177,6 +186,83 @@ export function planIdToMembership(planId: PlanId): MembershipType {
  */
 export function getCreditLimit(type: MembershipType): number {
     return getPlanConfig(type).creditLimit;
+}
+
+/**
+ * 获取套餐积分奖励
+ */
+export function getCreditReward(planId: PlanId): number {
+    return getPlanConfig(planId).creditReward;
+}
+
+/**
+ * 会员层级定义（用于升级/降级判断）
+ */
+const MEMBERSHIP_TIERS: Record<MembershipType, number> = {
+    free: 0,
+    plus: 1,
+    pro: 2,
+};
+
+export interface PlanAvailability {
+    available: boolean;
+    reason?: string;
+    canUpgrade?: boolean;
+}
+
+/**
+ * 检查套餐是否可订阅（基于当前会员状态）
+ *
+ * 规则：
+ * - 低级订阅可以升级到高级
+ * - 高级订阅不能降级到低级
+ * - 同级或更高级始终可用
+ */
+export function checkPlanAvailability(
+    targetPlanId: PlanId,
+    currentMembershipType?: MembershipType | null
+): PlanAvailability {
+    if (!currentMembershipType || currentMembershipType === 'free') {
+        return { available: true, canUpgrade: true };
+    }
+
+    const currentTier = MEMBERSHIP_TIERS[currentMembershipType] || 0;
+
+    // 目标套餐的会员类型
+    const targetMembership = planIdToMembership(targetPlanId);
+    const targetMembershipTier = MEMBERSHIP_TIERS[targetMembership] || 0;
+
+    // 如果目标是同级或更高级，允许
+    if (targetMembershipTier >= currentTier) {
+        return { available: true, canUpgrade: targetMembershipTier > currentTier };
+    }
+
+    // 目标是更低级，不允许降级
+    const currentPlanName = currentMembershipType === 'pro' ? 'Pro 会员' : 'Plus 会员';
+    const targetPlanName = getPlanConfig(targetPlanId).period.includes('年')
+        ? `${getPlanConfig(targetPlanId).name}(${getPlanConfig(targetPlanId).period})`
+        : `${getPlanConfig(targetPlanId).name}(${getPlanConfig(targetPlanId).period})`;
+
+    return {
+        available: false,
+        reason: `您当前已是${currentPlanName}，无法购买${targetPlanName}`,
+        canUpgrade: false,
+    };
+}
+
+/**
+ * 获取所有套餐的可用状态
+ */
+export function getAllPlansAvailability(
+    currentMembershipType?: MembershipType | null
+): Record<PlanId, PlanAvailability> {
+    const result: Record<PlanId, PlanAvailability> = {} as Record<PlanId, PlanAvailability>;
+
+    for (const plan of pricingPlans) {
+        result[plan.id] = checkPlanAvailability(plan.id, currentMembershipType);
+    }
+
+    return result;
 }
 
 /**

@@ -2,7 +2,7 @@ import { getSystemAdminClient } from '@/lib/supabase-server'
 import { WechatPayClient, getWechatPayConfig } from './client'
 import type { MembershipOrder, WechatPayTransaction } from './types'
 import type { PlanId } from '@/lib/user/membership'
-import { planIdToMembership } from '@/lib/user/membership'
+import { planIdToMembership, getCreditReward, getPlanConfig } from '@/lib/user/membership'
 
 function generateOutTradeNo(orderId: string): string {
   const timestamp = Date.now().toString().slice(-8)
@@ -251,6 +251,48 @@ export async function handlePaymentSuccess(transaction: WechatPayTransaction): P
 
       if (orderUpdateError) {
         console.error('[Payment] Update order status failed:', orderUpdateError.message)
+      }
+
+      // 赠送积分
+      const creditReward = getCreditReward(planId)
+      if (creditReward > 0) {
+        try {
+          const { data: currentData } = await supabase
+            .from('users')
+            .select('ai_chat_count')
+            .eq('id', order.user_id)
+            .maybeSingle()
+
+          const currentCredits = (currentData?.ai_chat_count as number) || 0
+          const targetCredits = currentCredits + creditReward
+
+          const { error: creditError } = await supabase
+            .from('users')
+            .update({ ai_chat_count: targetCredits })
+            .eq('id', order.user_id)
+
+          if (creditError) {
+            console.error('[Payment] Credit reward update failed:', creditError.message)
+          } else {
+            console.info(`[Payment] Credit reward ${creditReward} added for user ${order.user_id}, total: ${targetCredits}`)
+
+            // 记录积分交易日志
+            try {
+              const { logCreditTransaction } = await import('@/lib/user/credit-transactions')
+              await logCreditTransaction({
+                userId: order.user_id,
+                amount: creditReward,
+                type: 'earn',
+                source: 'membership_purchase',
+                description: `购买${getPlanConfig(planId).name}(${getPlanConfig(planId).period})赠送 ${creditReward} 积分`,
+              })
+            } catch (logError) {
+              console.error('[Payment] Log credit transaction failed:', logError)
+            }
+          }
+        } catch (creditEx) {
+          console.error('[Payment] Credit reward exception:', creditEx)
+        }
       }
 
       console.log('[Payment] Payment success processed for order:', order.id)
