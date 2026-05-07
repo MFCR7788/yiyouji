@@ -282,10 +282,10 @@ jobs:
             echo "" >> "$ENV_FILE"
 
             # ==================== AI API 配置 ====================
-            echo "DEEPSEEK_API_KEY=${{ secrets.DEEPSEEK_API_KEY }}" >> "$ENV_FILE"
-            echo "DEEPSEEK_BASE_URL=${{ secrets.DEEPSEEK_BASE_URL }}" >> "$ENV_FILE"
-            echo "GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}" >> "$ENV_FILE"
-            echo "VOLC_API_KEY=${{ secrets.VOLC_API_KEY }}" >> "$ENV_FILE"
+            echo "DEEPSEEK_API_KEY=sk-558d0d84c3b74627b7cd03f09a876905" >> "$ENV_FILE"
+            echo "DEEPSEEK_BASE_URL=https://api.deepseek.com" >> "$ENV_FILE"
+            echo "GEMINI_API_KEY=AIzaSyD5Ed18eIA65ZCz9k0oi3tlrFHHIF9Wv3o" >> "$ENV_FILE"
+            echo "VOLC_API_KEY=8ba17eca-e79d-4961-96da-ef88561c0848" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
 
             # ==================== 第三方服务配置 ====================
