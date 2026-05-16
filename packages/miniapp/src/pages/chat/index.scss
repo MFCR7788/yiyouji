@@ -1,0 +1,23 @@
+@import '../../styles/variables.scss';
+@import '../../styles/mixins.scss';
+
+.chat {
+  min-height: 100vh;
+  background: $bg-color;
+}
+
+.chat-empty {
+  @include flex-center;
+  flex-direction: column;
+  padding: 200px 0;
+}
+
+.chat-empty-icon {
+  font-size: 80px;
+  margin-bottom: $spacing-md;
+}
+
+.chat-empty-text {
+  font-size: $font-size-md;
+  color: $text-tertiary;
+}

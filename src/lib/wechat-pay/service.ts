@@ -182,6 +182,135 @@ export async function createPaymentOrder(
   }
 }
 
+export async function createJSAPIPaymentOrder(
+  userId: string,
+  planId: PlanId,
+  openid: string,
+): Promise<{ orderId: string; paymentParams?: { timeStamp: string; nonceStr: string; package: string; signType: string; paySign: string }; order: MembershipOrder }> {
+  const supabase = getSystemAdminClient()
+
+  if (!userId || typeof userId !== 'string') {
+    throw new Error('Invalid user ID')
+  }
+
+  if (!openid || typeof openid !== 'string') {
+    throw new Error('Invalid openid')
+  }
+
+  const validPlans = [
+    { id: 'plus' as PlanId, price: 98, months: 3 },
+    { id: 'plus_6m' as PlanId, price: 168, months: 6 },
+    { id: 'pro' as PlanId, price: 258, months: 12 },
+  ]
+  const plan = validPlans.find(p => p.id === planId)
+  if (!plan) {
+    throw new Error(`Invalid plan: ${planId}`)
+  }
+
+  try {
+    const { data: orderData, error: orderError } = await supabase
+      .from('membership_orders')
+      .insert({
+        user_id: userId,
+        plan_id: planId,
+        amount: plan.price,
+        months: plan.months,
+        status: 'pending',
+      })
+      .select('*')
+      .single()
+
+    if (orderError) {
+      console.error('[JSAPI Payment] Create order DB error:', orderError.message)
+      throw new Error(`Database error: ${orderError.message}`)
+    }
+
+    if (!orderData) {
+      throw new Error('Create order failed: no data returned')
+    }
+
+    const order: MembershipOrder = {
+      id: orderData.id,
+      user_id: orderData.user_id,
+      plan_id: orderData.plan_id,
+      amount: orderData.amount,
+      months: orderData.months,
+      status: orderData.status,
+      out_trade_no: orderData.out_trade_no,
+      transaction_id: orderData.transaction_id || orderData.pay_transaction_id,
+      paid_at: orderData.paid_at ? new Date(orderData.paid_at) : undefined,
+      created_at: new Date(orderData.created_at),
+      updated_at: new Date(orderData.updated_at),
+    }
+
+    const payConfig = getWechatPayConfig()
+
+    if (!payConfig) {
+      console.warn('[JSAPI Payment] WeChat Pay not configured, returning order without payment params')
+      return { orderId: order.id, order }
+    }
+
+    const outTradeNo = generateOutTradeNo(order.id)
+
+    try {
+      const { error: updateError } = await supabase
+        .from('membership_orders')
+        .update({ out_trade_no: outTradeNo })
+        .eq('id', order.id)
+
+      if (updateError) {
+        console.error('[JSAPI Payment] Update out_trade_no failed:', updateError.message)
+      }
+    } catch (updateEx) {
+      console.error('[JSAPI Payment] Update out_trade_no exception:', updateEx)
+    }
+
+    try {
+      const client = new WechatPayClient(payConfig)
+      console.log('[JSAPI Payment] 调用微信支付 JSAPI 下单接口:', {
+        planId,
+        outTradeNo,
+        amount: plan.price * 100,
+        openid,
+      })
+
+      const { prepayId } = await client.createJSAPIPay({
+        description: getPlanDescription(planId),
+        outTradeNo,
+        notifyUrl: payConfig.notifyUrl,
+        openid,
+        amount: {
+          total: plan.price * 100,
+          currency: 'CNY',
+        },
+      })
+
+      const paymentParams = client.signMiniappPayment(prepayId)
+
+      console.log('[JSAPI Payment] 微信支付 JSAPI 下单成功:', { orderId: order.id, hasPrepayId: !!prepayId })
+
+      return {
+        orderId: order.id,
+        paymentParams,
+        order: {
+          ...order,
+          out_trade_no: outTradeNo,
+        },
+      }
+    } catch (wechatError) {
+      const errorMsg = wechatError instanceof Error ? wechatError.message : String(wechatError)
+      console.error('[JSAPI Payment] WeChat Pay API 调用失败:', errorMsg)
+      throw new Error(`WechatPay JSAPI: ${errorMsg}`)
+    }
+  } catch (dbError) {
+    if (dbError instanceof Error && (dbError.message.startsWith('Database error:') || dbError.message.startsWith('WechatPay'))) {
+      throw dbError
+    }
+    console.error('[JSAPI Payment] Unexpected error:', dbError)
+    throw new Error('Create JSAPI order failed')
+  }
+}
+
 export async function handlePaymentSuccess(transaction: WechatPayTransaction): Promise<void> {
   const supabase = getSystemAdminClient()
   const { out_trade_no, transaction_id, success_time } = transaction

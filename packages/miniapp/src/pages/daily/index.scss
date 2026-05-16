@@ -1,0 +1,23 @@
+@import '../../styles/variables.scss';
+@import '../../styles/mixins.scss';
+
+.daily {
+  min-height: 100vh;
+  background: $bg-color;
+}
+
+.daily-empty {
+  @include flex-center;
+  flex-direction: column;
+  padding: 200px 0;
+}
+
+.daily-empty-icon {
+  font-size: 80px;
+  margin-bottom: $spacing-md;
+}
+
+.daily-empty-text {
+  font-size: $font-size-md;
+  color: $text-tertiary;
+}

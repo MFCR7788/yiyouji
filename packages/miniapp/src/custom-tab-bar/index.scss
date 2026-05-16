@@ -1,0 +1,53 @@
+@import '../styles/variables.scss';
+
+.custom-tab-bar {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-around;
+  align-items: center;
+  height: 100px;
+  background: #ffffff;
+  border-top: 1px solid $border-color;
+  padding-bottom: env(safe-area-inset-bottom);
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 999;
+}
+
+.tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 8px 0;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.92);
+  }
+}
+
+.tab-icon {
+  font-size: 40px;
+  line-height: 1;
+  transition: transform 0.2s ease;
+}
+
+.tab-item--active .tab-icon {
+  transform: scale(1.15);
+}
+
+.tab-text {
+  font-size: 20px;
+  color: $text-tertiary;
+  margin-top: 4px;
+  transition: color 0.2s ease;
+}
+
+.tab-item--active .tab-text {
+  color: $primary-color;
+  font-weight: bold;
+}

@@ -1,0 +1,56 @@
+@import '../../styles/variables.scss';
+@import '../../styles/mixins.scss';
+
+.index {
+  padding: $spacing-md;
+  padding-bottom: 120px;
+}
+
+.index-header {
+  text-align: center;
+  padding: $spacing-lg 0 $spacing-md;
+}
+
+.index-title {
+  display: block;
+  font-size: $font-size-xl;
+  font-weight: bold;
+  color: $primary-color;
+}
+
+.index-subtitle {
+  display: block;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  margin-top: $spacing-xs;
+}
+
+.index-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-sm;
+}
+
+.index-grid-item {
+  width: calc(33.33% - 12px);
+  @include flex-center;
+  flex-direction: column;
+  padding: $spacing-md 0;
+  @include card;
+  transition: transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.95);
+  }
+}
+
+.index-grid-icon {
+  font-size: 48px;
+  margin-bottom: $spacing-xs;
+}
+
+.index-grid-name {
+  font-size: $font-size-sm;
+  color: $text-primary;
+  font-weight: 500;
+}

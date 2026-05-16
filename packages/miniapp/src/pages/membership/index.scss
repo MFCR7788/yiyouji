@@ -1,0 +1,119 @@
+@import '../../styles/variables.scss';
+@import '../../styles/mixins.scss';
+
+.membership {
+  padding: $spacing-md;
+  background: $bg-color;
+  min-height: 100vh;
+}
+
+.membership-current {
+  @include card;
+  @include flex-between;
+  margin-bottom: $spacing-md;
+  background: linear-gradient(135deg, $primary-color, $secondary-color);
+}
+
+.membership-current-label {
+  font-size: $font-size-md;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.membership-current-type {
+  font-size: $font-size-lg;
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.membership-plans {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.plan-card {
+  @include card;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  background: $accent-color;
+  color: #ffffff;
+  font-size: $font-size-xs;
+  padding: 4px 16px;
+  border-radius: 0 0 0 $border-radius-sm;
+}
+
+.plan-name {
+  display: block;
+  font-size: $font-size-lg;
+  font-weight: bold;
+  color: $primary-color;
+}
+
+.plan-period {
+  display: block;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  margin-top: $spacing-xs;
+}
+
+.plan-price-row {
+  display: flex;
+  align-items: baseline;
+  margin-top: $spacing-sm;
+}
+
+.plan-price {
+  font-size: 48px;
+  font-weight: bold;
+  color: $accent-color;
+}
+
+.plan-original-price {
+  font-size: $font-size-md;
+  color: $text-tertiary;
+  text-decoration: line-through;
+  margin-left: $spacing-sm;
+}
+
+.plan-monthly {
+  display: block;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  margin-top: $spacing-xs;
+}
+
+.plan-features {
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid $border-color;
+}
+
+.plan-feature {
+  display: block;
+  font-size: $font-size-sm;
+  color: $text-secondary;
+  line-height: 2;
+}
+
+.plan-btn {
+  margin-top: $spacing-md;
+  width: 100%;
+  height: 80px;
+  line-height: 80px;
+  background: $primary-color;
+  color: #ffffff;
+  font-size: $font-size-md;
+  border-radius: $border-radius-md;
+  border: none;
+}
+
+.plan-btn--disabled {
+  background: $border-color;
+  color: $text-tertiary;
+}

@@ -19,6 +19,9 @@ scripts/tests/
 /build
 packages/*/dist/
 
+# SWC plugin cache
+**/.swc/
+
 # misc
 .DS_Store
 *.pem
@@ -58,6 +61,9 @@ next-env.d.ts
 
 # pnpm cache
 .pnpm-store
+
+# pnpm approve builds
+.pnpm-approve-builds.json
 
 # migration files (keep in git for CI checks)
 

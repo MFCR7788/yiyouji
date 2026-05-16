@@ -1,0 +1,16 @@
+{
+  "miniprogramRoot": "dist/",
+  "projectname": "yiyouji-miniapp",
+  "description": "易有吉 - AI 命理咨询",
+  "appid": "wx314d6d3cfbd33e79",
+  "setting": {
+    "urlCheck": true,
+    "es6": false,
+    "enhance": false,
+    "compileHotReLoad": false,
+    "postcss": false,
+    "minified": false,
+    "bundle": false
+  },
+  "compileType": "miniprogram"
+}

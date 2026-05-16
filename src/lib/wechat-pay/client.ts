@@ -4,6 +4,8 @@ import type {
   WechatPayConfig,
   CreateNativePayRequest,
   CreateNativePayResponse,
+  CreateJSAPIPayRequest,
+  CreateJSAPIPayResponse,
   WechatPayTransaction,
 } from './types'
 
@@ -166,6 +168,105 @@ export class WechatPayClient {
 
     return {
       codeUrl: data.code_url,
+    }
+  }
+
+  async createJSAPIPay(params: CreateJSAPIPayRequest): Promise<CreateJSAPIPayResponse> {
+    const url = `${this.baseUrl}/v3/pay/transactions/jsapi`
+    const body = JSON.stringify({
+      appid: this.config.appid,
+      mchid: this.config.mchid,
+      description: params.description,
+      out_trade_no: params.outTradeNo,
+      notify_url: params.notifyUrl,
+      amount: {
+        total: params.amount.total,
+        currency: params.amount.currency || 'CNY',
+      },
+      payer: {
+        openid: params.openid,
+      },
+    })
+
+    console.log('[WechatPay] 创建 JSAPI 支付订单:', {
+      url,
+      appid: this.config.appid,
+      mchid: this.config.mchid,
+      outTradeNo: params.outTradeNo,
+      amount: params.amount.total,
+      openid: params.openid,
+    })
+
+    const authorization = this.buildAuthorization('POST', '/v3/pay/transactions/jsapi', body)
+
+    let response: Response
+    try {
+      response = await fetch(url, {
+        ...this.createFetchOptions(),
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': authorization,
+          'Accept': 'application/json',
+        },
+        body,
+      })
+    } catch (networkError) {
+      console.error('[WechatPay] JSAPI 网络请求失败:', {
+        error: networkError instanceof Error ? networkError.message : networkError,
+      })
+      throw new Error(`微信支付网络连接失败: ${networkError instanceof Error ? networkError.message : '未知网络错误'}`)
+    }
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      let errorMessage = `微信支付JSAPI调用失败 (HTTP ${response.status})`
+
+      try {
+        const errorJson = JSON.parse(errorText)
+        if (errorJson.code) {
+          errorMessage += ` [${errorJson.code}]: ${errorJson.message || '无详细信息'}`
+        }
+      } catch {
+        errorMessage += ` - ${errorText.slice(0, 500)}`
+      }
+
+      console.error('[WechatPay] Create JSAPI pay failed:', {
+        status: response.status,
+        errorText: errorText.slice(0, 1000),
+      })
+
+      const enhancedError = new Error(errorMessage)
+      ;(enhancedError as any).statusCode = response.status
+      ;(enhancedError as any).wechatPayCode = (() => { try { return JSON.parse(errorText).code } catch { return undefined } })()
+
+      throw enhancedError
+    }
+
+    const data = await response.json()
+    console.log('[WechatPay] JSAPI 支付订单创建成功:', {
+      prepayId: data.prepay_id?.slice(0, 20) + '...',
+    })
+
+    return {
+      prepayId: data.prepay_id,
+    }
+  }
+
+  signMiniappPayment(prepayId: string): { timeStamp: string; nonceStr: string; package: string; signType: string; paySign: string } {
+    const timeStamp = getTimestamp()
+    const nonceStr = generateNonceStr()
+    const packageStr = `prepay_id=${prepayId}`
+
+    const message = `${this.config.appid}\n${timeStamp}\n${nonceStr}\n${packageStr}\n`
+    const paySign = this.sign(message)
+
+    return {
+      timeStamp,
+      nonceStr,
+      package: packageStr,
+      signType: 'RSA',
+      paySign,
     }
   }
 

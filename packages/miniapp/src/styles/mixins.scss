@@ -1,0 +1,24 @@
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin card {
+  background: $card-bg;
+  border-radius: $border-radius-md;
+  padding: $spacing-md;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+@mixin text-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

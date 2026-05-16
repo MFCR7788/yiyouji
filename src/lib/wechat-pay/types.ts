@@ -25,6 +25,21 @@ export interface CreateNativePayResponse {
   codeUrl: string
 }
 
+export interface CreateJSAPIPayRequest {
+  description: string
+  outTradeNo: string
+  notifyUrl: string
+  openid: string
+  amount: {
+    total: number
+    currency?: string
+  }
+}
+
+export interface CreateJSAPIPayResponse {
+  prepayId: string
+}
+
 export interface WechatPayCallbackResource {
   algorithm: string
   ciphertext: string

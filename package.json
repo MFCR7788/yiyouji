@@ -23,7 +23,10 @@
     "cap:open:ios": "npx cap open ios",
     "android:debug": "cd android && ./gradlew assembleDebug",
     "android:release": "cd android && ./gradlew assembleRelease",
-    "android:bundle": "cd android && ./gradlew bundleRelease"
+    "android:bundle": "cd android && ./gradlew bundleRelease",
+    "build:shared": "pnpm -C packages/shared build",
+    "build:miniapp": "pnpm -C packages/core build && pnpm -C packages/shared build && pnpm -C packages/miniapp build:weapp",
+    "dev:miniapp": "pnpm -C packages/core build && pnpm -C packages/shared build && pnpm -C packages/miniapp dev:weapp"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.48",

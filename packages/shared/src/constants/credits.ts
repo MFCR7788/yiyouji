@@ -1,0 +1,7 @@
+export const CREDIT_COST_PER_DIVINATION = 2
+
+export const DEFAULT_FREE_CREDIT_LIMIT = 10
+
+export const CHECKIN_REWARD_CREDITS = 1
+
+export const NEW_USER_REWARD_CREDITS = 5
