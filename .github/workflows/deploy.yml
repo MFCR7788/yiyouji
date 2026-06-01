@@ -461,16 +461,32 @@ jobs:
           fi
 
       - name: Install miniprogram-ci
-        run: npm install -g miniprogram-ci@1.9.0
+        run: npm install -g miniprogram-ci@latest
 
       - name: Create upload script
         run: |
           cat > upload-miniapp.js << 'EOF'
           const ci = require('miniprogram-ci');
           const fs = require('fs');
+          const path = require('path');
           
           async function main() {
+            console.log('🚀 开始上传小程序...');
+            console.log('AppID:', process.env.WECHAT_MINIAPP_APPID);
+            console.log('版本:', process.env.GITHUB_SHA);
+            
+            const distPath = path.join(__dirname, 'packages/miniapp/dist');
+            if (!fs.existsSync(distPath)) {
+              console.error('❌ 错误：dist 目录不存在');
+              process.exit(1);
+            }
+            
             const privateKey = process.env.WECHAT_MINIAPP_CI_PRIVATE_KEY;
+            if (!privateKey) {
+              console.error('❌ 错误：未配置微信小程序私钥');
+              process.exit(1);
+            }
+            
             const project = new ci.Project({
               appid: process.env.WECHAT_MINIAPP_APPID,
               type: 'miniProgram',
@@ -478,27 +494,42 @@ jobs:
               privateKey: privateKey,
               ignores: ['node_modules/**/*'],
             });
-          
+            
             try {
+              console.log('📤 正在上传到微信...');
               const result = await ci.upload({
                 project,
-                version: process.env.GITHUB_SHA,
-                desc: `Auto deploy from GitHub Actions ${process.env.GITHUB_RUN_NUMBER}`,
+                version: process.env.GITHUB_SHA.substring(0, 8),
+                desc: `Auto deploy from GitHub Actions #${process.env.GITHUB_RUN_NUMBER}`,
                 setting: {
                   es6: true,
                   minify: true,
+                  minifyWxml: true,
+                  minifyWxss: true,
+                  minifyXML: true,
                 },
               });
-              console.log('✅ 上传成功:', JSON.stringify(result));
+              console.log('✅ 上传成功:', JSON.stringify(result, null, 2));
             } catch (error) {
-              console.error('❌ 上传失败:', error);
+              console.error('❌ 上传失败:', error.message);
               process.exit(1);
             }
           }
           
-          main();
+          main().catch(err => {
+            console.error('❌ 未捕获的错误:', err);
+            process.exit(1);
+          });
           EOF
           echo "✅ 上传脚本创建完成"
+
+      - name: Check dist directory
+        run: |
+          echo "📂 检查 dist 目录结构:"
+          ls -la packages/miniapp/dist/ 2>&1 || echo "❌ dist 目录不存在"
+          echo ""
+          echo "📦 检查文件数量:"
+          find packages/miniapp/dist -type f | wc -l
 
       - name: Upload to WeChat CI
         if: success()
