@@ -39,6 +39,6 @@ export function isProxyConfigured(): boolean {
 }
 
 // 自动执行（在模块加载时）
-if (typeof process !== 'undefined' && process.env.NODE_ENV === 'development') {
+if (typeof process !== 'undefined' && (process.env.NODE_ENV === 'development' || process.env.USE_LOCAL_DB === 'true')) {
     configureGlobalProxy();
 }
