@@ -460,13 +460,51 @@ jobs:
             echo "⚠️ 版本不一致: Web=$WEB_VERSION, Mini=$MINI_VERSION"
           fi
 
+      - name: Install miniprogram-ci
+        run: npm install -g miniprogram-ci@1.9.0
+
+      - name: Create upload script
+        run: |
+          cat > upload-miniapp.js << 'EOF'
+          const ci = require('miniprogram-ci');
+          const fs = require('fs');
+          
+          async function main() {
+            const privateKey = process.env.WECHAT_MINIAPP_CI_PRIVATE_KEY;
+            const project = new ci.Project({
+              appid: process.env.WECHAT_MINIAPP_APPID,
+              type: 'miniProgram',
+              projectPath: 'packages/miniapp/dist',
+              privateKey: privateKey,
+              ignores: ['node_modules/**/*'],
+            });
+          
+            try {
+              const result = await ci.upload({
+                project,
+                version: process.env.GITHUB_SHA,
+                desc: `Auto deploy from GitHub Actions ${process.env.GITHUB_RUN_NUMBER}`,
+                setting: {
+                  es6: true,
+                  minify: true,
+                },
+              });
+              console.log('✅ 上传成功:', JSON.stringify(result));
+            } catch (error) {
+              console.error('❌ 上传失败:', error);
+              process.exit(1);
+            }
+          }
+          
+          main();
+          EOF
+          echo "✅ 上传脚本创建完成"
+
       - name: Upload to WeChat CI
         if: success()
-        uses: docker://ghcr.io/nichenqin/miniprogram-ci:latest
-        with:
-          action: upload
-          project_path: packages/miniapp/dist
-          version: ${{ github.sha }}
-          desc: "Auto deploy from GitHub Actions ${{ github.run_number }}"
-          appid: ${{ secrets.WECHAT_MINIAPP_APPID }}
-          private_key: ${{ secrets.WECHAT_MINIAPP_CI_PRIVATE_KEY }}
+        env:
+          WECHAT_MINIAPP_APPID: ${{ secrets.WECHAT_MINIAPP_APPID }}
+          WECHAT_MINIAPP_CI_PRIVATE_KEY: ${{ secrets.WECHAT_MINIAPP_CI_PRIVATE_KEY }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_NUMBER: ${{ github.run_number }}
+        run: node upload-miniapp.js
