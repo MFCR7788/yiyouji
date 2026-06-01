@@ -460,13 +460,21 @@ jobs:
             echo "⚠️ 版本不一致: Web=$WEB_VERSION, Mini=$MINI_VERSION"
           fi
 
-      - name: Install miniprogram-ci locally
-        run: npm install miniprogram-ci --save-dev
+      - name: Install miniprogram-ci in temp directory
+        run: |
+          echo "📦 在临时目录安装 miniprogram-ci..."
+          mkdir -p .tmp-ci
+          cd .tmp-ci
+          echo '{"name":"ci-temp","version":"1.0.0","private":true}' > package.json
+          npm install miniprogram-ci --save-dev 2>&1 | tail -10
+          cd ..
+          echo "✅ miniprogram-ci 安装完成"
+          ls -la .tmp-ci/node_modules/miniprogram-ci/package.json
 
       - name: Create upload script
         run: |
           cat > upload-miniapp.js << 'EOF'
-          const ci = require('./node_modules/miniprogram-ci');
+          const ci = require('./.tmp-ci/node_modules/miniprogram-ci');
           const fs = require('fs');
           const path = require('path');
           
@@ -529,13 +537,7 @@ jobs:
       - name: Verify miniprogram-ci installation
         run: |
           echo "📦 检查 miniprogram-ci 是否已安装:"
-          ls -la node_modules/miniprogram-ci/package.json 2>&1 || echo "❌ 未找到 miniprogram-ci"
-          echo ""
-          echo "📋 Node.js 路径:"
-          node -e "console.log(require.resolve.paths('miniprogram-ci'))"
-          echo ""
-          echo "📦 已安装的包:"
-          npm list --depth=0 2>&1 | head -20
+          ls -la .tmp-ci/node_modules/miniprogram-ci/package.json 2>&1 || echo "❌ 未找到 miniprogram-ci"
 
       - name: Check dist directory
         run: |
