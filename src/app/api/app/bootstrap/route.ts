@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
         new Promise<{ 
           viewerLoaded: false; 
           viewerSummary: null; 
-          viewerErrorMessage: '加载账户状态超时'; 
+          viewerErrorMessage: string | null; 
           membership: null; 
           unreadCount: 0; 
           unreadCountLoaded: false; 
