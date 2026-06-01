@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 构建和部署
+  # 构建和部署 Web 应用
   deploy:
     runs-on: ubuntu-latest
     environment: production
@@ -413,5 +413,60 @@ jobs:
 
             echo ""
             echo "=========================================="
-            echo "✨ 部署流程全部完成！"
+            echo "✨ Web 应用部署完成！"
             echo "=========================================="
+
+  # 构建和部署微信小程序
+  deploy-miniapp:
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 20
+    needs: deploy  # 等待 Web 部署完成后再执行
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build shared packages
+        run: |
+          pnpm -C packages/core build
+          pnpm -C packages/shared build
+
+      - name: Build miniapp
+        run: pnpm -C packages/miniapp build:weapp:prod
+        env:
+          TARO_APP_API_BASE_URL: https://yiyouji.zjsifan.com
+
+      - name: Version Sync Check
+        run: |
+          WEB_VERSION=$(node -p "require('./package.json').version")
+          MINI_VERSION=$(node -p "require('./packages/miniapp/package.json').version")
+          echo "Web version: $WEB_VERSION"
+          echo "Miniapp version: $MINI_VERSION"
+          if [ "$WEB_VERSION" != "$MINI_VERSION" ]; then
+            echo "⚠️ 版本不一致: Web=$WEB_VERSION, Mini=$MINI_VERSION"
+          fi
+
+      - name: Upload to WeChat CI
+        if: success()
+        uses: docker://ghcr.io/nichenqin/miniprogram-ci:latest
+        with:
+          action: upload
+          project_path: packages/miniapp/dist
+          version: ${{ github.sha }}
+          desc: "Auto deploy from GitHub Actions ${{ github.run_number }}"
+          appid: ${{ secrets.WECHAT_MINIAPP_APPID }}
+          private_key: ${{ secrets.WECHAT_MINIAPP_CI_PRIVATE_KEY }}
