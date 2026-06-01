@@ -17,6 +17,8 @@ interface FeatureGateProps {
     children: React.ReactNode;
 }
 
+const DEFAULT_ENABLED_FEATURES = ['bazi', 'palm', 'face', 'horoscope'];
+
 export function FeatureGate({ featureId, children }: FeatureGateProps) {
     const hydrated = useSyncExternalStore(
         () => () => {},
@@ -25,7 +27,17 @@ export function FeatureGate({ featureId, children }: FeatureGateProps) {
     );
     const { isFeatureEnabled, isLoading, loaded, error, refresh } = useFeatureToggles({ enabled: hydrated });
 
-    if (!hydrated || isLoading) {
+    const isDefaultEnabled = DEFAULT_ENABLED_FEATURES.includes(featureId);
+
+    if (!hydrated) {
+        return (
+            <div className="flex items-center justify-center min-h-[60vh] bg-background">
+                <SoundWaveLoader variant="block" />
+            </div>
+        );
+    }
+
+    if (isLoading && !isDefaultEnabled) {
         return (
             <div className="flex items-center justify-center min-h-[60vh] bg-background">
                 <SoundWaveLoader variant="block" />
@@ -34,6 +46,10 @@ export function FeatureGate({ featureId, children }: FeatureGateProps) {
     }
 
     if (!loaded && error) {
+        if (isDefaultEnabled) {
+            console.warn(`[FeatureGate] Feature ${featureId} error but is default enabled, rendering anyway`);
+            return <>{children}</>;
+        }
         return (
             <div className="flex flex-col items-center justify-center min-h-[60vh] px-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
@@ -57,6 +73,10 @@ export function FeatureGate({ featureId, children }: FeatureGateProps) {
     }
 
     if (!loaded) {
+        if (isDefaultEnabled) {
+            console.warn(`[FeatureGate] Feature ${featureId} not loaded but is default enabled, rendering anyway`);
+            return <>{children}</>;
+        }
         return (
             <div className="flex items-center justify-center min-h-[60vh] bg-background">
                 <SoundWaveLoader variant="block" />

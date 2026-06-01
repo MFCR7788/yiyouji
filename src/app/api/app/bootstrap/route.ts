@@ -136,9 +136,9 @@ export async function GET(request: NextRequest) {
         readFeatureTogglesState(),
         new Promise<{ loaded: true; toggles: Record<string, boolean> }>((resolve) => {
           setTimeout(() => {
-            console.warn('[bootstrap] readFeatureTogglesState timeout, falling back to defaults');
-            resolve({ loaded: true, toggles: {} });
-          }, 8000);
+            console.warn('[bootstrap] readFeatureTogglesState timeout (3s), falling back to defaults');
+            resolve({ loaded: true, toggles: { bazi: true, palm: true, face: true, horoscope: true } });
+          }, 3000);
         })
       ]),
       Promise.race([
@@ -152,16 +152,16 @@ export async function GET(request: NextRequest) {
           unreadCountLoaded: false; 
         }>((resolve) => {
           setTimeout(() => {
-            console.warn('[bootstrap] loadViewerState timeout, falling back to defaults');
+            console.warn('[bootstrap] loadViewerState timeout (3s), falling back to defaults');
             resolve({
               viewerLoaded: false,
               viewerSummary: null,
-              viewerErrorMessage: '加载账户状态超时',
+              viewerErrorMessage: null,
               membership: null,
               unreadCount: 0,
               unreadCountLoaded: false,
             });
-          }, 8000);
+          }, 3000);
         })
       ]),
     ]);
