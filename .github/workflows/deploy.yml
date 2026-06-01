@@ -263,7 +263,7 @@ jobs:
             echo "http_proxy=" >> "$ENV_FILE"
             echo "HTTPS_PROXY=" >> "$ENV_FILE"
             echo "https_proxy=" >> "$ENV_FILE"
-            echo "NO_PROXY=localhost,127.0.0.1,::1,*.weixin.qq.com,*.qq.com,*.supabase.co" >> "$ENV_FILE"
+            echo "NO_PROXY=localhost,127.0.0.1,::1,*.weixin.qq.com,*.qq.com,*.supabase.co,*.aliyuncs.com,*.aliyun.com" >> "$ENV_FILE"
             echo "" >> "$ENV_FILE"
 
             # ==================== Supabase 配置 ====================

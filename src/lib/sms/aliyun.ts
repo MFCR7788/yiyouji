@@ -10,6 +10,21 @@ import { createHash, createHmac } from 'crypto';
 const ALIYUN_SMS_ENDPOINT = 'https://dysmsapi.aliyuncs.com';
 const REQUEST_TIMEOUT = 15000;
 
+function getErrorDetails(error: unknown): { name: string; message: string; code?: string; stack?: string } {
+    if (error instanceof Error) {
+        return {
+            name: error.name,
+            message: error.message,
+            code: (error as any)?.code,
+            stack: error.stack?.slice(0, 1000),
+        };
+    }
+    return {
+        name: 'UnknownError',
+        message: String(error),
+    };
+}
+
 interface SendSmsResult {
     success: boolean;
     bizId?: string;
@@ -225,17 +240,50 @@ export async function sendAliyunSms(
             message: friendlyMessage,
         };
     } catch (error) {
+        const errorDetails = getErrorDetails(error);
+        
+        console.error('[SMS] 阿里云短信发送异常 - 详情:', JSON.stringify({
+            phone,
+            endpoint: ALIYUN_SMS_ENDPOINT,
+            timeout: REQUEST_TIMEOUT,
+            error: errorDetails,
+            proxyConfig: {
+                httpProxy: process.env.http_proxy || process.env.HTTP_PROXY || 'not set',
+                httpsProxy: process.env.https_proxy || process.env.HTTPS_PROXY || 'not set',
+                noProxy: process.env.NO_PROXY || process.env.no_proxy || 'not set',
+            },
+            env: {
+                NODE_ENV: process.env.NODE_ENV,
+                ALIYUN_SMS_REGION_ID: regionId,
+            },
+        }, null, 2));
+
         if (error instanceof Error && error.name === 'AbortError') {
-            console.error('[SMS] 短信发送超时 - 手机号:', phone);
             return {
                 success: false,
                 message: '请求超时，请稍后重试',
             };
         }
-        console.error('[SMS] 阿里云短信发送异常 - 手机号:', phone, '错误:', error);
+
+        const errorCode = errorDetails.code;
+        let friendlyMessage = '短信发送失败，请稍后重试';
+        
+        if (errorCode === 'ENOTFOUND' || errorCode === 'EAI_AGAIN') {
+            friendlyMessage = '网络连接失败，请检查网络设置';
+        } else if (errorCode === 'ECONNREFUSED') {
+            friendlyMessage = '无法连接到短信服务，请稍后重试';
+        } else if (errorCode === 'ECONNRESET') {
+            friendlyMessage = '连接被重置，请稍后重试';
+        } else if (errorCode === 'ETIMEDOUT') {
+            friendlyMessage = '请求超时，请稍后重试';
+        } else if (errorCode === 'ERR_INVALID_URL') {
+            friendlyMessage = '服务地址配置错误';
+        }
+
         return {
             success: false,
-            message: '短信发送失败，请稍后重试',
+            code: errorCode,
+            message: friendlyMessage,
         };
     }
 }
