@@ -427,20 +427,11 @@ export function ConversationListProvider({ children }: { children: ReactNode }) 
       return;
     }
 
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      idleCallbackHandleRef.current = (
-        window as Window & { requestIdleCallback: (cb: () => void) => number }
-      ).requestIdleCallback(() => {
-        idleCallbackHandleRef.current = null;
-        triggerConversationListLoad();
-      });
-      return clearScheduledIdleLoad;
-    }
-
+    // 延迟加载对话列表，避免阻塞首页渲染
     idleTimeoutHandleRef.current = globalThis.setTimeout(() => {
       idleTimeoutHandleRef.current = null;
       triggerConversationListLoad();
-    }, 1200);
+    }, 3000); // 延迟3秒再加载，优先显示页面
 
     return clearScheduledIdleLoad;
   }, [clearScheduledIdleLoad, sessionLoading, triggerConversationListLoad, userId]);

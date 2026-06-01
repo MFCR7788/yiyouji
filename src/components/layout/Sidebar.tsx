@@ -97,8 +97,9 @@ function SidebarInner() {
     const { handleNewChat } = useConversationList();
     const { openAnnouncementCenter, announcementPromptCount } = useAnnouncementCenterSafe();
     const [showAuthModal, setShowAuthModal] = useState(false);
-    const isNavLoading = featureLoading;
-    const notificationsEnabled = isFeatureEnabled('notifications');
+    
+    // 不再等待 feature loading 完成，而是有条件地显示加载状态
+    const notificationsEnabled = featureLoaded ? isFeatureEnabled('notifications') : true; // 默认启用
     const unreadCount = useNotificationUnreadCount(user?.id ?? null, {
         enabled: notificationsEnabled,
     });
@@ -107,12 +108,20 @@ function SidebarInner() {
     // 当前是否在具体某个对话中
     const activeConvId = searchParams.get('id');
 
-    // 根据 feature toggle 过滤导航项
-    const filteredNavItems = useMemo(() => navItems
-        .filter((item) => isFeatureEnabled(item.id)), [isFeatureEnabled]);
+    // 默认启用所有功能，等 feature toggles 加载完成后再过滤
+    const filteredNavItems = useMemo(() => {
+        if (!featureLoaded) {
+            return navItems; // feature 未加载时，显示所有项
+        }
+        return navItems.filter((item) => isFeatureEnabled(item.id));
+    }, [featureLoaded, isFeatureEnabled]);
 
-    const filteredToolItems = useMemo(() => toolItems
-        .filter((item) => isFeatureEnabled(item.id)), [isFeatureEnabled]);
+    const filteredToolItems = useMemo(() => {
+        if (!featureLoaded) {
+            return toolItems; // feature 未加载时，显示所有项
+        }
+        return toolItems.filter((item) => isFeatureEnabled(item.id));
+    }, [featureLoaded, isFeatureEnabled]);
 
     const toggleAnnouncementCenter = useCallback(() => {
         openAnnouncementCenter({
@@ -120,16 +129,9 @@ function SidebarInner() {
         });
     }, [notificationsEnabled, openAnnouncementCenter, user]);
 
-    if (isNavLoading) {
-        return <SidebarSkeleton />;
-    }
-
+    // 如果有 feature 错误才显示错误页面，其他情况正常显示
     if (featureError && !featureLoading) {
         return <SidebarLoadError onRetry={() => { void refreshFeatures(); }} />;
-    }
-
-    if (!featureLoaded) {
-        return <SidebarSkeleton />;
     }
 
     return (

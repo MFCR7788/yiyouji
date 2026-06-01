@@ -23,9 +23,9 @@ export function useNotificationUnreadCount(
     queryKey: queryKeys.notificationsUnread(userId),
     queryFn: () => getUnreadCount(),
     enabled: enabled && !!userId,
-    staleTime: 5_000,
-    refetchOnWindowFocus: true,
-    refetchInterval: userId ? 30_000 : false,
+    staleTime: 30_000, // 延长缓存时间
+    refetchOnWindowFocus: false, // 不要在窗口聚焦时立即刷新
+    refetchInterval: userId ? 60_000 : false, // 增加轮询间隔
     refetchIntervalInBackground: false,
   });
 
